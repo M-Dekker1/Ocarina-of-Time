@@ -1,26 +1,23 @@
-# Tunebox: put it online and install it
+# Ocarina of Time: put it online and install it
 
-## 1. Host it on GitHub Pages (once)
-1. On github.com, create a new **public** repository (e.g. `tunebox`).
-2. Click **Add file → Upload files** and drag in everything in this folder (index.html, sw.js, manifest.webmanifest, three icon PNGs). Commit.
-3. Go to **Settings → Pages**. Under "Build and deployment", pick **Deploy from a branch**, branch **main**, folder **/ (root)**, then Save.
-4. After a minute your app is at `https://YOUR-USERNAME.github.io/tunebox/`.
+## 1. Host it on GitHub Pages
+1. Open your existing repository on github.com (or create a new public one).
+2. Choose **Add file → Upload files**, drag in everything in this folder (replacing the old files), and commit.
+3. If this is a new repository: **Settings → Pages → Deploy from a branch → main → / (root)**.
+4. Your app is at `https://YOUR-USERNAME.github.io/REPO/`. Open it online once so it can save itself for offline use.
 
 Only the app code is hosted. Your music never leaves your device.
 
 ## 2. Install
-- **Windows:** open the link in Edge or Chrome, then click the install icon in the address bar (or menu → Install app).
-- **iPhone:** open the link in **Safari**, tap Share → **Add to Home Screen**. Always open Tunebox from that icon.
+- **Windows:** open the link in Edge or Chrome and click the install icon in the address bar.
+- **iPhone:** open the link in **Safari**, tap Share → **Add to Home Screen**. Always open the app from that icon. If you had the old "Tunebox" icon, delete it and add the new one (your library is kept only if you reuse the same address).
 
-Open the app once while online so it can save itself for offline use.
+## 3. Getting music onto your iPhone
+The app can only pick files the iPhone can see in the **Files** app. To get them there from Windows:
+- **iCloud Drive:** install "iCloud for Windows", turn on iCloud Drive, and copy your music into a folder there; **or**
+- **OneDrive / Google Drive:** upload the folder from your PC, install the app on your iPhone, and it appears in Files.
 
-## 3. Use it
-- **Add songs** picks MP3, WAV or OGG files (several at once). A yellow ! means title, artist, album or cover art is missing. Tap ⋯ on a song → Edit info.
-- Songs with an album tag are grouped into collections automatically. **New** makes your own playlists or collections.
-- A playlist is listed under every collection that shares a song with it.
+On the iPhone, make sure the files are downloaded (no cloud icon beside them), then tap **Add songs**, browse to the folder and select several at once. Start with 20-30 songs to check storage.
 
 ## 4. Move your library between devices
-Use ⋯ (top right) → **Export backup** on one device, then on the other: add the same audio files first, then **Import backup**. This carries playlists, collections, tags, favourites, ratings and play counts (not audio files or cover art).
-
-## Test small first on iPhone
-iOS limits web app storage. Add 20-30 songs, check they survive closing the app and a day or two, then add more.
+⋯ → **Export backup** on one device. On the other, add the same audio files first, then ⋯ → **Import backup**. This carries playlists, collections, tags, favourites, ratings and play counts (not audio or cover art).

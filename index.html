@@ -1,12 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Tunebox</title>
+<title>Ocarina of Time</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Tunebox">
+<meta name="apple-mobile-web-app-title" content="Ocarina of Time">
 <meta name="theme-color" content="#3d5afe">
 <style>
 :root{--bg:#f6f7f9;--fg:#15171c;--mut:#737985;--card:#fff;--line:#e3e6ec;--acc:#3d5afe;--sh:rgba(20,30,60,.12)}
@@ -29,7 +29,9 @@ main{padding:6px 16px 130px;max-width:1100px;margin:auto}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:18px}
 .card{cursor:pointer;min-width:0}.card .art{aspect-ratio:1;border-radius:8px;overflow:hidden;margin-bottom:7px;border:1px solid var(--line)}
 .card b,.t b,.t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.art img{width:100%;height:100%;object-fit:cover;display:block}
+.art img,.sm img,.big img,#nArt img{width:100%;height:100%;object-fit:contain;display:block}
+.sm,.big,#nArt,.card .art{background:var(--card)}
+.dur{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
 .ph{width:100%;height:100%;display:grid;place-items:center;font-size:28px;font-weight:700;color:#fff}
 .song{display:flex;align-items:center;gap:12px;padding:6px 6px;border-radius:8px;cursor:pointer}.song:hover{background:var(--card)}
 .sm{width:44px;height:44px;border-radius:6px;overflow:hidden;flex:none}
@@ -55,7 +57,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 #toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:20px;opacity:0;transition:.2s;z-index:30;pointer-events:none}
 .empty{text-align:center;padding:60px 10px}
 </style></head><body>
-<header><h1 class="logo">Tunebox</h1><input id="q" type="search" placeholder="Search songs and playlists"><button data-act="addfiles" class="p">Add songs</button><button data-act="newList">New</button><button class="ic" data-act="more" title="More">⋯</button></header>
+<header><h1 class="logo">Ocarina of Time</h1><input id="q" type="search" placeholder="Search songs and playlists"><button data-act="addfiles" class="p">Add songs</button><button data-act="newList">New</button><button class="ic" data-act="more" title="More">⋯</button></header>
 <nav><button class="tab on" data-t="home">Library</button><button class="tab" data-t="songs">Songs</button><button class="tab" data-t="artists">Artists</button></nav>
 <main id="main"></main>
 <div id="mini" hidden><div class="sm" id="mArt"></div><div class="t" id="mT"></div><button class="ic" id="mPrev">⏮</button><button class="ic" id="mPlay">▶</button><button class="ic" id="mNext">⏭</button><i id="mBar"></i></div>
@@ -69,6 +71,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <h3 style="text-align:left;margin-top:18px">Up next</h3><div id="nQ" style="text-align:left"></div></div></section>
 <div id="sheet" hidden></div><div id="toast"></div>
 <input type="file" id="file" multiple accept="audio/*,.mp3,.wav,.ogg" hidden>
+<input type="file" id="dir" webkitdirectory multiple hidden>
 <input type="file" id="imp" accept=".json,application/json" hidden>
 <script>
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
@@ -114,9 +117,12 @@ async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayB
 async function addFiles(files){let n=0;
  for(const f of files){if(!/\.(mp3|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id))continue;
   let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
-  const s={id,fn:f.name,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,cover:t.cover||null,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
+  const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,cover:t.cover||null,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
   songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});n++;if(n%5==0)toast('Adding… '+n)}
  toast(n?`Added ${n} song${n>1?'s':''}`:'Nothing new to add');render()}
+const getDur=f=>new Promise(res=>{const a=new Audio(),u=URL.createObjectURL(f);const done=d=>{a.src='';URL.revokeObjectURL(u);res(isFinite(d)&&d>0?d:0)};a.preload='metadata';a.onloadedmetadata=()=>done(a.duration);a.onerror=()=>done(0);setTimeout(()=>done(0),3000);a.src=u});
+async function backfill(){let fails=0,n=0;for(const s of all()){if(s.dur||fails>=3)continue;const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)continue;s.dur=await getDur(b.file);if(s.dur){fails=0;await put('songs',s);if(++n%25==0)render()}else fails++}if(n)render()}
+async function fitCover(f){try{const b=await createImageBitmap(f),k=Math.min(1,800/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(o=>r(o||f),'image/jpeg',.9))}catch{return f}}
 /* ---------- collections & playlists ---------- */
 function colls(){const m=new Map();
  for(const s of songs.values())if(s.album){if(!m.has(s.album))m.set(s.album,{id:'a:'+s.album,name:s.album,type:'collection',auto:1,songs:[]});m.get(s.album).songs.push(s)}
@@ -132,10 +138,10 @@ function ctxIds(c){if(c.startsWith('artist:'))return all().filter(s=>(s.artist||
  if(c=='search')return S.found||[];const l=getList(c);return l?l.songs.filter(i=>songs.has(i)):[]}
 /* ---------- views ---------- */
 const card=(id,name,subt,cover,act='go')=>`<div class="card" data-act="${act}" data-id="${esc(id)}"><div class="art">${art(cover,name)}</div><b>${esc(name)}</b><small>${esc(subt||'')}&nbsp;</small></div>`;
-const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${s.fav?'<span class="on" style="color:var(--acc)">♥</span>':''}<button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">⋯</button></div>`};
-function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your library is empty</h2><p class="mut">Add MP3, WAV or OGG files to get started.</p><button class="p" data-act="addfiles">Add songs</button></div>';
+const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${s.fav?'<span class="on" style="color:var(--acc)">♥</span>':''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">⋯</button></div>`};
+function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your library is empty</h2><p class="mut">Add MP3, WAV or OGG files. On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
  const cs=colls(),ps=pls();
- return`<h2>Playlists</h2><div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,lcover(p))).join('')||'<p class="mut">No playlists yet. Tap New to make one.</p>'}</div><h2>Collections</h2><div class="grid">${cs.map(c=>card(c.id,c.name,c.id=='all'||c.id=='fav'?`${c.songs.length} songs`:c.auto?'From album tag':'Collection',lcover(c))).join('')}</div>`}
+ return`<h2>Playlists</h2><div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,lcover(p))).join('')||'<p class="mut">No playlists yet. Tap New to make one.</p>'}</div><h2>Collections</h2><div class="grid">${cs.map(c=>card(c.id,c.name,`${c.songs.length} songs`,lcover(c))).join('')}</div>`}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  const own=lists.find(x=>x.id==l.id),ids=l.songs.filter(i=>songs.has(i)),id=esc(l.id);
  let h=`<button class="ic" data-act="back">← Back</button><div class="hd"><div class="big">${art(lcover(l),l.name)}</div><div><small>${l.type=='collection'?'Collection':'Playlist'}${l.auto&&!['all','fav'].includes(l.id)?' (auto)':''}</small><h1>${esc(l.name)}</h1><small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button>${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lmenu" data-id="${id}">⋯</button>`:''}</div></div></div>`;
@@ -172,6 +178,7 @@ function paint(){const s=songs.get(Q[qi]);if(!s)return;$('#mini').hidden=false;c
  $('#nShuf').classList.toggle('on',!!shuf);$('#nRep').classList.toggle('on',rep>0);$('#nRep').textContent=rep==2?'⟲1':'⟲';
  paintPlay();paintQ();
  if('mediaSession'in navigator)navigator.mediaSession.metadata=new MediaMetadata({title:ttl(s),artist:s.artist,album:s.album,artwork:s.cover?[{src:cu(s)}]:[]})}
+au.onloadedmetadata=()=>{const s=songs.get(Q[qi]);if(s&&!s.dur&&au.src==curUrl&&au.duration>0&&isFinite(au.duration)){s.dur=au.duration;put('songs',s);render()}};
 au.onplay=au.onpause=paintPlay;au.onended=()=>next(1);
 au.ontimeupdate=()=>{const d=au.duration||0;$('#mBar').style.width=d?au.currentTime/d*100+'%':0;
  if(!$('#np').hidden){$('#nSeek').max=d||1;$('#nSeek').value=au.currentTime;$('#nCur').textContent=fm(au.currentTime);$('#nDur').textContent=fm(d)}
@@ -203,7 +210,7 @@ function songMenu(id,ctx){const s=songs.get(id),l=lists.find(x=>x.id==ctx);
  it.push(['Delete from library',()=>delSong(id)]);menu(ttl(s),it)}
 function addMenu(id){menu('Add to…',[...lists.map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,[id])]),['New playlist with this song',()=>{pending=[id];A.newList()}]])}
 let pending=[];
-function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><label>Cover art</label><input id="eC" type="file" accept="image/*"><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`)}
+function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><label>Cover art (scaled to fit)</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`)}
 function listMenu(id){const l=lists.find(x=>x.id==id);if(l)menu(l.name,[['Rename',async()=>{const n=prompt('New name',l.name);if(n&&n.trim()){l.name=n.trim();l.mod=Date.now();await put('lists',l);render()}}],['Delete '+l.type,async()=>{if(!confirm(`Delete "${l.name}"? Songs stay in your library.`))return;lists=lists.filter(x=>x!=l);await del('lists',l.id);A.back();}]])}
 let pk={sel:new Set()};
 function pickSongs(lid){pk={sel:new Set(),id:lid};const l=lists.find(x=>x.id==lid);
@@ -213,11 +220,11 @@ function pkRender(){const l=lists.find(x=>x.id==pk.id),have=new Set(l.songs),src
  $('#pL').innerHTML=(ids.length?'<button data-act="pkall">Select shown</button>':'<p class="mut">Nothing to add here.</p>')+ids.map(i=>`<label class="pk"><input type="checkbox" data-pk="${i}" ${pk.sel.has(i)?'checked':''}>${esc(ttl(songs.get(i)))}<small>${esc(songs.get(i).artist)}</small></label>`).join('');$('#pG').textContent='Add '+pk.sel.size}
 const setTheme=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('th',t)}catch{}};
 const curTheme=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
-function exportBackup(){const d={v:1,at:Date.now(),songs:all().map(({cover,...r})=>r),lists};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:'application/json'}));a.download='tunebox-backup.json';a.click()}
+function exportBackup(){const d={v:1,at:Date.now(),songs:all().map(({cover,...r})=>r),lists};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:'application/json'}));a.download='ocarina-of-time-backup.json';a.click()}
 async function importBackup(f){try{const d=JSON.parse(await f.text());let n=0;
  for(const r of d.songs||[]){const s=songs.get(r.id);if(s&&(r.mod>s.mod||s.mod==s.added)){Object.assign(s,r,{cover:s.cover||null});await put('songs',s);n++}}
  for(const l of d.lists||[]){const o=lists.find(x=>x.id==l.id);if(!o){lists.push(l);await put('lists',l);n++}else if(l.mod>o.mod){Object.assign(o,l);await put('lists',o);n++}}
- toast(n+' items restored');render()}catch{toast('That file is not a Tunebox backup')}}
+ toast(n+' items restored');render()}catch{toast('That file is not an Ocarina of Time backup')}}
 const A={
  go:t=>{hist.push(S);S={t:'list',id:t.dataset.id};render();scrollTo(0,0)},
  artist:t=>{hist.push(S);S={t:'artist',id:t.dataset.id};render();scrollTo(0,0)},
@@ -229,18 +236,19 @@ const A={
  addfiles:()=>$('#file').click(),jump:t=>playAt(+t.dataset.i),rate:t=>rate(+t.dataset.n),
  newList:()=>sheet(`<h3>New</h3><label>Name</label><input id="nN" placeholder="e.g. Road trip"><label>Type</label><select id="nK"><option value="playlist">Playlist</option><option value="collection">Collection (groups playlists)</option></select><button class="p" data-act="mk">Create</button>`),
  mk:async()=>{const name=$('#nN').value.trim();if(!name)return toast('Enter a name');const l={id:'l'+Date.now().toString(36)+rnd(),name,type:$('#nK').value,songs:pending.slice(),mod:Date.now()};pending=[];lists.push(l);await put('lists',l);closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
- saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();const f=$('#eC').files[0];if(f){s.cover=f;urls.delete(s.id)}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
+ saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();const f=$('#eC').files[0];if(f){s.cover=await fitCover(f);urls.delete(s.id)}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
  pkall:()=>{pk.shown.forEach(i=>pk.sel.add(i));pkRender()},
  pkgo:()=>{const l=lists.find(x=>x.id==pk.id);closeSheet();addTo(l,[...pk.sel])},
- more:()=>menu('Tunebox',[['Switch to '+(curTheme()=='dark'?'light':'dark')+' mode',()=>setTheme(curTheme()=='dark'?'light':'dark')],['Export backup',exportBackup],['Import backup',()=>$('#imp').click()],['Storage used',async()=>{const e=await navigator.storage?.estimate?.();toast(e?`${(e.usage/1e9).toFixed(2)} GB used`:'Not available')}]])};
+ more:()=>menu('Ocarina of Time',[['Switch to '+(curTheme()=='dark'?'light':'dark')+' mode',()=>setTheme(curTheme()=='dark'?'light':'dark')],['Add a whole folder (desktop browsers)',()=>$('#dir').click()],['Export backup',exportBackup],['Import backup',()=>$('#imp').click()],['Storage used',async()=>{const e=await navigator.storage?.estimate?.();toast(e?`${(e.usage/1e9).toFixed(2)} GB used`:'Not available')}]])};
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 $$('.tab').forEach(b=>b.onclick=()=>{S={t:b.dataset.t};hist=[];S.q='';$('#q').value='';S.q='';render()});
 $('#file').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
+$('#dir').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#imp').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=''};
 document.addEventListener('input',e=>{if(e.target.id=='pQ')pkRender();else if(e.target.id=='q'){S.q=e.target.value.trim();render()}});
-document.addEventListener('change',e=>{const t=e.target;if(t.id=='pS')pkRender();else if(t.dataset.pk){t.checked?pk.sel.add(t.dataset.pk):pk.sel.delete(t.dataset.pk);$('#pG').textContent='Add '+pk.sel.size}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`}else if(t.id=='pS')pkRender();else if(t.dataset.pk){t.checked?pk.sel.add(t.dataset.pk):pk.sel.delete(t.dataset.pk);$('#pG').textContent='Add '+pk.sel.size}});
 (async()=>{try{const th=localStorage.getItem('th');if(th)document.documentElement.dataset.theme=th}catch{}
- await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());render();
+ await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());render();backfill();
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
 </script></body></html>
