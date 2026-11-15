@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ocarina of Time">
-<meta name="theme-color" content="#3d5afe">
+<meta name="theme-color" content="#13371b">
 <style>
-:root{--bg:#f6f7f9;--fg:#15171c;--mut:#737985;--card:#fff;--line:#e3e6ec;--acc:#3d5afe;--sh:rgba(20,30,60,.12)}
-:root[data-theme=dark]{--bg:#101215;--fg:#eef0f4;--mut:#929aa8;--card:#191c21;--line:#272b32;--acc:#8ea2ff;--sh:rgba(0,0,0,.55)}
-@media(prefers-color-scheme:dark){:root:not([data-theme]){--bg:#101215;--fg:#eef0f4;--mut:#929aa8;--card:#191c21;--line:#272b32;--acc:#8ea2ff;--sh:rgba(0,0,0,.55)}}
+:root{--bg:#f2f6f2;--fg:#12261a;--mut:#62776a;--card:#fff;--line:#dce6de;--acc:#4a5fb8;--gold:#e0a21a;--sh:rgba(18,48,27,.14)}
+:root[data-theme=dark]{--bg:#0e2015;--fg:#e9f0eb;--mut:#8ea697;--card:#163021;--line:#254331;--acc:#a3b3f0;--gold:#f2b632;--sh:rgba(0,0,0,.5)}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){--bg:#0e2015;--fg:#e9f0eb;--mut:#8ea697;--card:#163021;--line:#254331;--acc:#a3b3f0;--gold:#f2b632;--sh:rgba(0,0,0,.5)}}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;padding-top:env(safe-area-inset-top)}
@@ -21,7 +21,7 @@ button.p{background:var(--acc);border-color:var(--acc);color:var(--bg)}
 .ic{border:0;background:none;padding:6px 10px;font-size:19px;line-height:1}
 label{font-size:12px;color:var(--mut)}small,.mut{color:var(--mut)}small{display:block}
 header{position:sticky;top:env(safe-area-inset-top);z-index:5;background:var(--bg);display:flex;gap:8px;align-items:center;padding:10px 16px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
-.logo{font-size:19px;margin-right:auto;letter-spacing:-.02em}
+.logo{font-size:19px;margin-right:auto;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}.logo img{width:32px;height:32px;border-radius:8px}
 #q{flex:1 1 220px;min-width:150px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit}
 nav{display:flex;gap:4px;padding:10px 16px 0;max-width:1100px;margin:auto}
 .tab{border:0;background:none;color:var(--mut);font-weight:600}.tab.on{color:var(--fg);background:var(--card);border:1px solid var(--line)}
@@ -36,7 +36,7 @@ main{padding:6px 16px 130px;max-width:1100px;margin:auto}
 .song{display:flex;align-items:center;gap:12px;padding:6px 6px;border-radius:8px;cursor:pointer}.song:hover{background:var(--card)}
 .sm{width:44px;height:44px;border-radius:6px;overflow:hidden;flex:none}
 .t{flex:1;min-width:0}
-.warn{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#f5a524;color:#000;font-size:11px;font-weight:700;margin-left:6px;vertical-align:1px}
+.warn{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--gold);color:#12261a;font-size:11px;font-weight:700;margin-left:6px;vertical-align:1px}
 .hd{display:flex;gap:18px;align-items:flex-end;margin:10px 0 8px;flex-wrap:wrap}.big{width:160px;height:160px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 #mini{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-width:700px;margin:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px var(--sh);display:flex;align-items:center;gap:10px;padding:8px;z-index:6;cursor:pointer;overflow:hidden}
@@ -47,7 +47,7 @@ main{padding:6px 16px 130px;max-width:1100px;margin:auto}
 input[type=range]{width:100%;accent-color:var(--acc)}
 .tm{display:flex;justify-content:space-between;color:var(--mut);font-size:12px}
 .ctl{display:flex;justify-content:center;align-items:center;gap:12px;margin:8px 0}.ctl .ic{font-size:26px}.ic.on{color:var(--acc)}
-#stars span{font-size:26px;cursor:pointer;color:var(--mut)}#stars span.on{color:#f5a524}
+#stars span{font-size:26px;cursor:pointer;color:var(--mut)}#stars span.on{color:var(--gold)}
 #sheet{position:fixed;inset:0;z-index:20}.bk{position:absolute;inset:0;background:rgba(0,0,0,.45)}
 .pn{position:absolute;left:0;right:0;bottom:0;max-height:82vh;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-width:560px;margin:auto}
 .pn h3{margin-bottom:10px}
@@ -57,7 +57,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 #toast{position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:20px;opacity:0;transition:.2s;z-index:30;pointer-events:none}
 .empty{text-align:center;padding:60px 10px}
 </style></head><body>
-<header><h1 class="logo">Ocarina of Time</h1><input id="q" type="search" placeholder="Search songs and playlists"><button data-act="addfiles" class="p">Add songs</button><button data-act="newList">New</button><button class="ic" data-act="more" title="More">⋯</button></header>
+<header><h1 class="logo"><img src="icon-192.png" alt="">Ocarina of Time</h1><input id="q" type="search" placeholder="Search songs and playlists"><button data-act="addfiles" class="p">Add songs</button><button data-act="newList">New</button><button class="ic" data-act="more" title="More">⋯</button></header>
 <nav><button class="tab on" data-t="home">Library</button><button class="tab" data-t="songs">Songs</button><button class="tab" data-t="artists">Artists</button></nav>
 <main id="main"></main>
 <div id="mini" hidden><div class="sm" id="mArt"></div><div class="t" id="mT"></div><button class="ic" id="mPrev">⏮</button><button class="ic" id="mPlay">▶</button><button class="ic" id="mNext">⏭</button><i id="mBar"></i></div>
@@ -78,7 +78,7 @@ const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let db,songs=new Map(),lists=[],S={t:'home'},hist=[];
 /* ---------- storage (IndexedDB) ---------- */
-const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('tunebox',1);r.onupgradeneeded=()=>['songs','blobs','lists'].forEach(n=>r.result.createObjectStore(n,{keyPath:'id'}));r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
+const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('tunebox',2);r.onupgradeneeded=()=>['songs','blobs','lists','meta'].forEach(n=>{if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
 const idb=(st,mode,fn)=>new Promise((res,rej)=>{const tx=db.transaction(st,mode),r=fn(tx.objectStore(st));tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error)});
 const put=(st,o)=>idb(st,'readwrite',s=>s.put(o)),del=(st,id)=>idb(st,'readwrite',s=>s.delete(id));
 /* ---------- helpers ---------- */
@@ -115,10 +115,10 @@ async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayB
   if(k>0){const key=t.slice(0,k).toLowerCase(),val=t.slice(k+1).trim();if(key=='title')o.title=val;if(key=='artist')o.artist=val;if(key=='album')o.album=val;if(key=='tracknumber')o.trk=parseInt(val)||0}}
  return o}
 async function addFiles(files){let n=0;
- for(const f of files){if(!/\.(mp3|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id))continue;
+ for(const f of files){if(!/\.(mp3|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
   let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
-  const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,cover:t.cover||null,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
-  songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});n++;if(n%5==0)toast('Adding… '+n)}
+  const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,cover:t.cover||null,cmod:t.cover?Date.now():0,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
+  songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});haveBlob.add(id);n++;if(n%5==0)toast('Adding… '+n)}
  toast(n?`Added ${n} song${n>1?'s':''}`:'Nothing new to add');render()}
 const getDur=f=>new Promise(res=>{const a=new Audio(),u=URL.createObjectURL(f);const done=d=>{a.src='';URL.revokeObjectURL(u);res(isFinite(d)&&d>0?d:0)};a.preload='metadata';a.onloadedmetadata=()=>done(a.duration);a.onerror=()=>done(0);setTimeout(()=>done(0),3000);a.src=u});
 async function backfill(){let fails=0,n=0;for(const s of all()){if(s.dur||fails>=3)continue;const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)continue;s.dur=await getDur(b.file);if(s.dur){fails=0;await put('songs',s);if(++n%25==0)render()}else fails++}if(n)render()}
@@ -136,9 +136,40 @@ function sub(p,cs){const set=new Set(p.songs);if(!set.size)return'';let best=nul
  return best?best.name:''}
 function ctxIds(c){if(c.startsWith('artist:'))return all().filter(s=>(s.artist||'Unknown artist')==c.slice(7)).map(s=>s.id).sort(byTitle);
  if(c=='search')return S.found||[];const l=getList(c);return l?l.songs.filter(i=>songs.has(i)):[]}
+
+/* ---------- sync with the home server ---------- */
+let cfg={},tomb={},haveBlob=new Set(),syncing=0,lastSync=0;
+const saveCfg=()=>put('meta',{id:'cfg',...cfg}),saveTomb=()=>put('meta',{id:'tomb',map:tomb});
+const mime=fn=>/\.wav$/i.test(fn)?'audio/wav':/\.(ogg|oga|opus)$/i.test(fn)?'audio/ogg':'audio/mpeg';
+const strip=({cover,...r})=>r;
+async function sync(manual){
+ if(!cfg.url||syncing)return;syncing=1;
+ const base=cfg.url.replace(/\/+$/,''),api=(p,o={})=>fetch(base+p,{...o,headers:{Authorization:'Bearer '+cfg.token,...(o.headers||{})}});
+ try{
+  if(manual)toast('Syncing…');
+  const r=await api('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({songs:Object.fromEntries(all().map(s=>[s.id,strip(s)])),lists:Object.fromEntries(lists.map(l=>[l.id,l])),tomb})});
+  if(r.status==401)throw new Error('Wrong access token');if(!r.ok)throw new Error('Server error '+r.status);
+  const m=await r.json(),needCover=[];
+  for(const[id,rec]of Object.entries(m.songs)){const s=songs.get(id);
+   if(!s){const n={...rec,cover:null,cmod:0};songs.set(id,n);await put('songs',n);if(rec.cmod&&m.covers[id])needCover.push(id)}
+   else if(rec.mod>s.mod){const c=s.cover,cm=s.cmod||0;Object.assign(s,rec,{cover:c,cmod:cm});await put('songs',s);if(rec.cmod>cm&&m.covers[id])needCover.push(id)}}
+  for(const id of[...songs.keys()])if(!m.songs[id]){songs.delete(id);urls.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
+  for(const l of lists)if(!m.lists[l.id])await del('lists',l.id);
+  const nl=Object.values(m.lists);for(const l of nl){const o=lists.find(x=>x.id==l.id);if(!o||l.mod>o.mod)await put('lists',l)}
+  lists=nl;tomb=m.tomb;await saveTomb();render();
+  for(const s of songs.values())if(s.cover&&(s.cmod||0)>(m.covers[s.id]||0))await api(`/api/cover/${s.id}?cmod=${s.cmod}`,{method:'PUT',body:s.cover});
+  for(const id of needCover){const c=await api('/api/cover/'+id);if(c.ok){const s=songs.get(id);s.cover=await c.blob();s.cmod=m.songs[id].cmod;urls.delete(id);await put('songs',s)}}
+  const have=new Set(m.files),up=[...haveBlob].filter(id=>songs.has(id)&&!have.has(id));let i=0;
+  for(const id of up){toast(`Uploading ${++i} of ${up.length}`);const b=await idb('blobs','readonly',st=>st.get(id));if(b)await api('/api/audio/'+id,{method:'PUT',body:b.file})}
+  const dn=cfg.dl===false?[]:[...songs.keys()].filter(id=>!haveBlob.has(id)&&have.has(id));i=0;
+  for(const id of dn){toast(`Downloading ${++i} of ${dn.length}`);const a=await api('/api/audio/'+id);if(!a.ok)continue;const s=songs.get(id);
+   await put('blobs',{id,file:new File([await a.blob()],s.fn,{type:mime(s.fn)})});haveBlob.add(id);if(i%10==0)render()}
+  lastSync=Date.now();render();if(manual||up.length||dn.length)toast('Sync complete');
+ }catch(e){if(e.message=='Wrong access token'||e.message.startsWith('Server error'))toast(e.message);else if(manual)toast('Server not reachable, so nothing was synced')}
+ finally{syncing=0;render()}}
 /* ---------- views ---------- */
 const card=(id,name,subt,cover,act='go')=>`<div class="card" data-act="${act}" data-id="${esc(id)}"><div class="art">${art(cover,name)}</div><b>${esc(name)}</b><small>${esc(subt||'')}&nbsp;</small></div>`;
-const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${s.fav?'<span class="on" style="color:var(--acc)">♥</span>':''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">⋯</button></div>`};
+const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> ☁</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${s.fav?'<span class="on" style="color:var(--acc)">♥</span>':''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">⋯</button></div>`};
 function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your library is empty</h2><p class="mut">Add MP3, WAV or OGG files. On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
  const cs=colls(),ps=pls();
  return`<h2>Playlists</h2><div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,lcover(p))).join('')||'<p class="mut">No playlists yet. Tap New to make one.</p>'}</div><h2>Collections</h2><div class="grid">${cs.map(c=>card(c.id,c.name,`${c.songs.length} songs`,lcover(c))).join('')}</div>`}
@@ -161,8 +192,8 @@ function render(){$$('.tab').forEach(t=>t.classList.toggle('on',!S.q&&(t.dataset
 /* ---------- player ---------- */
 const au=new Audio();let Q=[],qi=-1,shuf=0,rep=0,curUrl=null,counted=0;
 async function playAt(i){if(i<0||i>=Q.length)return;qi=i;counted=0;const s=songs.get(Q[i]);if(!s)return next();
- const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)return toast('Audio file missing');
- if(curUrl)URL.revokeObjectURL(curUrl);curUrl=URL.createObjectURL(b.file);au.src=curUrl;au.play().catch(()=>{});paint()}
+ const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b&&!cfg.url)return toast('Audio file missing');
+ if(curUrl)URL.revokeObjectURL(curUrl);curUrl=b?URL.createObjectURL(b.file):null;au.src=b?curUrl:cfg.url.replace(/\/+$/,'')+'/api/audio/'+s.id+'?t='+encodeURIComponent(cfg.token);au.play().catch(()=>{});paint()}
 function startPlay(ids,id,sf){if(!ids.length)return;if(sf!==undefined)shuf=sf;ids=ids.slice();
  if(shuf){const f=id||ids[Math.random()*ids.length|0];Q=[f,...ids.filter(x=>x!=f).sort(()=>Math.random()-.5)];playAt(0)}else{Q=ids;playAt(id?ids.indexOf(id):0)}}
 function next(auto){if(!Q.length)return;if(rep==2&&auto)return playAt(qi);let n=qi+1;if(n>=Q.length){if(rep==1||!auto)n=0;else{au.pause();return}}playAt(n)}
@@ -182,7 +213,7 @@ au.onloadedmetadata=()=>{const s=songs.get(Q[qi]);if(s&&!s.dur&&au.src==curUrl&&
 au.onplay=au.onpause=paintPlay;au.onended=()=>next(1);
 au.ontimeupdate=()=>{const d=au.duration||0;$('#mBar').style.width=d?au.currentTime/d*100+'%':0;
  if(!$('#np').hidden){$('#nSeek').max=d||1;$('#nSeek').value=au.currentTime;$('#nCur').textContent=fm(au.currentTime);$('#nDur').textContent=fm(d)}
- if(!counted&&d&&au.currentTime>Math.min(30,d/2)){counted=1;const s=songs.get(Q[qi]);if(s){s.plays++;put('songs',s)}}};
+ if(!counted&&d&&au.currentTime>Math.min(30,d/2)){counted=1;const s=songs.get(Q[qi]);if(s){s.plays++;s.mod=Date.now();put('songs',s)}}};
 if('mediaSession'in navigator){const m=navigator.mediaSession;m.setActionHandler('play',()=>au.play());m.setActionHandler('pause',()=>au.pause());m.setActionHandler('previoustrack',prev);m.setActionHandler('nexttrack',()=>next());m.setActionHandler('seekto',e=>{au.currentTime=e.seekTime})}
 $('#mPlay').onclick=e=>{e.stopPropagation();toggle()};$('#nPlay').onclick=toggle;
 $('#mPrev').onclick=e=>{e.stopPropagation();prev()};$('#mNext').onclick=e=>{e.stopPropagation();next()};$('#nPrev').onclick=prev;$('#nNext').onclick=()=>next();
@@ -197,7 +228,7 @@ async function fav(id){const s=songs.get(id);s.fav=s.fav?0:1;s.mod=Date.now();aw
 async function rate(n){const s=songs.get(Q[qi]);if(!s)return;s.rating=s.rating==n?0:n;s.mod=Date.now();await put('songs',s);paint()}
 async function addTo(l,ids){const have=new Set(l.songs);let n=0;for(const i of ids)if(!have.has(i)){l.songs.push(i);n++}l.mod=Date.now();await put('lists',l);toast(n?`Added ${n}`:'Already in there');render()}
 async function mv(l,id,d){const i=l.songs.indexOf(id),j=i+d;if(j<0||j>=l.songs.length)return;[l.songs[i],l.songs[j]]=[l.songs[j],l.songs[i]];l.mod=Date.now();await put('lists',l);render()}
-async function delSong(id){if(!confirm('Delete this song from your library?'))return;songs.delete(id);await del('songs',id);await del('blobs',id);
+async function delSong(id){if(!confirm('Delete this song from your library?'))return;songs.delete(id);haveBlob.delete(id);tomb[id]=Date.now();saveTomb();await del('songs',id);await del('blobs',id);
  for(const l of lists){if(l.songs.includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}render()}
 const sh=$('#sheet');
 function sheet(h){sh.innerHTML=`<div class="bk"></div><div class="pn">${h}</div>`;sh.hidden=false}
@@ -210,8 +241,8 @@ function songMenu(id,ctx){const s=songs.get(id),l=lists.find(x=>x.id==ctx);
  it.push(['Delete from library',()=>delSong(id)]);menu(ttl(s),it)}
 function addMenu(id){menu('Add to…',[...lists.map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,[id])]),['New playlist with this song',()=>{pending=[id];A.newList()}]])}
 let pending=[];
-function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><label>Cover art (scaled to fit)</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`)}
-function listMenu(id){const l=lists.find(x=>x.id==id);if(l)menu(l.name,[['Rename',async()=>{const n=prompt('New name',l.name);if(n&&n.trim()){l.name=n.trim();l.mod=Date.now();await put('lists',l);render()}}],['Delete '+l.type,async()=>{if(!confirm(`Delete "${l.name}"? Songs stay in your library.`))return;lists=lists.filter(x=>x!=l);await del('lists',l.id);A.back();}]])}
+function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><label>Cover art</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`)}
+function listMenu(id){const l=lists.find(x=>x.id==id);if(l)menu(l.name,[['Rename',async()=>{const n=prompt('New name',l.name);if(n&&n.trim()){l.name=n.trim();l.mod=Date.now();await put('lists',l);render()}}],['Delete '+l.type,async()=>{if(!confirm(`Delete "${l.name}"? Songs stay in your library.`))return;lists=lists.filter(x=>x!=l);tomb[l.id]=Date.now();saveTomb();await del('lists',l.id);A.back();}]])}
 let pk={sel:new Set()};
 function pickSongs(lid){pk={sel:new Set(),id:lid};const l=lists.find(x=>x.id==lid);
  sheet(`<h3>Add songs to ${esc(l.name)}</h3><label>Pick from</label><select id="pS">${colls().map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}${pls().filter(p=>p.id!=lid).map(p=>`<option value="${esc(p.id)}">Playlist: ${esc(p.name)}</option>`).join('')}</select><input id="pQ" type="search" placeholder="Filter"><div id="pL"></div><button class="p" data-act="pkgo" id="pG">Add 0</button>`);pkRender()}
@@ -233,13 +264,17 @@ const A={
  plall:t=>startPlay(ctxIds(t.dataset.id),null,0),
  shuf:t=>startPlay(ctxIds(t.dataset.id),null,1),
  smenu:t=>songMenu(t.dataset.id,t.dataset.ctx),lmenu:t=>listMenu(t.dataset.id),addsongs:t=>pickSongs(t.dataset.id),
- addfiles:()=>$('#file').click(),jump:t=>playAt(+t.dataset.i),rate:t=>rate(+t.dataset.n),
+ addfiles:()=>$('#file').click(),
+ syncSet:()=>sheet(`<h3>Sync</h3><label>Server address</label><input id="sU" placeholder="https://my-pc.tailnet-name.ts.net" value="${esc(cfg.url||'')}"><label>Access token</label><input id="sT" value="${esc(cfg.token||'')}"><label class="pk"><input type="checkbox" id="sD" ${cfg.dl===false?'':'checked'}>Download songs to this device</label><button class="p" data-act="sSave">Save and sync</button>${cfg.url?' <button data-act="sOff">Turn off sync</button>':''}`),
+ sSave:async()=>{cfg={url:$('#sU').value.trim(),token:$('#sT').value.trim(),dl:$('#sD').checked};await saveCfg();closeSheet();sync(1)},
+ sOff:async()=>{cfg={};await del('meta','cfg');closeSheet();render();toast('Sync turned off')},
+jump:t=>playAt(+t.dataset.i),rate:t=>rate(+t.dataset.n),
  newList:()=>sheet(`<h3>New</h3><label>Name</label><input id="nN" placeholder="e.g. Road trip"><label>Type</label><select id="nK"><option value="playlist">Playlist</option><option value="collection">Collection (groups playlists)</option></select><button class="p" data-act="mk">Create</button>`),
  mk:async()=>{const name=$('#nN').value.trim();if(!name)return toast('Enter a name');const l={id:'l'+Date.now().toString(36)+rnd(),name,type:$('#nK').value,songs:pending.slice(),mod:Date.now()};pending=[];lists.push(l);await put('lists',l);closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
- saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();const f=$('#eC').files[0];if(f){s.cover=await fitCover(f);urls.delete(s.id)}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
+ saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();const f=$('#eC').files[0];if(f){s.cover=await fitCover(f);s.cmod=Date.now();urls.delete(s.id)}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
  pkall:()=>{pk.shown.forEach(i=>pk.sel.add(i));pkRender()},
  pkgo:()=>{const l=lists.find(x=>x.id==pk.id);closeSheet();addTo(l,[...pk.sel])},
- more:()=>menu('Ocarina of Time',[['Switch to '+(curTheme()=='dark'?'light':'dark')+' mode',()=>setTheme(curTheme()=='dark'?'light':'dark')],['Add a whole folder (desktop browsers)',()=>$('#dir').click()],['Export backup',exportBackup],['Import backup',()=>$('#imp').click()],['Storage used',async()=>{const e=await navigator.storage?.estimate?.();toast(e?`${(e.usage/1e9).toFixed(2)} GB used`:'Not available')}]])};
+ more:()=>menu('Ocarina of Time',[['Switch to '+(curTheme()=='dark'?'light':'dark')+' mode',()=>setTheme(curTheme()=='dark'?'light':'dark')],...(cfg.url?[['Sync now'+(lastSync?' (last '+new Date(lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+')':''),()=>sync(1)]]:[]),['Sync settings',A.syncSet],['Add a whole folder (desktop browsers)',()=>$('#dir').click()],['Export backup',exportBackup],['Import backup',()=>$('#imp').click()],['Storage used',async()=>{const e=await navigator.storage?.estimate?.();toast(e?`${(e.usage/1e9).toFixed(2)} GB used`:'Not available')}]])};
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 $$('.tab').forEach(b=>b.onclick=()=>{S={t:b.dataset.t};hist=[];S.q='';$('#q').value='';S.q='';render()});
 $('#file').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
@@ -248,7 +283,11 @@ $('#imp').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.ta
 document.addEventListener('input',e=>{if(e.target.id=='pQ')pkRender();else if(e.target.id=='q'){S.q=e.target.value.trim();render()}});
 document.addEventListener('change',e=>{const t=e.target;if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`}else if(t.id=='pS')pkRender();else if(t.dataset.pk){t.checked?pk.sel.add(t.dataset.pk):pk.sel.delete(t.dataset.pk);$('#pG').textContent='Add '+pk.sel.size}});
 (async()=>{try{const th=localStorage.getItem('th');if(th)document.documentElement.dataset.theme=th}catch{}
- await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());render();backfill();
+ await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());
+ (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
+ for(const m of await idb('meta','readonly',s=>s.getAll())){if(m.id=='cfg'){const{id,...c}=m;cfg=c}if(m.id=='tomb')tomb=m.map||{}}
+ for(const s of songs.values())if(s.cover&&!s.cmod){s.cmod=s.added;put('songs',s)}
+ render();backfill();sync();addEventListener('online',()=>sync());
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
 </script></body></html>
