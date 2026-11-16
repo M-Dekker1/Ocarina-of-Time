@@ -138,15 +138,17 @@ function ctxIds(c){if(c.startsWith('artist:'))return all().filter(s=>(s.artist||
  if(c=='search')return S.found||[];const l=getList(c);return l?l.songs.filter(i=>songs.has(i)):[]}
 
 /* ---------- sync with the home server ---------- */
-let cfg={},tomb={},haveBlob=new Set(),syncing=0,lastSync=0;
+let cfg={},tomb={},haveBlob=new Set(),syncing=0,lastSync=0,activeBase='';
+const bases=()=>(cfg.url||'').split(',').map(s=>s.trim().replace(/\/+$/,'')).filter(Boolean);
+async function findServer(){for(const b of bases()){const c=new AbortController(),tm=setTimeout(()=>c.abort(),4000);try{const r=await fetch(b+'/api/ping',{headers:{Authorization:'Bearer '+cfg.token},signal:c.signal});clearTimeout(tm);if(r.ok||r.status==401)return activeBase=b}catch{clearTimeout(tm)}}return''}
 const saveCfg=()=>put('meta',{id:'cfg',...cfg}),saveTomb=()=>put('meta',{id:'tomb',map:tomb});
 const mime=fn=>/\.wav$/i.test(fn)?'audio/wav':/\.(ogg|oga|opus)$/i.test(fn)?'audio/ogg':'audio/mpeg';
 const strip=({cover,...r})=>r;
 async function sync(manual){
  if(!cfg.url||syncing)return;syncing=1;
- const base=cfg.url.replace(/\/+$/,''),api=(p,o={})=>fetch(base+p,{...o,headers:{Authorization:'Bearer '+cfg.token,...(o.headers||{})}});
+ let base='';const api=(p,o={})=>fetch(base+p,{...o,headers:{Authorization:'Bearer '+cfg.token,...(o.headers||{})}});
  try{
-  if(manual)toast('Syncing…');
+  base=await findServer();if(!base)throw new Error('offline');if(manual)toast('Syncing…');
   const r=await api('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({songs:Object.fromEntries(all().map(s=>[s.id,strip(s)])),lists:Object.fromEntries(lists.map(l=>[l.id,l])),tomb})});
   if(r.status==401)throw new Error('Wrong access token');if(!r.ok)throw new Error('Server error '+r.status);
   const m=await r.json(),needCover=[];
@@ -193,7 +195,7 @@ function render(){$$('.tab').forEach(t=>t.classList.toggle('on',!S.q&&(t.dataset
 const au=new Audio();let Q=[],qi=-1,shuf=0,rep=0,curUrl=null,counted=0;
 async function playAt(i){if(i<0||i>=Q.length)return;qi=i;counted=0;const s=songs.get(Q[i]);if(!s)return next();
  const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b&&!cfg.url)return toast('Audio file missing');
- if(curUrl)URL.revokeObjectURL(curUrl);curUrl=b?URL.createObjectURL(b.file):null;au.src=b?curUrl:cfg.url.replace(/\/+$/,'')+'/api/audio/'+s.id+'?t='+encodeURIComponent(cfg.token);au.play().catch(()=>{});paint()}
+ if(curUrl)URL.revokeObjectURL(curUrl);curUrl=b?URL.createObjectURL(b.file):null;au.src=b?curUrl:(activeBase||bases()[0])+'/api/audio/'+s.id+'?t='+encodeURIComponent(cfg.token);au.play().catch(()=>{});paint()}
 function startPlay(ids,id,sf){if(!ids.length)return;if(sf!==undefined)shuf=sf;ids=ids.slice();
  if(shuf){const f=id||ids[Math.random()*ids.length|0];Q=[f,...ids.filter(x=>x!=f).sort(()=>Math.random()-.5)];playAt(0)}else{Q=ids;playAt(id?ids.indexOf(id):0)}}
 function next(auto){if(!Q.length)return;if(rep==2&&auto)return playAt(qi);let n=qi+1;if(n>=Q.length){if(rep==1||!auto)n=0;else{au.pause();return}}playAt(n)}
@@ -265,7 +267,7 @@ const A={
  shuf:t=>startPlay(ctxIds(t.dataset.id),null,1),
  smenu:t=>songMenu(t.dataset.id,t.dataset.ctx),lmenu:t=>listMenu(t.dataset.id),addsongs:t=>pickSongs(t.dataset.id),
  addfiles:()=>$('#file').click(),
- syncSet:()=>sheet(`<h3>Sync</h3><label>Server address</label><input id="sU" placeholder="https://my-pc.tailnet-name.ts.net" value="${esc(cfg.url||'')}"><label>Access token</label><input id="sT" value="${esc(cfg.token||'')}"><label class="pk"><input type="checkbox" id="sD" ${cfg.dl===false?'':'checked'}>Download songs to this device</label><button class="p" data-act="sSave">Save and sync</button>${cfg.url?' <button data-act="sOff">Turn off sync</button>':''}`),
+ syncSet:()=>sheet(`<h3>Sync</h3><label>Server address (you can list several, separated by commas)</label><input id="sU" placeholder="https://192.168.1.20:8765" value="${esc(cfg.url||'')}"><label>Access token</label><input id="sT" value="${esc(cfg.token||'')}"><label class="pk"><input type="checkbox" id="sD" ${cfg.dl===false?'':'checked'}>Download songs to this device</label><button class="p" data-act="sSave">Save and sync</button>${cfg.url?' <button data-act="sOff">Turn off sync</button>':''}`),
  sSave:async()=>{cfg={url:$('#sU').value.trim(),token:$('#sT').value.trim(),dl:$('#sD').checked};await saveCfg();closeSheet();sync(1)},
  sOff:async()=>{cfg={};await del('meta','cfg');closeSheet();render();toast('Sync turned off')},
 jump:t=>playAt(+t.dataset.i),rate:t=>rate(+t.dataset.n),
