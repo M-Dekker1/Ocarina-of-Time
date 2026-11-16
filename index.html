@@ -89,7 +89,7 @@ body.selecting #mini{display:none}
 <h3 style="text-align:left;margin-top:18px">Up next</h3><div id="nQ" style="text-align:left"></div></div></section>
 <div id="selbar" hidden><span id="selN">0 selected</span><button data-act="selAll">All</button><button data-act="bEdit">Edit</button><button data-act="bAdd">Add to…</button><button data-act="bMore">More</button><button class="p" data-act="selDone">Done</button></div>
 <div id="sheet" hidden></div><div id="toast"></div>
-<input type="file" id="file" multiple accept="audio/*,.mp3,.wav,.ogg" hidden>
+<input type="file" id="file" multiple accept="audio/*,.mp3,.m4a,.wav,.ogg" hidden>
 <input type="file" id="dir" webkitdirectory multiple hidden>
 <input type="file" id="imp" accept=".json,application/json" hidden>
 <script>
@@ -126,6 +126,18 @@ async function id3(f){const o={},hd=new Uint8Array(await f.slice(0,10).arrayBuff
    if(e==1||e==2){while(i<d.length&&!(d[i]==0&&d[i+1]==0))i+=2;i+=2}else{while(i<d.length&&d[i])i++;i++}
    o.cover=new Blob([d.slice(i)],{type:mime.includes('/')?mime:'image/'+mime.toLowerCase()})}}
  return o}
+/* MP4/M4A tags: moov > udta > meta > ilst, with iTunes-style atoms */
+async function m4a(f){const o={},rd=async(a,n)=>new Uint8Array(await f.slice(a,a+n).arrayBuffer());let p=0;
+ while(p+8<=f.size){const h=await rd(p,16),dv=new DataView(h.buffer);let sz=dv.getUint32(0),hl=8;const ty=String.fromCharCode(h[4],h[5],h[6],h[7]);
+  if(sz==1){sz=Number(dv.getBigUint64(8));hl=16}else if(sz==0)sz=f.size-p;if(sz<hl)break;
+  if(ty=='moov'){const b=await rd(p+hl,Math.min(sz-hl,16777216));const bx=(s,e,cb)=>{const d=new DataView(b.buffer);while(s+8<=e){let z=d.getUint32(s);const t4=String.fromCharCode(b[s+4],b[s+5],b[s+6],b[s+7]);if(z<8)break;if(s+z>e)z=e-s;cb(t4,s+8,s+z);s+=z}};
+   const item=(k,s,e)=>bx(s,e,(t4,s4,e4)=>{if(t4!='data')return;const d=new DataView(b.buffer),ty2=d.getUint32(s4)&0xffffff,v=b.slice(s4+8,e4),txt=()=>new TextDecoder().decode(v).trim();
+    if(k=='\xa9nam')o.title=txt();else if(k=='\xa9ART')o.artist=txt();else if(k=='aART'&&!o.artist)o.aart=txt();else if(k=='\xa9alb')o.album=txt();else if(k=='trkn')o.trk=(v[2]<<8|v[3])||0;
+    else if(k=='covr'&&!o.cover)o.cover=new Blob([v],{type:ty2==14?'image/png':'image/jpeg'})});
+   const walk=(s,e)=>bx(s,e,(t4,s4,e4)=>{if(t4=='udta')walk(s4,e4);else if(t4=='meta')walk(s4+4,e4);else if(t4=='ilst')bx(s4,e4,(k,a,z)=>item(k,a,z))});
+   walk(0,b.length);if(!o.artist&&o.aart)o.artist=o.aart;delete o.aart;break}
+  p+=sz}
+ return o}
 async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayBuffer());
  const find=s=>{const n=[...s].map(c=>c.charCodeAt(0));outer:for(let i=0;i<b.length-n.length;i++){for(let j=0;j<n.length;j++)if(b[i+j]!=n[j])continue outer;return i+n.length}return -1};
  let p=find('\x03vorbis');if(p<0)p=find('OpusTags');if(p<0)return o;
@@ -134,8 +146,8 @@ async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayB
   if(k>0){const key=t.slice(0,k).toLowerCase(),val=t.slice(k+1).trim();if(key=='title')o.title=val;if(key=='artist')o.artist=val;if(key=='album')o.album=val;if(key=='tracknumber')o.trk=parseInt(val)||0}}
  return o}
 async function addFiles(files){let n=0;const newIds=[];
- for(const f of files){if(!/\.(mp3|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
-  let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
+ for(const f of files){if(!/\.(mp3|m4a|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
+  let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.m4a$/i.test(f.name)?await m4a(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
   const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,cover:t.cover||null,cmod:t.cover?Date.now():0,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
   songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});haveBlob.add(id);newIds.push(id);n++;if(n%5==0)toast('Adding… '+n)}
  toast(n?`Added ${n} song${n>1?'s':''}`:'Nothing new to add');render();offerCollections(newIds)}
@@ -157,7 +169,7 @@ let cfg={},tomb={},haveBlob=new Set(),syncing=0,lastSync=0,activeBase='';
 const bases=()=>(cfg.url||'').split(',').map(s=>s.trim().replace(/\/+$/,'')).filter(Boolean);
 async function findServer(){for(const b of bases()){const c=new AbortController(),tm=setTimeout(()=>c.abort(),4000);try{const r=await fetch(b+'/api/ping',{headers:{Authorization:'Bearer '+cfg.token},signal:c.signal});clearTimeout(tm);if(r.ok||r.status==401)return activeBase=b}catch{clearTimeout(tm)}}return''}
 const saveCfg=()=>put('meta',{id:'cfg',...cfg}),saveTomb=()=>put('meta',{id:'tomb',map:tomb});
-const mime=fn=>/\.wav$/i.test(fn)?'audio/wav':/\.(ogg|oga|opus)$/i.test(fn)?'audio/ogg':'audio/mpeg';
+const mime=fn=>/\.wav$/i.test(fn)?'audio/wav':/\.m4a$/i.test(fn)?'audio/mp4':/\.(ogg|oga|opus)$/i.test(fn)?'audio/ogg':'audio/mpeg';
 const strip=({cover,...r})=>r;
 const imgBlob=buf=>{const u=new Uint8Array(buf,0,4);return new Blob([buf],{type:u[0]==0x89?'image/png':u[0]==0x47?'image/gif':u[0]==0x52?'image/webp':'image/jpeg'})};
 async function sync(manual){
@@ -191,7 +203,7 @@ const card=(id,name,subt,cover,act='go',html='')=>`<div class="card" data-act="$
 const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song${sel.has(id)?' picked':''}" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><span class="ck"></span><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> ☁</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small>${(s.tags||[]).length?`<span class="chips sm2">${s.tags.map(tag).filter(Boolean).map(x=>chip(x)).join('')}</span>`:''}</div>${s.fav?'<span class="on" style="color:var(--acc)">♥</span>':''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">⋯</button></div>`};
 function ccard(c){const set=new Set(c.songs),np=pls().filter(p=>p.col==c.id||p.songs.some(x=>set.has(x))).length,tg=etags(c).map(tag).filter(Boolean).slice(0,3);
  return`<div class="card cc" data-act="go" data-id="${esc(c.id)}"><div class="art">${art(lcover(c),c.name)}</div><b>${esc(c.name)}</b><small>${c.songs.length} songs${np?` · ${np} playlist${np>1?'s':''}`:''}</small>${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}</div>`}
-function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your game music, all in one place</h2><p class="mut">Add your soundtrack files (MP3, WAV or OGG). On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
+function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your game music, all in one place</h2><p class="mut">Add your soundtrack files (MP3, M4A, WAV or OGG). On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
  const cs0=colls(),f=S.f,serAll=lists.filter(l=>l.type=='series'),serIds=new Set(serAll.map(s=>s.id)),colIds=new Set(cs0.map(c=>c.id)),cm=collMap(),
   has=c=>!f||etags(c).includes(f),cs=sorted(cs0.filter(has)),rc=f?[]:recents(),sers=sorted(serAll.map(s=>({...s,songs:serSongs(s)})));
  const orph=f?[]:pls().filter(p=>!(p.col&&colIds.has(p.col))&&!(p.ser&&serIds.has(p.ser))&&!p.songs.some(x=>cm.has(x)));
