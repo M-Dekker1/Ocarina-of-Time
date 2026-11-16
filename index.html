@@ -144,6 +144,7 @@ async function findServer(){for(const b of bases()){const c=new AbortController(
 const saveCfg=()=>put('meta',{id:'cfg',...cfg}),saveTomb=()=>put('meta',{id:'tomb',map:tomb});
 const mime=fn=>/\.wav$/i.test(fn)?'audio/wav':/\.(ogg|oga|opus)$/i.test(fn)?'audio/ogg':'audio/mpeg';
 const strip=({cover,...r})=>r;
+const imgBlob=buf=>{const u=new Uint8Array(buf,0,4);return new Blob([buf],{type:u[0]==0x89?'image/png':u[0]==0x47?'image/gif':u[0]==0x52?'image/webp':'image/jpeg'})};
 async function sync(manual){
  if(!cfg.url||syncing)return;syncing=1;
  let base='';const api=(p,o={})=>fetch(base+p,{...o,headers:{Authorization:'Bearer '+cfg.token,...(o.headers||{})}});
@@ -151,16 +152,17 @@ async function sync(manual){
   base=await findServer();if(!base)throw new Error('offline');if(manual)toast('Syncing…');
   const r=await api('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({songs:Object.fromEntries(all().map(s=>[s.id,strip(s)])),lists:Object.fromEntries(lists.map(l=>[l.id,l])),tomb})});
   if(r.status==401)throw new Error('Wrong access token');if(!r.ok)throw new Error('Server error '+r.status);
-  const m=await r.json(),needCover=[];
+  const m=await r.json();
   for(const[id,rec]of Object.entries(m.songs)){const s=songs.get(id);
-   if(!s){const n={...rec,cover:null,cmod:0};songs.set(id,n);await put('songs',n);if(rec.cmod&&m.covers[id])needCover.push(id)}
-   else if(rec.mod>s.mod){const c=s.cover,cm=s.cmod||0;Object.assign(s,rec,{cover:c,cmod:cm});await put('songs',s);if(rec.cmod>cm&&m.covers[id])needCover.push(id)}}
+   if(!s){const n={...rec,cover:null,cmod:0};songs.set(id,n);await put('songs',n)}
+   else if(rec.mod>s.mod){const c=s.cover,cm=s.cmod||0;Object.assign(s,rec,{cover:c,cmod:cm});await put('songs',s)}}
   for(const id of[...songs.keys()])if(!m.songs[id]){songs.delete(id);urls.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
   for(const l of lists)if(!m.lists[l.id])await del('lists',l.id);
   const nl=Object.values(m.lists);for(const l of nl){const o=lists.find(x=>x.id==l.id);if(!o||l.mod>o.mod)await put('lists',l)}
   lists=nl;tomb=m.tomb;await saveTomb();render();
-  for(const s of songs.values())if(s.cover&&(s.cmod||0)>(m.covers[s.id]||0))await api(`/api/cover/${s.id}?cmod=${s.cmod}`,{method:'PUT',body:s.cover});
-  for(const id of needCover){const c=await api('/api/cover/'+id);if(c.ok){const s=songs.get(id);s.cover=await c.blob();s.cmod=m.songs[id].cmod;urls.delete(id);await put('songs',s)}}
+  let cv=0;for(const s of songs.values()){const rc=m.covers[s.id]||0,lc=s.cmod||0;
+   if(s.cover&&lc>rc)await api(`/api/cover/${s.id}?cmod=${lc}`,{method:'PUT',body:s.cover});
+   else if(rc>lc||(rc&&!s.cover)){const c=await api('/api/cover/'+s.id);if(c.ok){s.cover=imgBlob(await c.arrayBuffer());s.cmod=rc;urls.delete(s.id);await put('songs',s);if(++cv%20==0)render()}}}
   const have=new Set(m.files),up=[...haveBlob].filter(id=>songs.has(id)&&!have.has(id));let i=0;
   for(const id of up){toast(`Uploading ${++i} of ${up.length}`);const b=await idb('blobs','readonly',st=>st.get(id));if(b)await api('/api/audio/'+id,{method:'PUT',body:b.file})}
   const dn=cfg.dl===false?[]:[...songs.keys()].filter(id=>!haveBlob.has(id)&&have.has(id));i=0;
@@ -289,6 +291,7 @@ document.addEventListener('change',e=>{const t=e.target;if(t.id=='eC'){const f=t
  (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
  for(const m of await idb('meta','readonly',s=>s.getAll())){if(m.id=='cfg'){const{id,...c}=m;cfg=c}if(m.id=='tomb')tomb=m.map||{}}
  for(const s of songs.values())if(s.cover&&!s.cmod){s.cmod=s.added;put('songs',s)}
+ for(const s of songs.values())if(s.cover&&!(s.cover.type||'').startsWith('image/')){s.cover=imgBlob(await s.cover.arrayBuffer());urls.delete(s.id);put('songs',s)}
  render();backfill();sync();addEventListener('online',()=>sync());
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
