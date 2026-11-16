@@ -40,7 +40,8 @@ main{padding:6px 16px 130px;max-width:1100px;margin:auto}
 .hd{display:flex;gap:18px;align-items:flex-end;margin:10px 0 8px;flex-wrap:wrap}.big{width:160px;height:160px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 #mini{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-width:700px;margin:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px var(--sh);display:flex;align-items:center;gap:10px;padding:8px;z-index:6;cursor:pointer;overflow:hidden}
-#mBar{position:absolute;left:0;bottom:0;height:2px;background:var(--acc);width:0}
+#mTrack{position:absolute;left:0;right:0;bottom:0;height:18px;cursor:pointer;touch-action:none}#mTrack::before{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--line)}
+#mBar{position:absolute;left:0;bottom:0;height:4px;background:var(--acc);width:0}
 #np{position:fixed;inset:0;background:var(--bg);z-index:10;overflow:auto;padding:calc(10px + env(safe-area-inset-top)) 20px 30px}
 .npw{max-width:420px;margin:auto;text-align:center}
 #nArt{width:min(100%,360px);aspect-ratio:1;margin:10px auto 16px;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px var(--sh)}
@@ -68,11 +69,13 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 body.selecting .ck{display:block}body.selecting .song .ic{visibility:hidden}.picked .ck{background:var(--acc);border-color:var(--acc)}.song.picked{background:var(--card)}
 body.selecting #mini{display:none}
 #selbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-width:700px;margin:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px var(--sh);display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;z-index:8}#selN{margin-right:auto;font-weight:600}
+.grid.big{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:24px}.cc b{font-size:16px}.cc .chips{margin-top:6px}
+.rec{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}.rec .card{width:130px;flex:none}
 </style></head><body>
-<header><h1 class="logo"><img src="icon-192.png" alt="">Ocarina of Time</h1><input id="q" type="search" placeholder="Search songs and playlists"><button data-act="addfiles" class="p">Add songs</button><button data-act="newList">New</button><button class="ic" data-act="more" title="More">⋯</button></header>
-<nav><button class="tab on" data-t="home">Library</button><button class="tab" data-t="songs">Songs</button><button class="tab" data-t="artists">Artists</button></nav>
+<header><h1 class="logo"><img src="icon-192.png" alt="">Ocarina of Time</h1><input id="q" type="search" placeholder="Search songs, collections and playlists"><button data-act="addfiles" class="p">Add songs</button><button data-act="newList">New</button><button class="ic" data-act="more" title="More">⋯</button></header>
+<nav><button class="tab on" data-t="home">Collections</button><button class="tab" data-t="songs">Songs</button><button class="tab" data-t="artists">Artists</button></nav>
 <main id="main"></main>
-<div id="mini" hidden><div class="sm" id="mArt"></div><div class="t" id="mT"></div><button class="ic" id="mPrev">⏮</button><button class="ic" id="mPlay">▶</button><button class="ic" id="mNext">⏭</button><i id="mBar"></i></div>
+<div id="mini" hidden><div class="sm" id="mArt"></div><div class="t" id="mT"></div><button class="ic" id="mPrev">⏮</button><button class="ic" id="mPlay">▶</button><button class="ic" id="mNext">⏭</button><div id="mTrack"><i id="mBar"></i></div></div>
 <section id="np" hidden><div class="npw">
 <div style="text-align:left"><button class="ic" id="nClose">⌄</button></div>
 <div id="nArt"></div><h2 id="nT" style="margin:4px 0"></h2><small id="nA"></small>
@@ -127,24 +130,23 @@ async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayB
  for(let i=0;i<n&&p+4<b.length;i++){const l=dv.getUint32(p,true);p+=4;const t=new TextDecoder().decode(b.slice(p,p+l));p+=l;const k=t.indexOf('=');
   if(k>0){const key=t.slice(0,k).toLowerCase(),val=t.slice(k+1).trim();if(key=='title')o.title=val;if(key=='artist')o.artist=val;if(key=='album')o.album=val;if(key=='tracknumber')o.trk=parseInt(val)||0}}
  return o}
-async function addFiles(files){let n=0;
+async function addFiles(files){let n=0;const newIds=[];
  for(const f of files){if(!/\.(mp3|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
   let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
   const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,cover:t.cover||null,cmod:t.cover?Date.now():0,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
-  songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});haveBlob.add(id);n++;if(n%5==0)toast('Adding… '+n)}
- toast(n?`Added ${n} song${n>1?'s':''}`:'Nothing new to add');render()}
+  songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});haveBlob.add(id);newIds.push(id);n++;if(n%5==0)toast('Adding… '+n)}
+ toast(n?`Added ${n} song${n>1?'s':''}`:'Nothing new to add');render();offerCollections(newIds)}
 const getDur=f=>new Promise(res=>{const a=new Audio(),u=URL.createObjectURL(f);const done=d=>{a.src='';URL.revokeObjectURL(u);res(isFinite(d)&&d>0?d:0)};a.preload='metadata';a.onloadedmetadata=()=>done(a.duration);a.onerror=()=>done(0);setTimeout(()=>done(0),3000);a.src=u});
 async function backfill(){let fails=0,n=0;for(const s of all()){if(s.dur||fails>=3)continue;const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)continue;s.dur=await getDur(b.file);if(s.dur){fails=0;await put('songs',s);if(++n%25==0)render()}else fails++}if(n)render()}
 async function fitCover(f){try{const b=await createImageBitmap(f),k=Math.min(1,800/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(o=>r(o||f),'image/jpeg',.9))}catch{return f}}
 /* ---------- collections & playlists ---------- */
-function colls(){const out=[{id:'all',name:'All Songs',type:'collection',auto:1,songs:all().map(s=>s.id).sort(byTitle)}];
- const fav=all().filter(s=>s.fav).map(s=>s.id).sort(byTitle);if(fav.length)out.push({id:'fav',name:'Favourites',type:'collection',auto:1,songs:fav});
- return[...out,...lists.filter(l=>l.type=='collection')]}
+function colls(){return lists.filter(l=>l.type=='collection')}
 const pls=()=>lists.filter(l=>l.type=='playlist'),getList=id=>colls().find(c=>c.id==id)||lists.find(l=>l.id==id);
 function sub(p,cs){const set=new Set(p.songs);if(!set.size)return'';let best=null;
  for(const c of cs){if(c.id=='all'||c.id=='fav')continue;const cset=new Set(c.songs);if([...set].every(x=>cset.has(x))&&(!best||c.songs.length<best.songs.length))best=c}
  return best?best.name:''}
-function ctxIds(c){if(c.startsWith('stag:'))return all().filter(s=>(s.tags||[]).includes(c.slice(5))).map(s=>s.id).sort(byTitle);if(c.startsWith('artist:'))return all().filter(s=>(s.artist||'Unknown artist')==c.slice(7)).map(s=>s.id).sort(byTitle);
+function ctxIds(c){if(c.startsWith('stag:'))return all().filter(s=>(s.tags||[]).includes(c.slice(5))).map(s=>s.id).sort(byTitle);if(c=='all')return all().map(s=>s.id).sort(byTitle);if(c=='fav')return all().filter(s=>s.fav).map(s=>s.id).sort(byTitle);if(c=='free'){const cm=collMap();return all().filter(s=>!cm.has(s.id)).map(s=>s.id).sort(byTitle)}
+ if(c.startsWith('artist:'))return all().filter(s=>(s.artist||'Unknown artist')==c.slice(7)).map(s=>s.id).sort(byTitle);
  if(c=='search')return S.found||[];const l=getList(c);return l?l.songs.filter(i=>songs.has(i)):[]}
 
 /* ---------- sync with the home server ---------- */
@@ -169,7 +171,7 @@ async function sync(manual){
   for(const id of[...songs.keys()])if(!m.songs[id]){songs.delete(id);urls.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
   for(const l of lists)if(!m.lists[l.id])await del('lists',l.id);
   const nl=Object.values(m.lists);for(const l of nl){const o=lists.find(x=>x.id==l.id);if(!o||l.mod>o.mod)await put('lists',l)}
-  lists=nl;tomb=m.tomb;await saveTomb();render();
+  lists=nl;tomb=m.tomb;await saveTomb();await migrateTags();await cleanTags();render();
   let cv=0;for(const s of songs.values()){const rc=m.covers[s.id]||0,lc=s.cmod||0;
    if(s.cover&&lc>rc)await api(`/api/cover/${s.id}?cmod=${lc}`,{method:'PUT',body:s.cover});
    else if(rc>lc||(rc&&!s.cover)){const c=await api('/api/cover/'+s.id);if(c.ok){s.cover=imgBlob(await c.arrayBuffer());s.cmod=rc;urls.delete(s.id);await put('songs',s);if(++cv%20==0)render()}}}
@@ -184,19 +186,22 @@ async function sync(manual){
 /* ---------- views ---------- */
 const card=(id,name,subt,cover,act='go')=>`<div class="card" data-act="${act}" data-id="${esc(id)}"><div class="art">${art(cover,name)}</div><b>${esc(name)}</b><small>${esc(subt||'')}&nbsp;</small></div>`;
 const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song${sel.has(id)?' picked':''}" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><span class="ck"></span><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> ☁</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small>${(s.tags||[]).length?`<span class="chips sm2">${s.tags.map(tag).filter(Boolean).map(x=>chip(x)).join('')}</span>`:''}</div>${s.fav?'<span class="on" style="color:var(--acc)">♥</span>':''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">⋯</button></div>`};
-function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your library is empty</h2><p class="mut">Add MP3, WAV or OGG files. On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
- const cs0=colls(),f=S.f,has=l=>!f||(l.tags||[]).includes(f);
- const ps=sorted(pls().filter(has)),cs=[...cs0.filter(c=>c.auto&&!f),...sorted(cs0.filter(c=>!c.auto&&has(c)))];
- return`<div class="bar"><div class="chips">${lists.filter(l=>l.type=='ltag').map(x=>chip(x,'f',f==x.id)).join('')}</div><select id="sortSel">${[['az','A to Z'],['za','Z to A'],['new','Newest first'],['old','Oldest first'],['big','Most songs']].map(o=>`<option value="${o[0]}" ${sortK==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div><h2>Playlists</h2><div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs0)||`${p.songs.length} songs`,lcover(p))).join('')||'<p class="mut">Nothing here yet. Tap New to make one.</p>'}</div><h2>Collections</h2><div class="grid">${cs.map(c=>card(c.id,c.name,`${c.songs.length} songs`,lcover(c))).join('')}</div>`}
+function vHome(){if(!songs.size&&!lists.length)return'<div class="empty"><h2>Your game music, all in one place</h2><p class="mut">Add your soundtrack files (MP3, WAV or OGG). On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
+ const cs0=colls(),f=S.f,has=l=>!f||(l.tags||[]).includes(f),cm=collMap(),colIds=new Set(cs0.map(c=>c.id)),cs=sorted(cs0.filter(has)),rc=f?[]:recents();
+ const orph=f?[]:pls().filter(p=>!(p.col&&colIds.has(p.col))&&!p.songs.some(x=>cm.has(x)));
+ const cc=c=>{const set=new Set(c.songs),np=pls().filter(p=>p.col==c.id||p.songs.some(x=>set.has(x))).length,tg=(c.tags||[]).map(tag).filter(Boolean).slice(0,3);
+  return`<div class="card cc" data-act="go" data-id="${esc(c.id)}"><div class="art">${art(lcover(c),c.name)}</div><b>${esc(c.name)}</b><small>${c.songs.length} songs${np?` · ${np} playlist${np>1?'s':''}`:''}</small>${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}</div>`};
+ return(rc.length?`<h2>Jump back in</h2><div class="rec">${rc.map(([c,s])=>{const l=lists.find(x=>x.id==c);return card(c,l.name,ttl(s),lcover(l))}).join('')}</div>`:'')+`<div class="bar"><div class="chips">${lists.filter(l=>l.type=='ltag').map(x=>chip(x,'f',f==x.id)).join('')}</div><select id="sortSel">${[['az','A to Z'],['za','Z to A'],['new','Newest first'],['old','Oldest first'],['big','Most songs']].map(o=>`<option value="${o[0]}" ${sortK==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div><h2>Collections</h2><div class="grid big">${cs.map(cc).join('')||'<p class="mut">No collections yet. Tap New to create one, or add songs and I will offer to sort them by album.</p>'}</div>`+(orph.length?`<h2>Other playlists</h2><div class="grid">${orph.map(p=>card(p.id,p.name,`${p.songs.length} songs`,lcover(p))).join('')}</div>`:'')}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  const own=lists.find(x=>x.id==l.id),ids=l.songs.filter(i=>songs.has(i)),id=esc(l.id);
- let h=`<button class="ic" data-act="back">← Back</button><div class="hd"><div class="big">${art(lcover(l),l.name)}</div><div>${(l.tags||[]).length?`<div class="chips">${l.tags.map(tag).filter(Boolean).map(x=>chip(x)).join('')}</div>`:''}<small>${l.type=='collection'?'Collection':'Playlist'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}</div></div></div>`;
+ let h=`<button class="ic" data-act="back">← Back</button><div class="hd"><div class="big">${art(lcover(l),l.name)}</div><div>${(l.tags||[]).length?`<div class="chips">${l.tags.map(tag).filter(Boolean).map(x=>chip(x)).join('')}</div>`:''}<small>${l.type=='collection'?'Collection':'Playlist'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}</div></div></div>`;
  if(l.type=='collection'){const set=new Set(l.songs);
-  const ps=pls().filter(p=>l.id=='all'||p.songs.some(x=>set.has(x))).map(p=>({p,s:sub(p,cs)})).sort((a,b)=>!!b.s-!!a.s||a.p.name.localeCompare(b.p.name));
+  const ps=pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x))).map(p=>({p,s:sub(p,cs)})).sort((a,b)=>!!b.s-!!a.s||a.p.name.localeCompare(b.p.name));
   h+=`<h2>Playlists</h2><div class="grid">${ps.map(x=>card(x.p.id,x.p.name,x.s,lcover(x.p))).join('')||'<p class="mut">No playlists use songs from this collection yet.</p>'}</div>`}
- return h+'<h2>Songs</h2>'+(ids.map(i=>row(i,l.id)).join('')||'<p class="mut">No songs yet.</p>')}
-function vSongs(){const f=S.sf,c=f?'stag:'+f:'all',ids=ctxIds(c);
- return`<div class="bar"><div class="chips">${lists.filter(l=>l.type=='stag').map(x=>chip(x,'sf',f==x.id)).join('')}</div><button data-act="selStart" data-ctx="${esc(c)}">Select</button></div><h2>${ids.length} songs</h2>`+ids.map(i=>row(i,c)).join('')}
+ const lt=l.type=='collection'?lists.filter(x=>x.type=='stag'&&x.col==l.id):[],lf=S.lf&&lt.some(x=>x.id==S.lf)?S.lf:null,shown=lf?ids.filter(i=>(songs.get(i).tags||[]).includes(lf)):ids,ctx=lf?'stag:'+lf:l.id;
+ return h+'<h2>Songs</h2>'+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(shown.map(i=>row(i,ctx)).join('')||'<p class="mut">No songs yet.</p>')}
+function vSongs(){const cols=lists.filter(l=>l.type=='collection'),c=S.sc,tg=S.sf,fav=S.fav,ctx=tg?'stag:'+tg:fav?'fav':c||'all',ids=ctxIds(ctx),tags=c?lists.filter(l=>l.type=='stag'&&l.col==c):[];
+ return`<div class="bar"><div class="chips"><span class="chip${fav?' on':''}" style="--c:#c2477a" data-act="favf">♥ Favourites</span></div><select id="scSel"><option value="">All collections</option>${cols.map(x=>`<option value="${x.id}" ${c==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><button data-act="selStart" data-ctx="${esc(ctx)}">Select</button></div>${tags.length?`<div class="chips" style="margin-top:10px">${tags.map(x=>chip(x,'sf',tg==x.id)).join('')}</div>`:''}<h2>${ids.length} songs</h2>`+ids.map(i=>row(i,ctx)).join('')}
 const artistsMap=()=>{const m=new Map();for(const s of songs.values()){const a=s.artist||'Unknown artist';if(!m.has(a))m.set(a,[]);m.get(a).push(s)}return[...m].sort((a,b)=>a[0].localeCompare(b[0]))};
 function vArtists(){return`<h2>Artists</h2><div class="grid">${artistsMap().map(([a,ss])=>card(a,a,ss.length+' songs',(ss.find(s=>s.cover)?cu(ss.find(s=>s.cover)):''),'artist')).join('')}</div>`}
 function vArtist(){const c='artist:'+S.id,ids=ctxIds(c);return`<button class="ic" data-act="back">← Back</button><div class="hd"><div><h1>${esc(S.id)}</h1><small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${esc(c)}">Play</button><button data-act="shuf" data-id="${esc(c)}">Shuffle</button></div></div></div>`+ids.map(i=>row(i,c)).join('')}
@@ -207,7 +212,7 @@ function render(){$$('.tab').forEach(t=>t.classList.toggle('on',!S.q&&(t.dataset
  $('#main').innerHTML=S.q?vSearch():({home:vHome,songs:vSongs,artists:vArtists,list:vList,artist:vArtist}[S.t])()}
 /* ---------- player ---------- */
 const au=new Audio();let Q=[],qi=-1,shuf=0,rep=0,curUrl=null,counted=0;
-async function playAt(i){if(i<0||i>=Q.length)return;qi=i;counted=0;const s=songs.get(Q[i]);if(!s)return next();
+async function playAt(i){if(i<0||i>=Q.length)return;qi=i;counted=0;const s=songs.get(Q[i]);if(!s)return next();s.lp=Date.now();put('songs',s);
  const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b&&!cfg.url)return toast('Audio file missing');
  if(curUrl)URL.revokeObjectURL(curUrl);curUrl=b?URL.createObjectURL(b.file):null;au.src=b?curUrl:(activeBase||bases()[0])+'/api/audio/'+s.id+'?t='+encodeURIComponent(cfg.token);au.play().catch(()=>{});paint()}
 function startPlay(ids,id,sf){if(!ids.length)return;if(sf!==undefined)shuf=sf;ids=ids.slice();
@@ -233,7 +238,9 @@ au.ontimeupdate=()=>{const d=au.duration||0;$('#mBar').style.width=d?au.currentT
 if('mediaSession'in navigator){const m=navigator.mediaSession;m.setActionHandler('play',()=>au.play());m.setActionHandler('pause',()=>au.pause());m.setActionHandler('previoustrack',prev);m.setActionHandler('nexttrack',()=>next());m.setActionHandler('seekto',e=>{au.currentTime=e.seekTime})}
 $('#mPlay').onclick=e=>{e.stopPropagation();toggle()};$('#nPlay').onclick=toggle;
 $('#mPrev').onclick=e=>{e.stopPropagation();prev()};$('#mNext').onclick=e=>{e.stopPropagation();next()};$('#nPrev').onclick=prev;$('#nNext').onclick=()=>next();
-$('#mini').onclick=()=>{$('#np').hidden=false;au.ontimeupdate()};$('#nClose').onclick=()=>$('#np').hidden=true;
+$('#mini').onclick=()=>{$('#np').hidden=false;au.ontimeupdate()};
+{const mt=$('#mTrack'),go=e=>{const r=mt.getBoundingClientRect(),f=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));if(au.duration){au.currentTime=f*au.duration;$('#mBar').style.width=f*100+'%'}};
+ mt.onpointerdown=e=>{e.stopPropagation();mt.setPointerCapture(e.pointerId);mt._d=1;go(e)};mt.onpointermove=e=>{if(mt._d)go(e)};mt.onpointerup=mt.onpointercancel=()=>{mt._d=0};mt.onclick=e=>e.stopPropagation()}$('#nClose').onclick=()=>$('#np').hidden=true;
 $('#nSeek').oninput=e=>au.currentTime=+e.target.value;$('#vol').oninput=e=>au.volume=+e.target.value;
 $('#nShuf').onclick=()=>{shuf=!shuf?1:0;if(shuf&&qi>=0){const r=Q.splice(qi+1).sort(()=>Math.random()-.5);Q.push(...r)}paint()};
 $('#nRep').onclick=()=>{rep=(rep+1)%3;paint()};
@@ -243,32 +250,58 @@ addEventListener('pointerdown',()=>{au.src='data:audio/wav;base64,UklGRiQAAABXQV
 /* ---------- tags, sorting, selection, list settings ---------- */
 const PAL=['#4a5fb8','#2f9e6e','#d9822b','#c2477a','#8a5cc2','#2a9bb5','#b8a02a'];
 const tag=id=>lists.find(l=>l.id==id&&(l.type=='stag'||l.type=='ltag'));
-const chip=(t,mode,on)=>`<span class="chip${on?' on':''}" style="--c:${esc(t.color||PAL[0])}" ${mode?`data-act="${{rm:'tpRm',f:'filt',sf:'sfilt',e:'tagEdit',bx:'bRm'}[mode]}" data-id="${t.id}"`:''}>${t.icon?`<img src="${t.icon}" alt="">`:''}${esc(t.name||'Tag')}${mode=='rm'?' ×':''}</span>`;
+const chip=(t,mode,on)=>`<span class="chip${on?' on':''}" style="--c:${esc(t.color||PAL[0])}" ${mode?`data-act="${{rm:'tpRm',f:'filt',sf:'sfilt',e:'tagEdit',bx:'bRm',lf:'lfilt'}[mode]}" data-id="${t.id}"`:''}>${t.icon?`<img src="${t.icon}" alt="">`:''}${esc(t.name||'Tag')}${mode=='rm'?' ×':''}</span>`;
 const created=l=>parseInt((l.id||'').slice(1,9),36)||0;
 const sorters={az:(a,b)=>a.name.localeCompare(b.name),za:(a,b)=>b.name.localeCompare(a.name),new:(a,b)=>created(b)-created(a),old:(a,b)=>created(a)-created(b),big:(a,b)=>b.songs.length-a.songs.length};
 let sortK='az';try{sortK=localStorage.getItem('sort')||'az'}catch{}
 const sorted=a=>[...a].sort(sorters[sortK]||sorters.az);
 async function toData(f,max,png){try{const b=await createImageBitmap(f),k=Math.min(1,max/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);const x=c.getContext('2d');if(!png){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(b,0,0,c.width,c.height);return c.toDataURL(png?'image/png':'image/jpeg',.85)}catch{return''}}
 let tp={kind:'stag',sel:new Set()},td={},ls={},bRm=new Set(),selMode=0,sel=new Set(),selCtx='';
-const newTag=(kind,name,color,icon)=>({id:'t'+Date.now().toString(36)+rnd(),type:kind,name,color:color||PAL[hue(name)%PAL.length],icon:icon||'',songs:[],mod:Date.now()});
+const newTag=(kind,name,color,icon,col)=>({id:'t'+Date.now().toString(36)+rnd(),type:kind,name,color:color||PAL[hue(name)%PAL.length],icon:icon||'',songs:[],col,mod:Date.now()});
 async function ensureLtag(st){let x=lists.find(l=>l.type=='ltag'&&l.name.toLowerCase()==st.name.toLowerCase());if(!x){x=newTag('ltag',st.name,st.color,st.icon);lists.push(x);await put('lists',x)}return x}
-function tpRender(){const el=$('#tp');if(!el)return;el.innerHTML=`<div class="chips">${[...tp.sel].map(tag).filter(Boolean).map(x=>chip(x,'rm')).join('')||'<small>No tags yet</small>'}</div><input id="tpI" list="tpL" placeholder="Add a tag: type, or pick a suggestion"><datalist id="tpL">${lists.filter(l=>l.type==tp.kind&&!tp.sel.has(l.id)).map(x=>`<option value="${esc(x.name)}">`).join('')}</datalist>`}
-async function tpAdd(v){v=v.trim();if(!v)return;let x=lists.find(l=>l.type==tp.kind&&l.name.toLowerCase()==v.toLowerCase());if(!x){x=newTag(tp.kind,v);lists.push(x);await put('lists',x)}tp.sel.add(x.id);tpRender();$('#tpI')&&$('#tpI').focus()}
-function tagMgr(){sheet('<h3>Tags</h3>'+['stag','ltag'].map(k=>`<label>${k=='stag'?'Song tags':'Playlist and collection tags'}</label><div class="chips">${lists.filter(l=>l.type==k).map(x=>chip(x,'e')).join('')||'<small>None yet</small>'}</div><button data-act="tagNew" data-k="${k}">New tag</button><div style="height:14px"></div>`).join(''))}
-function tagEdit(id,kind){const o=id&&tag(id);td=o?{...o}:{id:null,type:kind,name:'',color:PAL[0],icon:''};
- sheet(`<h3>${o?'Edit tag':'New tag'}</h3><label>Name</label><input id="tN" value="${esc(td.name)}"><label>Colour</label><input id="tK" type="color" value="${esc(td.color)}"><label>Icon (optional)</label><div class="row" style="align-items:center"><span id="tPv">${chip(td)}</span><input id="tI" type="file" accept="image/*"><button data-act="tIcoX">Remove icon</button></div><div class="row"><button class="p" data-act="tagSave">Save</button>${o?'<button data-act="tagDel">Delete tag</button>':''}</div>${o&&td.type=='stag'?'<div class="row"><button data-act="fromTag" data-k="playlist">Make a playlist from this tag</button><button data-act="fromTag" data-k="collection">Make a collection from this tag</button></div>':''}`)}
-function nFChange(v){const s=$('#nS');s.hidden=!(v=='album'||v=='stag');if(v=='album')s.innerHTML=[...new Set(all().map(x=>x.album).filter(Boolean))].sort().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');if(v=='stag')s.innerHTML=lists.filter(l=>l.type=='stag').map(l=>`<option value="${l.id}">${esc(l.name)}</option>`).join('')||'<option value="">(no song tags yet)</option>';$('#nN').placeholder=v=='every'?'(names come from the albums)':'e.g. Road trip'}
+function tpRender(){const el=$('#tp');if(!el)return;if(tp.kind=='stag'&&!tp.col){el.innerHTML='<small>Tags belong to one collection, so this needs songs that are all in the same collection.</small>';return}
+ el.innerHTML=`<div class="chips">${[...tp.sel].map(tag).filter(Boolean).map(x=>chip(x,'rm')).join('')||'<small>No tags yet</small>'}</div><input id="tpI" list="tpL" placeholder="Add a tag: type, or pick a suggestion"><datalist id="tpL">${lists.filter(l=>l.type==tp.kind&&(tp.kind!='stag'||l.col==tp.col)&&!tp.sel.has(l.id)).map(x=>`<option value="${esc(x.name)}">`).join('')}</datalist>`}
+async function tpAdd(v){v=v.trim();if(!v)return;let x=lists.find(l=>l.type==tp.kind&&(tp.kind!='stag'||l.col==tp.col)&&l.name.toLowerCase()==v.toLowerCase());if(!x){x=newTag(tp.kind,v,undefined,undefined,tp.kind=='stag'?tp.col:undefined);lists.push(x);await put('lists',x)}tp.sel.add(x.id);tpRender();$('#tpI')&&$('#tpI').focus()}
+function tagMgr(){const cols=lists.filter(l=>l.type=='collection'),st=lists.filter(l=>l.type=='stag'),orphan=st.filter(x=>!cols.some(c=>c.id==x.col));
+ sheet('<h3>Tags</h3><label>Collection tags (the main tags)</label><div class="chips">'+(lists.filter(l=>l.type=='ltag').map(x=>chip(x,'e')).join('')||'<small>None yet</small>')+'</div><button data-act="tagNew" data-k="ltag">New collection tag</button><div style="height:16px"></div>'
+  +cols.map(c=>`<label>${esc(c.name)}: song tags</label><div class="chips">${st.filter(x=>x.col==c.id).map(x=>chip(x,'e')).join('')||'<small>None yet</small>'}</div><button data-act="tagNew" data-k="stag" data-col="${esc(c.id)}">New song tag</button><div style="height:14px"></div>`).join('')
+  +(orphan.length?`<label>Song tags without a collection (open one to assign it)</label><div class="chips">${orphan.map(x=>chip(x,'e')).join('')}</div>`:''))}
+function tagEdit(id,kind,col){const o=id&&tag(id);td=o?{...o}:{id:null,type:kind,name:'',color:PAL[0],icon:'',col};
+ sheet(`<h3>${o?'Edit tag':'New tag'}</h3><label>Name</label><input id="tN" value="${esc(td.name)}"><label>Colour</label><input id="tK" type="color" value="${esc(td.color)}"><label>Icon (optional)</label><div class="row" style="align-items:center"><span id="tPv">${chip(td)}</span><input id="tI" type="file" accept="image/*"><button data-act="tIcoX">Remove icon</button></div>${td.type=='stag'?`<label>Collection</label><select id="tCol"><option value="">(none)</option>${lists.filter(c=>c.type=='collection').map(c=>`<option value="${esc(c.id)}" ${td.col==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:''}<div class="row"><button class="p" data-act="tagSave">Save</button>${o?'<button data-act="tagDel">Delete tag</button>':''}</div>${o&&td.type=='stag'?'<div class="row"><button data-act="fromTag">Make a playlist from this tag</button></div>':''}`)}
+function nFChange(v){const s=$('#nS');s.hidden=!(v=='album'||v=='stag');if(v=='album')s.innerHTML=[...new Set(all().map(x=>x.album).filter(Boolean))].sort().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');if(v=='stag')s.innerHTML=lists.filter(l=>l.type=='stag'&&l.col).map(l=>`<option value="${l.id}">${esc((lists.find(c=>c.id==l.col)||{}).name||'')}: ${esc(l.name)}</option>`).join('')||'<option value="">(no song tags yet)</option>';$('#nN').placeholder=v=='every'?'(names come from the albums)':'Name'}
 function endSel(){if(!selMode)return;selMode=0;sel=new Set();document.body.classList.remove('selecting');$('#selbar').hidden=true;$$('.song.picked').forEach(e=>e.classList.remove('picked'))}
 function toggleSel(t){const id=t.dataset.id;sel.has(id)?sel.delete(id):sel.add(id);t.classList.toggle('picked',sel.has(id));$('#selN').textContent=sel.size+' selected'}
 async function purge(id){songs.delete(id);haveBlob.delete(id);tomb[id]=Date.now();await del('songs',id);await del('blobs',id);for(const l of lists)if(l.type!='stag'&&l.type!='ltag'&&(l.songs||[]).includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}
-function bulkEdit(){const ids=[...sel],present=new Set(ids.flatMap(i=>(songs.get(i)||{}).tags||[]));bRm=new Set();tp={kind:'stag',sel:new Set()};
+function bulkEdit(){const ids=[...sel],present=new Set(ids.flatMap(i=>(songs.get(i)||{}).tags||[]));bRm=new Set();const cm=collMap(),cs=new Set(ids.map(i=>cm.get(i)));tp={kind:'stag',col:cs.size==1?[...cs][0]:undefined,sel:new Set()};
  sheet(`<h3>Edit ${ids.length} songs</h3><label>Artist</label><input id="bA" placeholder="Leave blank to keep each song's artist"><label>Album</label><input id="bB" placeholder="Leave blank to keep each song's album"><label>Add tags</label><div id="tp"></div>${present.size?`<label>Remove tags (tap to mark)</label><div class="chips">${[...present].map(tag).filter(Boolean).map(x=>chip(x,'bx')).join('')}</div>`:''}<label>Cover art (applies to all)</label><input id="bC" type="file" accept="image/*"><button class="p" data-act="bSave">Apply to ${ids.length} songs</button>`);tpRender()}
 function listSettings(id){const l=lists.find(x=>x.id==id);if(!l)return;ls={id,img:l.img||''};tp={kind:'ltag',sel:new Set(l.tags||[])};
- sheet(`<h3>${l.type=='collection'?'Collection':'Playlist'} settings</h3><label>Name</label><input id="lN" value="${esc(l.name)}"><label>Description</label><textarea id="lD" rows="3">${esc(l.desc||'')}</textarea><label>Tags</label><div id="tp"></div><label>Cover art</label><div class="row" style="align-items:center"><div class="sm" id="lP" style="width:70px;height:70px">${art(l.img||lcover(l),l.name)}</div><input id="lC" type="file" accept="image/*"><button data-act="lNoImg">Use default</button></div><div class="row"><button class="p" data-act="lSave">Save</button><button data-act="lDel">Delete ${l.type}</button></div>`);tpRender()}
+ sheet(`<h3>${l.type=='collection'?'Collection':'Playlist'} settings</h3><label>Name</label><input id="lN" value="${esc(l.name)}"><label>Description</label><textarea id="lD" rows="3">${esc(l.desc||'')}</textarea><label>Tags</label><div id="tp"></div>${l.type=='playlist'?`<label>Collection</label><select id="lCol"><option value="">(none)</option>${lists.filter(c=>c.type=='collection').map(c=>`<option value="${esc(c.id)}" ${l.col==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:''}<label>Cover art</label><div class="row" style="align-items:center"><div class="sm" id="lP" style="width:70px;height:70px">${art(l.img||lcover(l),l.name)}</div><input id="lC" type="file" accept="image/*"><button data-act="lNoImg">Use default</button></div><div class="row"><button class="p" data-act="lSave">Save</button><button data-act="lDel">Delete ${l.type}</button></div>`);tpRender()}
+
+/*@@ch*/
+const collMap=()=>{const m=new Map();for(const l of lists)if(l.type=='collection')for(const id of l.songs)if(!m.has(id))m.set(id,l.id);return m};
+const collOf=id=>collMap().get(id);
+async function mkList(o){const l={id:'l'+Date.now().toString(36)+rnd(),songs:[],tags:[],mod:Date.now(),...o};lists.push(l);await put('lists',l);return l}
+async function cleanTags(){const cm=collMap();for(const s of songs.values()){if(!(s.tags||[]).length)continue;const c=cm.get(s.id),k=s.tags.filter(i=>{const x=tag(i);return x&&(x.col===undefined?!c:x.col==c)});if(k.length!=s.tags.length){s.tags=k;s.mod=Date.now();await put('songs',s)}}}
+async function toColl(col,ids){const cm=collMap(),have=new Set(col.songs),moved=new Map();
+ for(const id of ids){const from=cm.get(id);if(from&&from!=col.id){if(!moved.has(from))moved.set(from,new Set());moved.get(from).add(id)}if(!have.has(id)){have.add(id);col.songs.push(id)}}
+ for(const[from,set]of moved){const o=lists.find(x=>x.id==from);if(o){o.songs=o.songs.filter(x=>!set.has(x));o.mod=Date.now();await put('lists',o)}}
+ col.mod=Date.now();await put('lists',col);await cleanTags();return[...moved.values()].reduce((a,s)=>a+s.size,0)}
+async function migrateTags(){const cm=collMap();
+ for(const t of lists.filter(l=>l.type=='stag'&&l.col===undefined)){const by=new Map();
+  for(const s of songs.values())if((s.tags||[]).includes(t.id)&&cm.get(s.id)){const c=cm.get(s.id);if(!by.has(c))by.set(c,[]);by.get(c).push(s)}
+  const cs=[...by.keys()].sort();if(!cs.length)continue;t.col=cs[0];t.mod=Date.now();await put('lists',t);
+  for(const c of cs.slice(1)){const id=t.id+'_'+c;let k=lists.find(x=>x.id==id);if(!k){k={...t,id,col:c,mod:Date.now()};lists.push(k);await put('lists',k)}
+   for(const s of by.get(c)){s.tags=s.tags.map(x=>x==t.id?id:x);s.mod=Date.now();await put('songs',s)}}}}
+let offer=new Map();
+function offerCollections(ids){const cm=collMap(),m=new Map();for(const id of ids){const s=songs.get(id);if(s&&s.album&&!cm.has(id)){if(!m.has(s.album))m.set(s.album,[]);m.get(s.album).push(id)}}
+ if(!m.size)return;offer=m;sheet(`<h3>${m.size==1?'1 new album':m.size+' new albums'} found</h3><p class="mut">Make ${m.size==1?'a collection':'collections'} for ${m.size==1?'it':'them'}?</p>${[...m].map(([a,x])=>`<div class="song"><div class="t"><b>${esc(a)}</b><small>${x.length} songs${lists.some(l=>l.type=='collection'&&l.name==a)?' · added to your existing collection':''}</small></div></div>`).join('')}<div class="row"><button class="p" data-act="offerYes">Make collections</button><button data-act="offerNo">Not now</button></div>`)}
+function recents(){const cm=collMap(),seen=new Set(),out=[];for(const s of all().filter(x=>x.lp).sort((a,b)=>b.lp-a.lp)){const c=cm.get(s.id);if(c&&!seen.has(c)){seen.add(c);out.push([c,s]);if(out.length==8)break}}return out}
+/*@@end*/
 /* ---------- actions ---------- */
 async function fav(id){const s=songs.get(id);s.fav=s.fav?0:1;s.mod=Date.now();await put('songs',s);if(Q[qi]==id)paint();render()}
 async function rate(n){const s=songs.get(Q[qi]);if(!s)return;s.rating=s.rating==n?0:n;s.mod=Date.now();await put('songs',s);paint()}
-async function addTo(l,ids){const have=new Set(l.songs);let n=0;for(const i of ids)if(!have.has(i)){l.songs.push(i);n++}l.mod=Date.now();await put('lists',l);toast(n?`Added ${n}`:'Already in there');render()}
+async function addTo(l,ids){if(l.type=='collection'){const n0=l.songs.length,mv=await toColl(l,ids),n=l.songs.length-n0;toast(n?`Added ${n}${mv?` (moved ${mv} from other collections)`:''}`:'Already in there');render();return}
+ const have=new Set(l.songs);let n=0;for(const i of ids)if(!have.has(i)){l.songs.push(i);n++}l.mod=Date.now();await put('lists',l);toast(n?`Added ${n}`:'Already in there');render()}
 async function mv(l,id,d){const i=l.songs.indexOf(id),j=i+d;if(j<0||j>=l.songs.length)return;[l.songs[i],l.songs[j]]=[l.songs[j],l.songs[i]];l.mod=Date.now();await put('lists',l);render()}
 async function delSong(id){if(!confirm('Delete this song from your library?'))return;songs.delete(id);haveBlob.delete(id);tomb[id]=Date.now();saveTomb();await del('songs',id);await del('blobs',id);
  for(const l of lists){if(l.songs.includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}render()}
@@ -279,15 +312,15 @@ function menu(title,items){sheet(`<h3>${esc(title)}</h3>`+items.map((it,i)=>`<bu
 sh.onclick=e=>{if(e.target.classList.contains('bk'))return closeSheet();const b=e.target.closest('.mi');if(b){const f=sh._items[b.dataset.i][1];closeSheet();f()}};
 function songMenu(id,ctx){const s=songs.get(id),l=lists.find(x=>x.id==ctx);
  const it=[['Play next',()=>enq(id,1)],['Add to queue',()=>enq(id,0)],['Add to playlist or collection…',()=>addMenu(id)],['Edit info'+(needs(s)?' (needs info)':''),()=>editSong(id)],[s.fav?'Remove favourite':'Favourite',()=>fav(id)]];
- if(l)it.push(['Remove from this list',async()=>{l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l);render()}],['Move up',()=>mv(l,id,-1)],['Move down',()=>mv(l,id,1)]);
+ if(l)it.push(['Remove from this list',async()=>{l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l);if(l.type=='collection')await cleanTags();render()}],['Move up',()=>mv(l,id,-1)],['Move down',()=>mv(l,id,1)]);
  it.push(['Delete from library',()=>delSong(id)]);menu(ttl(s),it)}
 function addMenu(id){menu('Add to…',[...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,[id])]),['New playlist with this song',()=>{pending=[id];A.newList()}]])}
 let pending=[];
-function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><label>Cover art</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><label>Tags</label><div id="tp"></div><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`);tp={kind:'stag',sel:new Set(s.tags||[])};tpRender()}
+function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><label>Cover art</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><label>Tags</label><div id="tp"></div><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`);const col=collOf(id);tp={kind:'stag',col,sel:new Set(col?s.tags||[]:[])};tpRender()}
 let pk={sel:new Set()};
 function pickSongs(lid){pk={sel:new Set(),id:lid};const l=lists.find(x=>x.id==lid);
- sheet(`<h3>Add songs to ${esc(l.name)}</h3><label>Pick from</label><select id="pS">${colls().map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}${pls().filter(p=>p.id!=lid).map(p=>`<option value="${esc(p.id)}">Playlist: ${esc(p.name)}</option>`).join('')}</select><input id="pQ" type="search" placeholder="Filter"><div id="pL"></div><button class="p" data-act="pkgo" id="pG">Add 0</button>`);pkRender()}
-function pkRender(){const l=lists.find(x=>x.id==pk.id),have=new Set(l.songs),src=getList($('#pS').value),q=$('#pQ').value.toLowerCase();
+ sheet(`<h3>Add songs to ${esc(l.name)}</h3><label>Pick from</label><select id="pS"><option value="all">All songs</option><option value="free">Songs not in a collection</option>${colls().map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}${pls().filter(p=>p.id!=lid).map(p=>`<option value="${esc(p.id)}">Playlist: ${esc(p.name)}</option>`).join('')}</select><input id="pQ" type="search" placeholder="Filter"><div id="pL"></div><button class="p" data-act="pkgo" id="pG">Add 0</button>`);pkRender()}
+function pkRender(){const l=lists.find(x=>x.id==pk.id),have=new Set(l.songs),src={songs:ctxIds($('#pS').value)},q=$('#pQ').value.toLowerCase();
  const ids=src.songs.filter(i=>songs.has(i)&&!have.has(i)&&(ttl(songs.get(i))+' '+songs.get(i).artist).toLowerCase().includes(q)).slice(0,100);pk.shown=ids;
  $('#pL').innerHTML=(ids.length?'<button data-act="pkall">Select shown</button>':'<p class="mut">Nothing to add here.</p>')+ids.map(i=>`<label class="pk"><input type="checkbox" data-pk="${i}" ${pk.sel.has(i)?'checked':''}>${esc(ttl(songs.get(i)))}<small>${esc(songs.get(i).artist)}</small></label>`).join('');$('#pG').textContent='Add '+pk.sel.size}
 const setTheme=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('th',t)}catch{}};
@@ -306,17 +339,21 @@ const A={
  shuf:t=>startPlay(ctxIds(t.dataset.id),null,1),
  smenu:t=>songMenu(t.dataset.id,t.dataset.ctx),lset:t=>listSettings(t.dataset.id),
  filt:t=>{S.f=S.f==t.dataset.id?null:t.dataset.id;render()},sfilt:t=>{S.sf=S.sf==t.dataset.id?null:t.dataset.id;render()},
- tpRm:t=>{tp.sel.delete(t.dataset.id);tpRender()},tagNew:t=>tagEdit(null,t.dataset.k),tagEdit:t=>tagEdit(t.dataset.id),
+ tpRm:t=>{tp.sel.delete(t.dataset.id);tpRender()},tagNew:t=>tagEdit(null,t.dataset.k,t.dataset.col),tagEdit:t=>tagEdit(t.dataset.id),
  tIcoX:()=>{td.icon='';$('#tPv').innerHTML=chip(td)},
- tagSave:async()=>{td.name=$('#tN').value.trim();td.color=$('#tK').value;if(!td.name)return toast('Enter a name');
-  let o=td.id&&tag(td.id);if(o)Object.assign(o,{name:td.name,color:td.color,icon:td.icon,mod:Date.now()});else{o=newTag(td.type,td.name,td.color,td.icon);lists.push(o)}
-  await put('lists',o);closeSheet();tagMgr();render()},
+ tagSave:async()=>{td.name=$('#tN').value.trim();td.color=$('#tK').value;if($('#tCol'))td.col=$('#tCol').value||undefined;if(!td.name)return toast('Enter a name');
+  let o=td.id&&tag(td.id);if(o)Object.assign(o,{name:td.name,color:td.color,icon:td.icon,col:td.col,mod:Date.now()});else{o=newTag(td.type,td.name,td.color,td.icon,td.col);lists.push(o)}
+  await put('lists',o);await cleanTags();closeSheet();tagMgr();render()},
  tagDel:async()=>{const o=tag(td.id);if(!o||!confirm(`Delete the tag "${o.name}"? It will be removed everywhere it is used.`))return;
   for(const s of songs.values())if((s.tags||[]).includes(o.id)){s.tags=s.tags.filter(x=>x!=o.id);s.mod=Date.now();await put('songs',s)}
   for(const l of lists)if((l.tags||[]).includes(o.id)){l.tags=l.tags.filter(x=>x!=o.id);l.mod=Date.now();await put('lists',l)}
   lists=lists.filter(x=>x!=o);tomb[o.id]=Date.now();saveTomb();await del('lists',o.id);if(S.f==o.id)S.f=null;if(S.sf==o.id)S.sf=null;closeSheet();tagMgr();render()},
- fromTag:async t=>{const st=tag(td.id),ids=all().filter(s=>(s.tags||[]).includes(st.id)).map(s=>s.id).sort(byTitle),lt=await ensureLtag(st);
-  const l={id:'l'+Date.now().toString(36)+rnd(),name:st.name,type:t.dataset.k,songs:ids,tags:[lt.id],mod:Date.now()};lists.push(l);await put('lists',l);closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
+ fromTag:async()=>{const st=tag(td.id),ids=all().filter(s=>(s.tags||[]).includes(st.id)).map(s=>s.id).sort(byTitle);
+  const l=await mkList({name:st.name,type:'playlist',songs:ids,col:st.col});closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
+ lfilt:t=>{S.lf=S.lf==t.dataset.id?null:t.dataset.id;render()},favf:()=>{S.fav=!S.fav;S.sc=null;S.sf=null;render()},
+ newPl:async t=>{const n=prompt('Playlist name');if(n&&n.trim()){await mkList({name:n.trim(),type:'playlist',col:t.dataset.id});render()}},
+ offerNo:()=>closeSheet(),
+ offerYes:async()=>{closeSheet();let made=0;for(const[a,ids]of offer){let c=lists.find(l=>l.type=='collection'&&l.name==a);if(!c){c=await mkList({name:a,type:'collection'});made++}await toColl(c,ids)}offer=new Map();render();toast(made?`Made ${made} collection${made>1?'s':''}`:'Songs added to your collections')},
  selStart:t=>{selMode=1;sel=new Set();selCtx=t.dataset.ctx;document.body.classList.add('selecting');$('#selbar').hidden=false;$('#selN').textContent='0 selected'},
  selDone:()=>endSel(),
  selAll:()=>{$$('#main .song[data-id]').forEach(e=>{sel.add(e.dataset.id);e.classList.add('picked')});$('#selN').textContent=sel.size+' selected'},
@@ -324,34 +361,37 @@ const A={
  bRm:t=>{const id=t.dataset.id;bRm.has(id)?bRm.delete(id):bRm.add(id);t.classList.toggle('off')},
  bSave:async()=>{const ids=[...sel],a=$('#bA').value.trim(),b=$('#bB').value.trim(),f=$('#bC').files[0],cv=f?await fitCover(f):null;
   for(const id of ids){const s=songs.get(id);if(!s)continue;if(a)s.artist=a;if(b)s.album=b;if(cv){s.cover=cv;s.cmod=Date.now();urls.delete(id)}
-   s.tags=[...new Set([...(s.tags||[]),...tp.sel])].filter(x=>!bRm.has(x));s.mod=Date.now();await put('songs',s)}
+   s.tags=[...new Set([...(s.tags||[]),...(tp.col?tp.sel:[])])].filter(x=>!bRm.has(x));s.mod=Date.now();await put('songs',s)}
   closeSheet();endSel();toast(`Updated ${ids.length} songs`);render()},
  bAdd:()=>{if(!sel.size)return toast('Select songs first');menu('Add to…',lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>{addTo(l,[...sel]);endSel()}]))},
  bMore:()=>{if(!sel.size)return toast('Select songs first');const src=lists.find(x=>x.id==selCtx&&(x.type=='playlist'||x.type=='collection'));
   const it=[['Favourite all',async()=>{for(const id of sel){const s=songs.get(id);s.fav=1;s.mod=Date.now();await put('songs',s)}endSel();render()}]];
-  if(src)it.push(['Remove from this list',async()=>{src.songs=src.songs.filter(x=>!sel.has(x));src.mod=Date.now();await put('lists',src);endSel();render()}]);
+  if(src)it.push(['Remove from this list',async()=>{src.songs=src.songs.filter(x=>!sel.has(x));src.mod=Date.now();await put('lists',src);if(src.type=='collection')await cleanTags();endSel();render()}]);
   it.push(['Delete from library',async()=>{if(!confirm(`Delete ${sel.size} songs from your library?`))return;for(const id of [...sel])await purge(id);saveTomb();endSel();render()}]);menu(sel.size+' songs',it)},
  lNoImg:()=>{const l=lists.find(x=>x.id==ls.id);ls.img='';$('#lP').innerHTML=art(lcover({songs:l.songs}),l.name)},
- lSave:async()=>{const l=lists.find(x=>x.id==ls.id),n=$('#lN').value.trim();if(!n)return toast('Enter a name');Object.assign(l,{name:n,desc:$('#lD').value.trim(),tags:[...tp.sel],img:ls.img,mod:Date.now()});await put('lists',l);closeSheet();render()},
- lDel:async()=>{const l=lists.find(x=>x.id==ls.id);if(!l||!confirm(`Delete "${l.name}"? Songs stay in your library.`))return;lists=lists.filter(x=>x!=l);tomb[l.id]=Date.now();saveTomb();await del('lists',l.id);closeSheet();S=hist.pop()||{t:'home'};render()},
+ lSave:async()=>{const l=lists.find(x=>x.id==ls.id),n=$('#lN').value.trim();if(!n)return toast('Enter a name');Object.assign(l,{name:n,desc:$('#lD').value.trim(),tags:[...tp.sel],img:ls.img,mod:Date.now()});if($('#lCol'))l.col=$('#lCol').value||undefined;await put('lists',l);closeSheet();render()},
+ lDel:async()=>{const l=lists.find(x=>x.id==ls.id);if(!l||!confirm(`Delete "${l.name}"? Songs stay in your library.`))return;lists=lists.filter(x=>x!=l);tomb[l.id]=Date.now();saveTomb();if(l.type=='collection'){const ts=lists.filter(x=>x.type=='stag'&&x.col==l.id);for(const x of ts){tomb[x.id]=Date.now();await del('lists',x.id)}lists=lists.filter(x=>!ts.includes(x));saveTomb();await cleanTags()}await del('lists',l.id);closeSheet();S=hist.pop()||{t:'home'};render()},
  addsongs:t=>pickSongs(t.dataset.id),
  addfiles:()=>$('#file').click(),
  syncSet:()=>sheet(`<h3>Sync</h3><label>Server address (you can list several, separated by commas)</label><input id="sU" placeholder="https://192.168.1.20:8765" value="${esc(cfg.url||'')}"><label>Access token</label><input id="sT" value="${esc(cfg.token||'')}"><label class="pk"><input type="checkbox" id="sD" ${cfg.dl===false?'':'checked'}>Download songs to this device</label><button class="p" data-act="sSave">Save and sync</button>${cfg.url?' <button data-act="sOff">Turn off sync</button>':''}`),
  sSave:async()=>{cfg={url:$('#sU').value.trim(),token:$('#sT').value.trim(),dl:$('#sD').checked};await saveCfg();closeSheet();sync(1)},
  sOff:async()=>{cfg={};await del('meta','cfg');closeSheet();render();toast('Sync turned off')},
 jump:t=>playAt(+t.dataset.i),rate:t=>rate(+t.dataset.n),
- newList:()=>sheet(`<h3>New</h3><label>Name</label><input id="nN" placeholder="e.g. Road trip"><label>Type</label><select id="nK"><option value="playlist">Playlist</option><option value="collection">Collection</option></select><label>Start with</label><select id="nF"><option value="">Nothing (empty)</option><option value="album">Songs from an album</option><option value="stag">Songs with a song tag</option><option value="every">One collection for every album</option></select><select id="nS" hidden></select><button class="p" data-act="mk">Create</button>`),
- mk:async()=>{const f=$('#nF').value,src=$('#nS').value,now=()=>'l'+Date.now().toString(36)+rnd();
-  const mkl=async(name,type,ids,tags)=>{const l={id:now(),name,type,songs:ids,tags:tags||[],mod:Date.now()};lists.push(l);await put('lists',l);return l};
-  const trk=(x,y)=>(x.trk||0)-(y.trk||0)||ttl(x).localeCompare(ttl(y));
-  if(f=='every'){const m=new Map();for(const s of songs.values())if(s.album){if(!m.has(s.album))m.set(s.album,[]);m.get(s.album).push(s)}let n=0;
-   for(const[a,ss]of m){if(lists.some(l=>l.type=='collection'&&l.name==a))continue;await mkl(a,'collection',ss.sort(trk).map(s=>s.id));n++}
-   closeSheet();render();return toast(n?`Made ${n} collections`:'Every album already has a collection')}
-  let name=$('#nN').value.trim(),ids=[],tags=[];
+ newList:()=>{sheet(`<h3>New</h3><label>Name</label><input id="nN" placeholder="e.g. The Legend of Zelda: Ocarina of Time"><label>Type</label><select id="nK"><option value="collection">Collection</option><option value="playlist">Playlist</option></select><div id="nCw" hidden><label>Inside collection</label><select id="nC">${lists.filter(l=>l.type=='collection').map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></div><label>Start with</label><select id="nF"><option value="">Nothing (empty)</option><option value="album">Songs from an album</option><option value="stag">Songs with a song tag (makes a playlist)</option><option value="every">One collection for every unsorted album</option></select><select id="nS" hidden></select><button class="p" data-act="mk">Create</button>`);
+  if(pending.length){$('#nK').value='playlist';$('#nCw').hidden=false;const c=collOf(pending[0]);if(c)$('#nC').value=c}},
+ mk:async()=>{const f=$('#nF').value,src=$('#nS').value;let type=$('#nK').value;const trk=(x,y)=>(x.trk||0)-(y.trk||0)||ttl(x).localeCompare(ttl(y));
+  if(f=='every'){const cm=collMap(),m=new Map();for(const s of songs.values())if(s.album&&!cm.has(s.id)){if(!m.has(s.album))m.set(s.album,[]);m.get(s.album).push(s)}
+   for(const[a,ss]of m){const c=lists.find(l=>l.type=='collection'&&l.name==a)||await mkList({name:a,type:'collection'});await toColl(c,ss.sort(trk).map(s=>s.id))}
+   closeSheet();render();return toast(m.size?`Sorted ${m.size} album${m.size>1?'s':''} into collections`:'No unsorted albums found')}
+  let name=$('#nN').value.trim(),ids=[],col;
+  if(f=='stag'){type='playlist';const st=tag(src);if(st){ids=all().filter(s=>(s.tags||[]).includes(src)).map(s=>s.id).sort(byTitle);name=name||st.name;col=st.col}}
   if(f=='album'){ids=all().filter(s=>s.album==src).sort(trk).map(s=>s.id);name=name||src}
-  if(f=='stag'){const st=tag(src);if(st){ids=all().filter(s=>(s.tags||[]).includes(src)).map(s=>s.id).sort(byTitle);name=name||st.name;tags=[(await ensureLtag(st)).id]}}
   if(!name)return toast('Enter a name');
-  const l=await mkl(name,$('#nK').value,ids.concat(pending),tags);pending=[];closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
+  ids=ids.concat(pending);
+  if(type=='playlist'){col=col||$('#nC').value||collOf(ids[0]);if(!col)return toast('Create a collection first, then add playlists to it')}
+  const l=await mkList({name,type,songs:type=='playlist'?ids:[],col:type=='playlist'?col:undefined});
+  if(type=='collection'){const mv=await toColl(l,ids);if(mv)toast(`Moved ${mv} songs from other collections`)}
+  pending=[];closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
  saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();s.tags=[...tp.sel];const f=$('#eC').files[0];if(f){s.cover=await fitCover(f);s.cmod=Date.now();urls.delete(s.id)}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
  pkall:()=>{pk.shown.forEach(i=>pk.sel.add(i));pkRender()},
  pkgo:()=>{const l=lists.find(x=>x.id==pk.id);closeSheet();addTo(l,[...pk.sel])},
@@ -363,6 +403,8 @@ $('#dir').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#imp').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=''};
 document.addEventListener('input',e=>{if(e.target.id=='pQ')pkRender();else if(e.target.id=='q'){S.q=e.target.value.trim();render()}else if(e.target.id=='tN'||e.target.id=='tK'){td.name=$('#tN').value;td.color=$('#tK').value;$('#tPv').innerHTML=chip(td)}});
 document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id=='scSel'){S.sc=t.value||null;S.sf=null;S.fav=false;return render()}
+ if(t.id=='nK'){$('#nCw').hidden=t.value!='playlist';return}
  if(t.id=='tpI')return tpAdd(t.value);
  if(t.id=='sortSel'){sortK=t.value;try{localStorage.setItem('sort',sortK)}catch{}return render()}
  if(t.id=='nF')return nFChange(t.value);
@@ -375,7 +417,7 @@ if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.creat
  for(const m of await idb('meta','readonly',s=>s.getAll())){if(m.id=='cfg'){const{id,...c}=m;cfg=c}if(m.id=='tomb')tomb=m.map||{}}
  for(const s of songs.values())if(s.cover&&!s.cmod){s.cmod=s.added;put('songs',s)}
  for(const s of songs.values())if(s.cover&&!(s.cover.type||'').startsWith('image/')){s.cover=imgBlob(await s.cover.arrayBuffer());urls.delete(s.id);put('songs',s)}
- render();backfill();sync();addEventListener('online',()=>sync());
+ await migrateTags();await cleanTags();render();backfill();sync();addEventListener('online',()=>sync());
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
 </script></body></html>
