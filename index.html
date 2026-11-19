@@ -636,7 +636,11 @@ function newDlg(type){const sers=lists.filter(l=>l.type=='series'),cl=lists.filt
 /* ---------- key art, facets, hero ---------- */
 const ART=new Map();let keyCol=null,keySet=new Set(),featIdx=0,fsx=null;const featSeed=Math.random();
 const artUrl=id=>{const a=ART.get(id);if(!a)return'';if(!a.url)a.url=URL.createObjectURL(a.blob);return a.url};
-async function toBlob(f,max,q){try{const b=await createImageBitmap(f),k=Math.min(1,max/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);const x=c.getContext('2d');x.fillStyle='#071D13';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(o=>r(o||f),'image/jpeg',q||.82))}catch{return f}}
+async function toBlob(f,max,q){try{let b;try{b=await createImageBitmap(f)}catch{b=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('decode'));i.src=URL.createObjectURL(f)})}
+ const w=b.width||b.naturalWidth,h=b.height||b.naturalHeight,k=Math.min(1,max/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));const x=c.getContext('2d');x.fillStyle='#071D13';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);
+ return await new Promise((r,j)=>c.toBlob(o=>o?r(o):j(new Error('encode')),'image/jpeg',q||.82))}catch{return null}}
+function busy(sel,work){const b=$(sel),txt=b&&b.textContent;if(b){b.disabled=true;b.textContent='Preparing image...'}return work().finally(()=>{const x=$(sel);if(x){x.disabled=false;x.textContent=txt}})}
+const BADIMG="That image couldn't be read. Try a JPEG or PNG.";
 const splitList=s=>(s||'').split(/[,;]/).map(x=>x.trim()).filter(Boolean);
 function facetVals(k){const m=new Map(),add=(v,c)=>{v=(v||'').trim();if(!v)return;if(!m.has(v))m.set(v,[]);if(!m.get(v).includes(c))m.get(v).push(c)};
  for(const c of colls()){if(k=='console')splitList(c.console).forEach(v=>add(v,c));else if(k=='decade'){const y=parseInt(c.year);if(y)add(Math.floor(y/10)*10+'s',c)}else if(k=='developer')splitList(c.dev).forEach(v=>add(v,c));else if(k=='composer')splitList(c.comp).forEach(v=>add(v,c));else if(k=='tag')etags(c).forEach(i=>{const x=tag(i);if(x)add(x.name,c)})}return m}
@@ -718,7 +722,7 @@ const A={
  filt:t=>{S.f=S.f==t.dataset.id?null:t.dataset.id;render()},sfilt:t=>{S.sf=S.sf==t.dataset.id?null:t.dataset.id;render()},
  tpRm:t=>{tp.sel.delete(t.dataset.id);tpRender()},tagNew:t=>tagEdit(null,t.dataset.k,t.dataset.col),tagEdit:t=>tagEdit(t.dataset.id),
  tIcoX:()=>{td.icon='';$('#tPv').innerHTML=chip(td)},
- tagSave:async()=>{td.name=$('#tN').value.trim();td.color=$('#tK').value;if($('#tCol'))td.col=$('#tCol').value||undefined;if(!td.name)return toast('Enter a name');
+ tagSave:async()=>{if(td.pending)await td.pending;td.name=$('#tN').value.trim();td.color=$('#tK').value;if($('#tCol'))td.col=$('#tCol').value||undefined;if(!td.name)return toast('Enter a name');
   let o=td.id&&tag(td.id);if(o)Object.assign(o,{name:td.name,color:td.color,icon:td.icon,col:td.col,mod:Date.now()});else{o=newTag(td.type,td.name,td.color,td.icon,td.col);lists.push(o)}
   await put('lists',o);await cleanTags();closeSheet();tagMgr();render()},
  tagDel:async()=>{const o=tag(td.id);if(!o||!confirm(`Delete the tag "${o.name}"? It will be removed everywhere it is used.`))return;
@@ -749,7 +753,7 @@ const A={
   if(src)it.push(['Remove from this list',async()=>{src.songs=src.songs.filter(x=>!sel.has(x));src.mod=Date.now();await put('lists',src);if(src.type=='collection')await cleanTags();endSel();render()}]);
   it.push(['Delete from library',async()=>{if(!confirm(`Delete ${sel.size} songs from your library?`))return;for(const id of [...sel])await purge(id);saveTomb();endSel();render()}]);menu(sel.size+' songs',it)},
  lNoImg:()=>{const l=lists.find(x=>x.id==ls.id);ls.img='';$('#lP').innerHTML=l.type=='series'?serArt({...l,img:''}):art(lcover({songs:l.songs}),l.name)},
- lSave:async()=>{const l=lists.find(x=>x.id==ls.id),n=$('#lN').value.trim();if(!n)return toast('Enter a name');Object.assign(l,{name:n,desc:$('#lD').value.trim(),tags:[...tp.sel],img:ls.img,mod:Date.now()});if($('#lCol'))l.col=$('#lCol').value||undefined;if($('#lSer'))l.ser=$('#lSer').value||undefined;
+ lSave:async()=>{if(ls.pending)await ls.pending;const l=lists.find(x=>x.id==ls.id),n=$('#lN').value.trim();if(!n)return toast('Enter a name');Object.assign(l,{name:n,desc:$('#lD').value.trim(),tags:[...tp.sel],img:ls.img,mod:Date.now()});if($('#lCol'))l.col=$('#lCol').value||undefined;if($('#lSer'))l.ser=$('#lSer').value||undefined;
   for(const[k,i]of[['console','dCon'],['year','dYear'],['dev','dDev'],['pub','dPub'],['comp','dComp'],['genre','dGen'],['syear','dSY'],['awards','dAw']]){const e=$('#'+i);if(e)l[k]=e.value.trim()}
   if($('#dKind'))l.kind=$('#dKind').value;
   if(ls.artBlob){const c=Date.now();ART.set(l.id,{blob:ls.artBlob,cmod:c});await put('art',{id:l.id,blob:ls.artBlob,cmod:c});l.acmod=c}
@@ -811,9 +815,10 @@ document.addEventListener('change',async e=>{const t=e.target;
  if(t.id=='sortSel'){sortK=t.value;try{localStorage.setItem('sort',sortK)}catch{}return render()}
  if(t.id=='nF')return nFChange(t.value);
  if(t.id=='dKind'){$('#dBox').className=t.value=='album'?'isAlbum':'isGame';return}
- if(t.id=='kaF'&&t.files[0]){ls.artBlob=await toBlob(t.files[0],1800,.82);ls.artDel=false;$('#kaP').innerHTML=`<img src="${URL.createObjectURL(ls.artBlob)}" alt="">`;return}
- if(t.id=='lC'&&t.files[0]){ls.img=await toData(t.files[0],500,false);$('#lP').innerHTML=art(ls.img,'?');return}
- if(t.id=='tI'&&t.files[0]){td.icon=await toData(t.files[0],64,true);$('#tPv').innerHTML=chip(td);return}
+ if(t.id=='kaF'&&t.files[0]){const f=t.files[0];ls.pending=busy('[data-act=lSave]',async()=>{const k=$('#kaP');if(k)k.innerHTML='<small style="padding:6px">Preparing...</small>';const b=await toBlob(f,1800,.82);if(b){ls.artBlob=b;ls.artDel=false}else toast(BADIMG);
+   const k2=$('#kaP');if(k2){const u=ls.artBlob?URL.createObjectURL(ls.artBlob):(ls.artDel?'':artUrl(ls.id));k2.innerHTML=u?`<img src="${u}" alt="">`:''}});await ls.pending;return}
+ if(t.id=='lC'&&t.files[0]){const f=t.files[0];ls.pending=busy('[data-act=lSave]',async()=>{const d=await toData(f,500,false);if(d)ls.img=d;else toast(BADIMG);const p=$('#lP');if(p)p.innerHTML=art(ls.img,'?')});await ls.pending;return}
+ if(t.id=='tI'&&t.files[0]){const f=t.files[0];td.pending=busy('[data-act=tagSave]',async()=>{const d=await toData(f,64,true);if(d)td.icon=d;else toast(BADIMG);const p=$('#tPv');if(p)p.innerHTML=chip(td)});await td.pending;return}
 if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`}else if(t.id=='pS')pkRender();else if(t.dataset.pk){t.checked?pk.sel.add(t.dataset.pk):pk.sel.delete(t.dataset.pk);$('#pG').textContent='Add '+pk.sel.size}});
 (async()=>{
  await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());
