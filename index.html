@@ -171,6 +171,11 @@ body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:var(--npH);
 .rec2 .card{width:170px}.kap{width:120px;height:60px;border-radius:12px;overflow:hidden;background:var(--bg);flex:none}.kap img{width:100%;height:100%;object-fit:cover}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.isAlbum .gonly,.isGame .aonly{display:none}
 @media(max-width:820px){.hero.fh{height:330px;min-height:0;padding:18px 18px 54px}.fh .hi h1{font-size:26px;margin:2px 0 4px}.fh .desc{-webkit-line-clamp:2;margin:4px 0 0}.fh .hi .row{margin-top:10px}.igrid{grid-template-columns:1fr 1fr}.tiles{grid-template-columns:1fr 1fr}.hero{padding:18px;min-height:240px}.hc{flex-direction:column;align-items:flex-start;gap:12px}.hcov{width:120px;height:120px}.hi h1,.fh .hi h1{font-size:28px}.fg{grid-template-columns:1fr}}
+.hero.fh{padding-left:72px;padding-right:72px}
+.fnav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center;background:rgba(7,29,19,.55);border:1px solid var(--line);color:var(--fg);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:.85}
+.fnav.l{left:14px}.fnav.r{right:14px}.fnav:hover,.fnav:focus-visible{opacity:1;background:rgba(7,29,19,.82)}.fnav:active{transform:translateY(-50%) scale(.94)}.fnav .i{width:22px;height:22px}
+@media(max-width:820px){.hero.fh{padding-left:50px;padding-right:50px}.fnav{width:34px;height:34px}.fnav.l{left:6px}.fnav.r{right:6px}.fnav .i{width:18px;height:18px}}
+.more{height:1px}
 /* rounded, modern surfaces */
 button{border-radius:14px;padding:9px 16px}.ic{border-radius:12px}
 .card .art{border-radius:18px}.big{border-radius:22px}.sm{border-radius:12px}.song{border-radius:14px}
@@ -253,20 +258,49 @@ const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let db,songs=new Map(),lists=[],S={t:'home'},hist=[];
 /* ---------- storage (IndexedDB) ---------- */
-const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('tunebox',4);r.onupgradeneeded=()=>['songs','blobs','lists','meta','log','art'].forEach(n=>{if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
+const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('tunebox',5);r.onupgradeneeded=()=>['songs','blobs','lists','meta','log','art','covers'].forEach(n=>{if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
 const idb=(st,mode,fn)=>new Promise((res,rej)=>{const tx=db.transaction(st,mode),r=fn(tx.objectStore(st));tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error)});
-const put=(st,o)=>idb(st,'readwrite',s=>s.put(o)),del=(st,id)=>idb(st,'readwrite',s=>s.delete(id));
+let ver=0;const bump=st=>{if(st=='songs'||st=='lists'||st=='log')ver++};
+const rawPut=(st,o)=>idb(st,'readwrite',s=>s.put(o));
+const put=(st,o)=>{bump(st);return st=='songs'?putSong(o):rawPut(st,o)},del=(st,id)=>{bump(st);return idb(st,'readwrite',s=>s.delete(id))};
 /* ---------- helpers ---------- */
 const h53=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^a>>>16,2246822507)^Math.imul(b^b>>>13,3266489909);b=Math.imul(b^b>>>16,2246822507)^Math.imul(a^a>>>13,3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
 const rnd=()=>Math.random().toString(36).slice(2,8),all=()=>[...songs.values()];
 const ttl=s=>s.title||s.fn.replace(/\.[^.]+$/,''),needs=s=>!s.title||!s.artist||!s.album||!s.cover;
 const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
 const art=(u,n,eager)=>u?`<img ${eager?'':'loading="lazy" '}src="${u}" alt="">`:`<div class="ph" style="background:hsl(${hue(n||'?')},42%,40%)">${esc((n||'?')[0].toUpperCase())}</div>`;
-const urls=new Map(),cu=s=>{if(!s.cover)return'';if(!urls.has(s.id))urls.set(s.id,URL.createObjectURL(s.cover));return urls.get(s.id)};
+const urlOf=new WeakMap(),cu=s=>{if(!s.cover)return'';let u=urlOf.get(s.cover);if(!u){u=URL.createObjectURL(s.cover);urlOf.set(s.cover,u)}return u};
 const lcover=l=>{if(l.img)return l.img;const s=l.songs.map(i=>songs.get(i)).find(s=>s&&s.cover);return s?cu(s):''};
 const fm=x=>isFinite(x)?(x/60|0)+':'+String(x%60|0).padStart(2,'0'):'0:00';
 let tt;const toast=m=>{const e=$('#toast');e.textContent=m;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>e.style.opacity=0,2000)};
 const byTitle=(a,b)=>ttl(songs.get(a)).localeCompare(ttl(songs.get(b)));
+/* ---------- caching: results are reused until songs, lists or the listening log change ---------- */
+const stamp=()=>ver+':'+LOG.length+':'+lists.length+':'+songs.size,MEMO=new Map();let memoS='';
+function memo(k,fn){const s=stamp();if(s!=memoS){MEMO.clear();memoS=s}if(!MEMO.has(k))MEMO.set(k,fn());return MEMO.get(k)}
+const shuffled=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+/* ---------- shared cover store: identical pictures are kept once, however many songs use them ---------- */
+const WM=new WeakMap(),COV=new Map();
+async function coverHash(b){const buf=await b.arrayBuffer();
+ if(window.crypto&&crypto.subtle){const d=new Uint8Array(await crypto.subtle.digest('SHA-256',buf));return'h'+[...d.slice(0,16)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+ const u=new Uint8Array(buf),step=Math.max(1,u.length/8192|0);let s='';for(let i=0;i<u.length;i+=step)s+=String.fromCharCode(u[i]);return'h'+h53(s)+h53(u.length+':'+s.slice(0,512))}
+async function normCover(s){const b=s.cover;if(!b)return;let h=WM.get(b);if(!h)h=await coverHash(b);if(s.cover!==b)return normCover(s);
+ const canon=COV.get(h);let fresh=false;if(canon){s.cover=canon;WM.set(canon,h)}else{COV.set(h,b);WM.set(b,h);fresh=true}
+ if(s.cvh!==h){s.cvh=h;s.mod=Date.now()}
+ if(fresh)await rawPut('covers',{id:h,blob:b})}
+async function putSong(s){if(s.cover&&WM.get(s.cover)!==s.cvh)await normCover(s);const{cover,...rec}=s;return idb('songs','readwrite',st=>st.put(rec))}
+async function putCover(h,b){COV.set(h,b);WM.set(b,h);await rawPut('covers',{id:h,blob:b})}
+async function gcCovers(){const used=new Set();for(const s of songs.values())if(s.cvh)used.add(s.cvh);for(const h of[...COV.keys()])if(!used.has(h)){COV.delete(h);await del('covers',h)}}
+/* ---------- long lists are drawn in chunks as you scroll ---------- */
+const CH=120,MORE=new Map(),KEEP=new Map();let moreN=0,viewKey='';
+const itemHtml=(it,ctx)=>typeof it=='string'?row(it,ctx):it.h;
+const io='IntersectionObserver'in window?new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting)loadMore(e.target)},{rootMargin:'900px 0px'}):null;
+function rowsHtml(items,ctx){if(!io||items.length<=CH)return items.map(it=>itemHtml(it,ctx)).join('');const k=viewKey+'|'+ctx,n=Math.min(items.length,Math.max(CH,KEEP.get(k)||0)),key='m'+(++moreN);MORE.set(key,{ids:items,ctx,n,k});
+ return items.slice(0,n).map(it=>itemHtml(it,ctx)).join('')+(n<items.length?`<div class="more" data-more="${key}"></div>`:'')}
+function loadMore(el){const m=MORE.get(el.dataset.more);if(!m)return;io.unobserve(el);const next=m.ids.slice(m.n,m.n+CH);m.n+=next.length;KEEP.set(m.k,m.n);el.insertAdjacentHTML('beforebegin',next.map(it=>itemHtml(it,m.ctx)).join(''));if(m.n>=m.ids.length)el.remove();else io.observe(el)}
+/* the newest group of imported songs: one import = one batch (older songs are grouped by how close together they were added) */
+function latestBatch(){return memo('lb',()=>{const ss=all().filter(s=>s.added).sort((a,b)=>b.added-a.added);if(!ss.length)return{ids:[],at:0};const f=ss[0];let g;
+ if(f.batch)g=ss.filter(s=>s.batch==f.batch);else{g=[f];for(let i=1;i<ss.length&&!ss[i].batch&&g[g.length-1].added-ss[i].added<=600000;i++)g.push(ss[i])}
+ g.sort((a,b)=>(a.album||'').localeCompare(b.album||'')||(a.disc||1)-(b.disc||1)||(a.trk||1e9)-(b.trk||1e9)||ttl(a).localeCompare(ttl(b)));return{ids:g.map(s=>s.id),at:f.batch||f.added}})}
 /* ---------- tag reading ---------- */
 const dec=(b,e)=>{try{let t;if(e==1)t=new TextDecoder(b[0]==254&&b[1]==255?'utf-16be':'utf-16le').decode(b);else t=new TextDecoder(e==2?'utf-16be':e==3?'utf-8':'iso-8859-1').decode(b);return t.replace(/\uFEFF|\0/g,'').trim()}catch{return''}};
 async function id3(f){const o={},hd=new Uint8Array(await f.slice(0,10).arrayBuffer());
@@ -301,54 +335,73 @@ async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayB
  for(let i=0;i<n&&p+4<b.length;i++){const l=dv.getUint32(p,true);p+=4;const t=new TextDecoder().decode(b.slice(p,p+l));p+=l;const k=t.indexOf('=');
   if(k>0){const key=t.slice(0,k).toLowerCase(),val=t.slice(k+1).trim();if(key=='title')o.title=val;if(key=='artist')o.artist=val;if(key=='album')o.album=val;if(key=='tracknumber')o.trk=parseInt(val)||0;if(key=='discnumber')o.disc=parseInt(val)||0}}
  return o}
-async function addFiles(files){let n=0;const newIds=[];
+async function addFiles(files){let n=0;const newIds=[],batch=Date.now();
  for(const f of files){if(!/\.(mp3|m4a|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
   let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.m4a$/i.test(f.name)?await m4a(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
-  const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,disc:t.disc||0,cover:t.cover||null,cmod:t.cover?Date.now():0,fav:0,rating:0,plays:0,added:Date.now(),mod:Date.now()};
+  const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,disc:t.disc||0,cover:t.cover||null,cmod:t.cover?Date.now():0,fav:0,rating:0,plays:0,added:Date.now(),batch,mod:Date.now()};
   songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});haveBlob.add(id);newIds.push(id);n++;if(n%5==0)toast('Adding… '+n)}
  toast(n?`Added ${n} song${n>1?'s':''}`:'Nothing new to add');render();offerCollections(newIds)}
 const getDur=f=>new Promise(res=>{const a=new Audio(),u=URL.createObjectURL(f);const done=d=>{a.src='';URL.revokeObjectURL(u);res(isFinite(d)&&d>0?d:0)};a.preload='metadata';a.onloadedmetadata=()=>done(a.duration);a.onerror=()=>done(0);setTimeout(()=>done(0),3000);a.src=u});
 async function backfill(){let fails=0,n=0;for(const s of all()){if(s.dur||fails>=3)continue;const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)continue;s.dur=await getDur(b.file);if(s.dur){fails=0;await put('songs',s);if(++n%25==0)render()}else fails++}if(n)render()}
 async function fitCover(f){try{const b=await createImageBitmap(f),k=Math.min(1,800/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(b,0,0,c.width,c.height);return await new Promise(r=>c.toBlob(o=>r(o||f),'image/jpeg',.9))}catch{return f}}
 /* ---------- collections & playlists ---------- */
-function colls(){return lists.filter(l=>l.type=='collection')}
-const pls=()=>lists.filter(l=>l.type=='playlist'),getList=id=>colls().find(c=>c.id==id)||lists.find(l=>l.id==id);
+function colls(){return memo('colls',()=>lists.filter(l=>l.type=='collection'))}
+const pls=()=>memo('pls',()=>lists.filter(l=>l.type=='playlist')),getList=id=>colls().find(c=>c.id==id)||lists.find(l=>l.id==id);
 function sub(p,cs){const set=new Set(p.songs);if(!set.size)return'';let best=null;
  for(const c of cs){if(c.id=='all'||c.id=='fav')continue;const cset=new Set(c.songs);if([...set].every(x=>cset.has(x))&&(!best||c.songs.length<best.songs.length))best=c}
  return best?best.name:''}
-function ctxIds(c){if(c.startsWith('stag:'))return all().filter(s=>(s.tags||[]).includes(c.slice(5))).map(s=>s.id).sort(byTitle);if(c.startsWith('kt:')){const l=lists.find(x=>x.id==c.slice(3));return((l&&l.keys)||[]).filter(i=>songs.has(i))}
+function ctxIds(c){if(c=='batch')return latestBatch().ids.filter(i=>songs.has(i));if(c.startsWith('stag:'))return all().filter(s=>(s.tags||[]).includes(c.slice(5))).map(s=>s.id).sort(byTitle);if(c.startsWith('kt:')){const l=lists.find(x=>x.id==c.slice(3));return((l&&l.keys)||[]).filter(i=>songs.has(i))}
  if(c=='view')return(S.viewIds||[]).filter(i=>songs.has(i));if(c=='lib')return(S.libIds||[]).filter(i=>songs.has(i));if(c=='top')return(S.topIds||[]).filter(i=>songs.has(i));
- if(c=='all')return all().map(s=>s.id).sort(byTitle);if(c=='fav')return all().filter(s=>s.fav).map(s=>s.id).sort(byTitle);if(c=='free'){const cm=collMap();return all().filter(s=>!cm.has(s.id)).map(s=>s.id).sort(byTitle)}
+ if(c=='all')return memo('ids:all',()=>all().map(s=>s.id).sort(byTitle));if(c=='fav')return memo('ids:fav',()=>all().filter(s=>s.fav).map(s=>s.id).sort(byTitle));if(c=='free'){const cm=collMap();return all().filter(s=>!cm.has(s.id)).map(s=>s.id).sort(byTitle)}
  if(c.startsWith('artist:'))return all().filter(s=>(s.artist||'Unknown artist')==c.slice(7)).map(s=>s.id).sort(byTitle);
  if(c=='search')return S.found||[];const l=getList(c);if(l&&l.type=='series')return serSongs(l).filter(i=>songs.has(i));return l?sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l):[]}
 
 /* ---------- sync with the home server ---------- */
-let cfg={},tomb={},haveBlob=new Set(),syncing=0,lastSync=0,activeBase='';
+let cfg={},tomb={},haveBlob=new Set(),syncing=0,lastSync=0,activeBase='',srvSeq=0,lastPush=0;
 const bases=()=>(cfg.url||'').split(',').map(s=>s.trim().replace(/\/+$/,'')).filter(Boolean);
 async function findServer(){for(const b of bases()){const c=new AbortController(),tm=setTimeout(()=>c.abort(),4000);try{const r=await fetch(b+'/api/ping',{headers:{Authorization:'Bearer '+cfg.token},signal:c.signal});clearTimeout(tm);if(r.ok||r.status==401)return activeBase=b}catch{clearTimeout(tm)}}return''}
-const saveCfg=()=>put('meta',{id:'cfg',...cfg}),saveTomb=()=>put('meta',{id:'tomb',map:tomb});
+const saveCfg=()=>put('meta',{id:'cfg',...cfg}),saveTomb=()=>put('meta',{id:'tomb',map:tomb}),saveSyncState=()=>put('meta',{id:'syncstate',seq:srvSeq,push:lastPush});
 const mime=fn=>/\.wav$/i.test(fn)?'audio/wav':/\.m4a$/i.test(fn)?'audio/mp4':/\.(ogg|oga|opus)$/i.test(fn)?'audio/ogg':'audio/mpeg';
 const strip=({cover,...r})=>r;
 const imgBlob=buf=>{const u=new Uint8Array(buf,0,4);return new Blob([buf],{type:u[0]==0x89?'image/png':u[0]==0x47?'image/gif':u[0]==0x52?'image/webp':'image/jpeg'})};
 async function sync(manual){
  if(!cfg.url||syncing)return;syncing=1;
+ try{if(await syncOnce(manual)=='reset')await syncOnce(manual)}finally{syncing=0;render()}}
+/* Delta sync: only records changed on this device since the last sync are sent, and only records
+   changed on the server since 'srvSeq' (its change counter) come back. Audio and covers are matched by id. */
+async function syncOnce(manual){
  let base='';const api=(p,o={})=>fetch(base+p,{...o,headers:{Authorization:'Bearer '+cfg.token,...(o.headers||{})}});
  try{
   base=await findServer();if(!base)throw new Error('offline');if(manual)toast('Syncing…');
-  const r=await api('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({songs:Object.fromEntries(all().map(s=>[s.id,strip(s)])),lists:Object.fromEntries(lists.map(l=>[l.id,l])),tomb})});
+  const t0=Date.now(),dS={},dL={},dT={};
+  for(const s of songs.values())if((s.mod||0)>=lastPush)dS[s.id]=strip(s);
+  for(const l of lists)if((l.mod||0)>=lastPush)dL[l.id]=l;
+  for(const[id,ts]of Object.entries(tomb))if(ts>=lastPush)dT[id]=ts;
+  const r=await api('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({songs:dS,lists:dL,tomb:dT,since:srvSeq})});
   if(r.status==401)throw new Error('Wrong access token');if(!r.ok)throw new Error('Server error '+r.status);
   const m=await r.json();
-  for(const[id,rec]of Object.entries(m.songs)){const s=songs.get(id);
+  if(m.reset){srvSeq=0;lastPush=0;await saveSyncState();return'reset'}   /* the server was reset or restored: send everything again */
+  for(const[id,rec]of Object.entries(m.songs||{})){const s=songs.get(id);
+   if(tomb[id]&&rec.mod>tomb[id])delete tomb[id];
    if(!s){const n={...rec,cover:null,cmod:0};songs.set(id,n);await put('songs',n)}
-   else if(rec.mod>s.mod){const c=s.cover,cm=s.cmod||0;Object.assign(s,rec,{cover:c,cmod:cm});await put('songs',s)}}
-  for(const id of[...songs.keys()])if(!m.songs[id]){songs.delete(id);urls.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
-  for(const l of lists)if(!m.lists[l.id])await del('lists',l.id);
-  const nl=Object.values(m.lists);for(const l of nl){const o=lists.find(x=>x.id==l.id);if(!o||l.mod>o.mod)await put('lists',l)}
-  lists=nl;tomb=m.tomb;await saveTomb();await migrateTags();await cleanTags();render();try{await syncLog(api)}catch{}
-  let cv=0;for(const s of songs.values()){const rc=m.covers[s.id]||0,lc=s.cmod||0;
-   if(s.cover&&lc>rc)await api(`/api/cover/${s.id}?cmod=${lc}`,{method:'PUT',body:s.cover});
-   else if(rc>lc||(rc&&!s.cover)){const c=await api('/api/cover/'+s.id);if(c.ok){s.cover=imgBlob(await c.arrayBuffer());s.cmod=rc;urls.delete(s.id);await put('songs',s);if(++cv%20==0)render()}}}
-  for(const l of lists){if(l.type!='collection'&&l.type!='series')continue;const loc=ART.get(l.id),rc=m.covers[l.id]||0,lc=loc?loc.cmod:0;
+   else if(rec.mod>s.mod){let c=s.cover;if(rec.cvh&&rec.cvh!==s.cvh)c=COV.get(rec.cvh)||null;const cm=s.cmod||0;Object.assign(s,rec,{cover:c,cmod:cm});await put('songs',s)}}
+  for(const l of Object.values(m.lists||{})){if(tomb[l.id]&&l.mod>tomb[l.id])delete tomb[l.id];const ix=lists.findIndex(x=>x.id==l.id);
+   if(ix<0){lists.push(l);await put('lists',l)}else if(l.mod>lists[ix].mod){lists[ix]=l;await put('lists',l)}}
+  for(const[id,ts]of Object.entries(m.tomb||{})){
+   const s=songs.get(id);if(s&&(s.mod||0)<=ts){songs.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
+   const li=lists.findIndex(x=>x.id==id);if(li>=0&&(lists[li].mod||0)<=ts){lists.splice(li,1);await del('lists',id)}
+   if(ts>(tomb[id]||0))tomb[id]=ts}
+  srvSeq=m.seq;lastPush=t0;await saveSyncState();await saveTomb();await gcCovers();
+  await migrateTags();await cleanTags();render();try{await syncLog(api)}catch{}
+  /* song covers are shared: one file per distinct picture, named by its hash */
+  const srvC=m.covers||{},want=new Set(),legacy=[];let cv=0;
+  for(const s of songs.values()){if(s.cvh){const b=COV.get(s.cvh);if(b){if(s.cover!==b){s.cover=b;cv++}}else if(srvC[s.cvh])want.add(s.cvh)}else if(!s.cover&&srvC[s.id])legacy.push(s)}
+  for(const h of want){const c=await api('/api/cover/'+h);if(!c.ok)continue;const b=imgBlob(await c.arrayBuffer());await putCover(h,b);for(const s of songs.values())if(s.cvh==h)s.cover=b;if(++cv%15==0)render()}
+  for(const s of legacy){const c=await api('/api/cover/'+s.id);if(!c.ok)continue;s.cover=imgBlob(await c.arrayBuffer());s.cmod=srvC[s.id];s.mod=Date.now();await put('songs',s);cv++}
+  const upH=[...new Set([...songs.values()].filter(s=>s.cvh&&COV.has(s.cvh)&&!srvC[s.cvh]).map(s=>s.cvh))];
+  for(const h of upH)await api(`/api/cover/${h}?cmod=1`,{method:'PUT',body:COV.get(h)});
+  if(cv){await gcCovers();artKey='';paint();render()}
+  for(const l of lists){if(l.type!='collection'&&l.type!='series')continue;const loc=ART.get(l.id),rc=srvC[l.id]||0,lc=loc?loc.cmod:0;
    if(!l.acmod){if(loc){ART.delete(l.id);await del('art',l.id)}continue}
    if(lc==l.acmod&&rc<l.acmod)await api(`/api/cover/${l.id}?cmod=${l.acmod}`,{method:'PUT',body:loc.blob});
    else if(lc<l.acmod&&rc>0){const c=await api('/api/cover/'+l.id);if(c.ok){const b=imgBlob(await c.arrayBuffer());ART.set(l.id,{blob:b,cmod:l.acmod});await put('art',{id:l.id,blob:b,cmod:l.acmod})}}}
@@ -358,8 +411,7 @@ async function sync(manual){
   for(const id of dn){toast(`Downloading ${++i} of ${dn.length}`);const a=await api('/api/audio/'+id);if(!a.ok)continue;const s=songs.get(id);
    await put('blobs',{id,file:new File([await a.blob()],s.fn,{type:mime(s.fn)})});haveBlob.add(id);if(i%10==0)render()}
   lastSync=Date.now();render();if(manual||up.length||dn.length)toast('Sync complete');
- }catch(e){if(e.message=='Wrong access token'||e.message.startsWith('Server error'))toast(e.message);else if(manual)toast('Server not reachable, so nothing was synced')}
- finally{syncing=0;render()}}
+ }catch(e){if(e.message=='Wrong access token'||e.message.startsWith('Server error'))toast(e.message);else if(manual)toast('Server not reachable, so nothing was synced')}}
 /* ---------- icons (no emoji: these render the same everywhere) ---------- */
 const LOGO='data:image/png;base64,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';
 const ICONS={
@@ -378,7 +430,7 @@ const ICONS={
  volume:'<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
  mute:'<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>',
  more:'<circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/>',
- back:'<path d="M19 12H5M12 19l-7-7 7-7"/>',chevR:'<path d="M9 6l6 6-6 6"/>',chevDown:'<path d="M6 9l6 6 6-6"/>',
+ back:'<path d="M19 12H5M12 19l-7-7 7-7"/>',chevR:'<path d="M9 6l6 6-6 6"/>',chevL:'<path d="M15 6l-6 6 6 6"/>',chevDown:'<path d="M6 9l6 6 6-6"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',
  alert:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
  cloud:'<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
@@ -397,8 +449,6 @@ function initIcons(){$$('img.lg').forEach(i=>i.src=LOGO);const m={bShuf:'shuffle
 /* ---------- views ---------- */
 const card=(id,name,subt,cover,act='go',html='')=>`<div class="card" data-act="${act}" data-id="${esc(id)}"><div class="art">${html||art(cover,name)}</div><b>${esc(name)}</b><small>${esc(subt||'')}&nbsp;</small></div>`;
 const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song${sel.has(id)?' picked':''}" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"><span class="ck"></span>${keyCol?`<span class="tn">${tnum(s)}</span>`:''}<div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> '+ic('cloud')+'</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small>${(s.tags||[]).length?`<span class="chips sm2">${s.tags.map(tag).filter(Boolean).map(x=>chip(x)).join('')}</span>`:''}</div>${s.fav?'<span class="fv">'+ic('heartFill')+'</span>':''}${s.plays?`<span class="pc" title="Times played">${ic('play')}${s.plays}</span>`:''}${keyCol?`<button class="ic kb${keySet.has(id)?' on':''}" data-act="keyT" data-id="${id}" data-col="${esc(keyCol)}" title="Key track">${ic(keySet.has(id)?'starFill':'star')}</button>`:''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}">${ic('more')}</button></div>`};
-function ccard(c){const set=new Set(c.songs),mt=[splitList(c.console)[0],c.year].filter(Boolean).join(' · '),np=pls().filter(p=>p.col==c.id||p.songs.some(x=>set.has(x))).length,tg=etags(c).map(tag).filter(Boolean).slice(0,3);
- return`<div class="card cc" data-act="go" data-id="${esc(c.id)}"><div class="art">${art(lcover(c),c.name)}</div><b>${esc(c.name)}</b>${mt?`<small>${esc(mt)}</small>`:''}<small>${c.songs.length} songs${np?` · ${np} playlist${np>1?'s':''}`:''}</small>${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}</div>`}
 const EMPTY='<div class="empty"><h2>Your game music, all in one place</h2><p class="mut">Add your soundtrack files (MP3, M4A, WAV or OGG). On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
 const phead=(title,btns)=>`<div class="phd"><h1>${title}</h1><div class="row" style="margin:0">${btns||''}</div></div>`;
 const sortSelHtml=()=>`<select id="sortSel">${[['az','A to Z'],['za','Z to A'],['new','Newest first'],['old','Oldest first'],['big','Most songs']].map(o=>`<option value="${o[0]}" ${sortK==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`;
@@ -406,7 +456,7 @@ const tagBar=f=>lists.filter(l=>l.type=='ltag').map(x=>chip(x,'f',f==x.id)).join
 function ccard(c){const set=new Set(c.songs),np=pls().filter(p=>p.col==c.id||p.songs.some(x=>set.has(x))).length,tg=etags(c).map(tag).filter(Boolean).slice(0,3);
  return`<div class="card cc" data-act="go" data-id="${esc(c.id)}"><div class="art">${art(lcover(c),c.name)}</div><b>${esc(c.name)}</b><small>${c.songs.length} songs${np?` · ${np} playlist${np>1?'s':''}`:''}</small>${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}</div>`}
 function vHome(){if(!songs.size&&!lists.length)return EMPTY;
- const cols=colls(),serAll=lists.filter(l=>l.type=='series'),cur=songs.get(Q[qi]),need=all().filter(needs).length,rc=recents(),hasLog=LOG.length>0,mode=hasLog?(S.hm||'time'):'plays';
+ const cols=colls(),serAll=lists.filter(l=>l.type=='series'),cur=songs.get(Q[qi]),need=all().filter(needs).length,rc=recents(),lb=latestBatch(),hasLog=LOG.length>0,mode=hasLog?(S.hm||'time'):'plays';
  const ac=agg(e=>e.coll),sp=agg(e=>e.song);
  const mp=cols.map(c=>{const a=ac.get(c.id)||{secs:0,plays:0};return{c,secs:a.secs,plays:hasLog?a.plays:c.songs.reduce((n,i)=>n+((songs.get(i)||{}).plays||0),0)}}).filter(x=>mode=='time'?x.secs>0:x.plays>0).sort((a,b)=>mode=='time'?b.secs-a.secs:b.plays-a.plays).slice(0,8);
  const ra=[...cols].sort((a,b)=>created(b)-created(a)).slice(0,8);
@@ -417,17 +467,18 @@ function vHome(){if(!songs.size&&!lists.length)return EMPTY;
  +featHtml()+(cur&&paused?`<div class="resume"><div class="sm">${art(cu(cur),ttl(cur))}</div><div class="t"><small>Pick up where you left off</small><b>${esc(ttl(cur))}</b><small>${esc(ccl?ccl.name:cur.artist||'')} · ${fm(realSrc()?au.currentTime:resumePos)} of ${fm(cur.dur||0)}</small></div><button class="p" data-act="resume">Resume</button></div>`:'')
  +`<div class="row"><button class="p" data-act="qshuf" data-id="all">Shuffle everything</button>${serAll.slice(0,6).map(s=>`<button data-act="qshuf" data-id="${esc(s.id)}">Shuffle ${esc(s.name)}</button>`).join('')}</div>`
  +(rc.length?`<h2>Recently played</h2><div class="rec">${rc.map(([c,s])=>{const l=lists.find(x=>x.id==c);return card(c,l.name,ttl(s),lcover(l))}).join('')}</div>`:'')
+ +(lb.ids.length?`<div class="bar" style="align-items:baseline"><h2>Recently added <small style="display:inline">${lb.ids.length} song${lb.ids.length>1?'s':''} · ${new Date(lb.at).toLocaleDateString()}</small></h2><div class="row" style="margin:0"><button data-act="plall" data-id="batch">${ic('play')} Play</button>${lb.ids.length>6?`<button data-act="batchAll">See all ${lb.ids.length}</button>`:''}</div></div>${lb.ids.slice(0,6).map(i=>row(i,'batch')).join('')}`:'')
  +(mp.length?`<div class="bar" style="align-items:baseline"><h2>Most played collections</h2>${hasLog?`<div class="chips"><span class="chip${mode=='time'?' on':''}" style="--c:var(--acc)" data-act="hm" data-k="time">Time</span><span class="chip${mode=='plays'?' on':''}" style="--c:var(--acc)" data-act="hm" data-k="plays">Plays</span></div>`:''}</div><div class="rec">${mp.map(x=>card(x.c.id,x.c.name,mode=='time'?fmtT(x.secs)+' listened':x.plays+' plays',lcover(x.c))).join('')}</div>`:'')
- +(ra.length?`<h2>Recently added</h2><div class="rec">${ra.map(c=>card(c.id,c.name,c.songs.length+' songs',lcover(c))).join('')}</div>`:'')
+ +(ra.length?`<h2>New collections</h2><div class="rec">${ra.map(c=>card(c.id,c.name,c.songs.length+' songs',lcover(c))).join('')}</div>`:'')
  +`<div class="two"><div><h2>Top songs</h2>${topIds.map(i=>row(i,'top')).join('')||'<p class="mut">Songs you play will show up here.</p>'}</div><div><h2>Favourites</h2>${favIds.map(i=>row(i,'fav')).join('')||'<p class="mut">Tap the heart on a song to add it here.</p>'}</div></div>`
  +`<h2>This month in numbers</h2><div class="kpis" data-act="goStats" style="cursor:pointer"><div class="kpi"><small>Listening time</small><b>${fmtT(mo.secs)}</b></div><div class="kpi"><small>Plays</small><b>${mo.plays}</b></div><div class="kpi"><small>Top collection</small><b style="font-size:16px">${mcl?esc(mcl.name):'None yet'}</b></div></div>`}
-function vLibrary(){const cols=colls(),c=S.sc,tg=S.sf,fav=S.fav,ctx0=tg?'stag:'+tg:fav?'fav':c||'all';let ids=ctxIds(ctx0);if(S.need)ids=ids.filter(i=>needs(songs.get(i)));
+function vLibrary(){const cols=colls(),c=S.sc,tg=S.sf,fav=S.fav,ctx0=S.lb?'batch':tg?'stag:'+tg:fav?'fav':c||'all';let ids=ctxIds(ctx0);if(S.need)ids=ids.filter(i=>needs(songs.get(i)));
  const tags=c?lists.filter(l=>l.type=='stag'&&l.col==c):[];let h;
  if(S.ga){const m=new Map();for(const i of ids){const a=songs.get(i).artist||'Unknown artist';if(!m.has(a))m.set(a,[]);m.get(a).push(i)}
-  const gs=[...m].sort((a,b)=>a[0].localeCompare(b[0]));ids=gs.flatMap(g=>g[1]);h=gs.map(([a,xs])=>`<div class="ah"><h2 class="lnk2" data-act="artist" data-id="${esc(a)}">${esc(a)}</h2><small>${xs.length} songs</small></div>`+xs.map(i=>row(i,'lib')).join('')).join('')}
- else h=ids.map(i=>row(i,'lib')).join('');
+  const gs=[...m].sort((a,b)=>a[0].localeCompare(b[0]));ids=gs.flatMap(g=>g[1]);h=rowsHtml(gs.flatMap(([a,xs])=>[{h:`<div class="ah"><h2 class="lnk2" data-act="artist" data-id="${esc(a)}">${esc(a)}</h2><small>${xs.length} songs</small></div>`},...xs]),'lib')}
+ else h=rowsHtml(ids,'lib');
  S.libIds=ids;
- return phead('Library',`<button class="p" data-act="addfiles">Add songs</button><button data-act="selStart" data-ctx="${esc(ctx0)}">Select</button>`)+`<div class="bar"><div class="chips"><span class="chip${fav?' on':''}" style="--c:#c2477a" data-act="favf">${ic('heart')} Favourites</span><span class="chip${S.need?' on':''}" style="--c:var(--gold)" data-act="needf">${ic('alert')} Needs info</span><span class="chip${S.ga?' on':''}" style="--c:var(--acc)" data-act="gaToggle">Group by artist</span></div><select id="scSel"><option value="">All collections</option>${cols.map(x=>`<option value="${x.id}" ${c==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>${tags.length?`<div class="chips" style="margin-top:10px">${tags.map(x=>chip(x,'sf',tg==x.id)).join('')}</div>`:''}<h2>${ids.length} songs</h2>`+(h||'<p class="mut">No songs match.</p>')}
+ return phead('Library',`<button class="p" data-act="addfiles">Add songs</button><button data-act="selStart" data-ctx="${esc(ctx0)}">Select</button>`)+`<div class="bar"><div class="chips"><span class="chip${fav?' on':''}" style="--c:#c2477a" data-act="favf">${ic('heart')} Favourites</span><span class="chip${S.lb?' on':''}" style="--c:var(--acc)" data-act="lbf">${ic('plus')} Latest import</span><span class="chip${S.need?' on':''}" style="--c:var(--gold)" data-act="needf">${ic('alert')} Needs info</span><span class="chip${S.ga?' on':''}" style="--c:var(--acc)" data-act="gaToggle">Group by artist</span></div><select id="scSel"><option value="">All collections</option>${cols.map(x=>`<option value="${x.id}" ${c==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>${tags.length?`<div class="chips" style="margin-top:10px">${tags.map(x=>chip(x,'sf',tg==x.id)).join('')}</div>`:''}<h2>${ids.length} songs</h2>`+(h||'<p class="mut">No songs match.</p>')}
 function vSeriesPage(ex){const f=S.f,ss=sorted(lists.filter(l=>l.type=='series'&&(!f||(l.tags||[]).includes(f))).map(s=>({...s,songs:serSongs(s)})));
  return(ex?'':phead('Series',`<button class="p" data-act="newList" data-k="series">New series</button>`))+`<div class="bar"><div class="chips">${tagBar(f)}</div>${sortSelHtml()}</div><div class="grid lg" style="margin-top:14px">${ss.map(s=>card(s.id,s.name,`${colls().filter(c=>c.ser==s.id).length} collections · ${s.songs.length} songs`,'','go',serArt(s))).join('')||'<p class="mut">No series yet. Use New series to make your first.</p>'}</div>`}
 function vCollections(ex){const cs0=colls(),f=S.f,serAll=lists.filter(l=>l.type=='series'),serIds=new Set(serAll.map(s=>s.id)),has=c=>!f||etags(c).includes(f),cs=sorted(cs0.filter(has)),sers=sorted(serAll.map(s=>({...s,songs:serSongs(s)})));let body;
@@ -451,7 +502,7 @@ function vExplore(){const tiles=[['console','Console','gamepad'],['decade','Deca
  +`<div id="exGrid">${exBody()}</div>`}
 function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>${b}</div>`;
  return phead('Settings')+'<div class="setg">'
- +sec('Sync',`<p class="mut">${sc?`Connected to ${esc(bases()[0]||sc)}${lastSync?' · last synced '+new Date(lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}.`:'Keep your PC and phone in step over your home Wi-Fi.'}</p><div class="row"><button class="p" data-act="syncSet">${sc?'Edit connection':'Set up sync'}</button>${sc?'<button data-act="syncNow">Sync now</button>':''}</div>`)
+ +sec('Sync',`<p class="mut">${sc?`Connected to ${esc(bases()[0]||sc)}${lastSync?' · last synced '+new Date(lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}.`:'Keep your PC and phone in step over your home Wi-Fi.'}</p><div class="row"><button class="p" data-act="syncSet">${sc?'Edit connection':'Set up sync'}</button>${sc?'<button data-act="syncNow">Sync now</button><button data-act="fullSync">Full resync</button>':''}</div>`)
  +sec('Tags','<p class="mut">Rename, recolour and give icons to your tags.</p><div class="row"><button data-act="tagMgrOpen">Manage tags</button></div>')
  +sec('Library','<p class="mut" id="stu">Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button></div>')
  +sec('Backup','<p class="mut">Playlists, tags, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
@@ -494,7 +545,7 @@ function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i))
  +infoGrid(l)
  +`<div class="bar" style="align-items:baseline"><h2>Key tracks</h2>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`+(keys.length?`<div class="keys">${keys.map((k,i)=>keyRow(k,i,l.id)).join('')}</div>`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>')
  +`<div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`+(ps.length?`<div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,lcover(p))).join('')}</div>`:'<p class="mut">No playlists yet.</p>')
- +songsHead(l,ids.length)+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(shown.map(i=>row(i,ctx)).join('')||'<p class="mut">No songs yet. Use Add songs.</p>')}
+ +songsHead(l,ids.length)+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(rowsHtml(shown,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>')}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  if(l.type=='series')return vSeries(l);if(l.type=='collection')return vGame(l);
  const own=lists.find(x=>x.id==l.id),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null;
@@ -503,27 +554,29 @@ function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act=
   const ps=pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x))).map(p=>({p,s:sub(p,cs)})).sort((a,b)=>!!b.s-!!a.s||a.p.name.localeCompare(b.p.name));
   h+=`<h2>Playlists</h2><div class="grid">${ps.map(x=>card(x.p.id,x.p.name,x.s,lcover(x.p))).join('')||'<p class="mut">No playlists use songs from this collection yet.</p>'}</div>`}
  const lt=l.type=='collection'?lists.filter(x=>x.type=='stag'&&x.col==l.id):[],lf=S.lf&&lt.some(x=>x.id==S.lf)?S.lf:null,shown=lf?ids.filter(i=>(songs.get(i).tags||[]).includes(lf)):ids,ctx=lf?'stag:'+lf:l.id;
- return h+songsHead(l,ids.length)+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(shown.map(i=>row(i,ctx)).join('')||'<p class="mut">No songs yet.</p>')}
+ return h+songsHead(l,ids.length)+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(rowsHtml(shown,ctx)||'<p class="mut">No songs yet.</p>')}
 const artistsMap=()=>{const m=new Map();for(const s of songs.values()){const a=s.artist||'Unknown artist';if(!m.has(a))m.set(a,[]);m.get(a).push(s)}return[...m].sort((a,b)=>a[0].localeCompare(b[0]))};
 function vArtists(){return`<h2>Artists</h2><div class="grid">${artistsMap().map(([a,ss])=>card(a,a,ss.length+' songs',(ss.find(s=>s.cover)?cu(ss.find(s=>s.cover)):''),'artist')).join('')}</div>`}
-function vArtist(){const c='artist:'+S.id,ids=ctxIds(c);return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div><h1>${esc(S.id)}</h1><small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${esc(c)}">Play</button><button data-act="shuf" data-id="${esc(c)}">Shuffle</button></div></div></div>`+ids.map(i=>row(i,c)).join('')}
+function vArtist(){const c='artist:'+S.id,ids=ctxIds(c);return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div><h1>${esc(S.id)}</h1><small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${esc(c)}">Play</button><button data-act="shuf" data-id="${esc(c)}">Shuffle</button></div></div></div>`+rowsHtml(ids,c)}
 function vSearch(){const q=S.q.toLowerCase(),ids=all().filter(s=>(ttl(s)+' '+s.artist+' '+s.album).toLowerCase().includes(q)).sort((a,b)=>ttl(a).localeCompare(ttl(b))).map(s=>s.id).slice(0,200);S.found=ids;
  const ls=[...lists.filter(x=>x.type=='series'),...pls(),...colls().filter(c=>c.id!='all'&&c.id!='fav')].filter(l=>l.name.toLowerCase().includes(q)),cs=colls();
- return`<h2>Series, collections and playlists</h2><div class="grid">${ls.map(l=>card(l.id,l.name,l.type=='playlist'?sub(l,cs):l.type=='series'?'Series':'Collection',lcover(l),'go',l.type=='series'?serArt(l):'')).join('')||'<p class="mut">No matches.</p>'}</div><h2>Songs</h2>`+(ids.map(i=>row(i,'search')).join('')||'<p class="mut">No matches.</p>')}
+ return`<h2>Series, collections and playlists</h2><div class="grid">${ls.map(l=>card(l.id,l.name,l.type=='playlist'?sub(l,cs):l.type=='series'?'Series':'Collection',lcover(l),'go',l.type=='series'?serArt(l):'')).join('')||'<p class="mut">No matches.</p>'}</div><h2>Songs</h2>`+(rowsHtml(ids,'search')||'<p class="mut">No matches.</p>')}
 function navKey(){if(S.t=='list'){const l=getList(S.id);return l?({collection:'explore',series:'explore',playlist:'playlists'}[l.type]||'home'):'home'}if(S.t=='artist')return'library';return S.t}
-let lastKey='';function render(){keyCol=null;const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
- $('#main').innerHTML=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();if(S.t=='settings'&&!S.q)storageInfo();if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
+let lastKey='',rq=0;
+function render(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;doRender()})}
+function doRender(){keyCol=null;MORE.clear();const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');if(nk2!=lastKey)KEEP.clear();viewKey=nk2;$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
+ $('#main').innerHTML=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();if(S.t=='settings'&&!S.q)storageInfo();if(io)$$('#main .more').forEach(el=>io.observe(el));if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
 /* ---------- stats ---------- */
 let LOG=[],logSeq=0,statsMeta=null;
 const inRange=(e,y,m)=>{const d=new Date(e.t);return(y===''||y==null||d.getFullYear()==y)&&(m===''||m==null||d.getMonth()==m)};
-function agg(keyFn,y,m){const r=new Map();for(const e of LOG){if(!inRange(e,y,m))continue;const k=keyFn(e);if(!k)continue;const o=r.get(k)||{secs:0,plays:0};o.secs+=e.secs||0;o.plays+=e.play?1:0;r.set(k,o)}return r}
+function agg(keyFn,y,m){return memo('agg:'+keyFn+'|'+y+'|'+m,()=>{const r=new Map();for(const e of LOG){if(!inRange(e,y,m))continue;const k=keyFn(e);if(!k)continue;const o=r.get(k)||{secs:0,plays:0};o.secs+=e.secs||0;o.plays+=e.play?1:0;r.set(k,o)}return r})}
 const fmtT=s=>{s=Math.round(s||0);if(s<60)return s+'s';const d=s/86400|0,h=(s%86400)/3600|0,m=(s%3600)/60|0;return d?`${d}d ${h}h ${m}m`:h?`${h}h ${m}m`:`${m}m`};
 async function syncLog(api){const pend=LOG.filter(e=>!e.sent),r=await api('/api/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({events:pend.map(({sent,seq,...x})=>x),since:logSeq})});if(!r.ok)return;const m=await r.json();
  for(const e of pend){e.sent=1;await put('log',e)}const have=new Set(LOG.map(e=>e.id));
  for(const e of m.events)if(!have.has(e.id)){const n={...e,sent:1};LOG.push(n);await put('log',n)}
  logSeq=m.seq;await put('meta',{id:'logseq',n:logSeq})}
 /* ---------- player ---------- */
-let artKey='';const au=new Audio();let Q=[],qi=-1,shuf=0,rep=0,curUrl=null,counted=0,curCtx='',resumePos=0,sess=null,lastT=0,seeking='';
+let artKey='';const au=new Audio();let Q=[],Q0=null,qi=-1,shuf=0,rep=0,curUrl=null,counted=0,curCtx='',resumePos=0,sess=null,lastT=0,seeking='';
 const realSrc=()=>!!au.src&&!au.src.startsWith('data:');
 function sessNew(s){const c=collOf(s.id),cl=c&&lists.find(l=>l.id==c),pl=lists.find(l=>l.id==curCtx&&l.type=='playlist');sess={song:s.id,coll:c,ser:cl&&cl.ser,pl:pl&&pl.id,secs:0,tot:0,played:0,t:Date.now()};lastT=0}
 async function flush(){const x=sess;if(!x||(x.secs<1&&!x.played))return;const e={id:'e'+Date.now().toString(36)+rnd(),t:x.t,song:x.song,coll:x.coll,ser:x.ser,pl:x.pl,secs:Math.round(x.secs),play:x.played};x.secs=0;x.played=0;x.t=Date.now();LOG.push(e);await put('log',e)}
@@ -535,7 +588,7 @@ async function playAt(i,o={}){if(i<0||i>=Q.length)return;await flush();qi=i;coun
  if(o.pos)au.addEventListener('loadedmetadata',()=>{au.currentTime=o.pos},{once:true});
  au.play().catch(()=>{});paint();savePlay()}
 function startPlay(ids,id,sf,ctx){if(!ids.length)return;if(sf!==undefined)shuf=sf;curCtx=ctx||'';ids=ids.slice();
- if(shuf){const f=id||ids[Math.random()*ids.length|0];Q=[f,...ids.filter(x=>x!=f).sort(()=>Math.random()-.5)];playAt(0)}else{Q=ids;playAt(id?ids.indexOf(id):0)}}
+ if(shuf){const f=id||ids[Math.random()*ids.length|0];Q0=ids.slice();Q=[f,...shuffled(ids.filter(x=>x!=f))];playAt(0)}else{Q0=null;Q=ids;playAt(id?ids.indexOf(id):0)}}
 function next(auto){if(!Q.length)return;if(rep==2&&auto)return playAt(qi);let n=qi+1;if(n>=Q.length){if(rep==1||!auto)n=0;else{au.pause();return}}playAt(n)}
 function prev(){if(realSrc()&&au.currentTime>3)au.currentTime=0;else playAt(Math.max(0,qi-1))}
 function toggle(){if(!realSrc()){if(Q.length)playAt(qi,{pos:resumePos});return}au.paused?au.play():au.pause()}
@@ -545,12 +598,12 @@ function setVol(v){v=Math.max(0,Math.min(1,v));au.volume=v;au.muted=false;$('#bV
 function enq(id,now){if(!Q.length){startPlay([id],id);return}if(now)Q.splice(qi+1,0,id);else Q.push(id);paintQ();toast(now?'Playing next':'Added to queue')}
 function paintPlay(){const h=ic(!realSrc()||au.paused?'play':'pause');for(const id of['bPlay','nPlay','pPlay'])$('#'+id).innerHTML=h}
 function paintQ(){const rw=(id,k,small)=>{const s=songs.get(id);return s?`<div class="song" data-act="jump" data-i="${qi+1+k}">${small?`<div class="sm">${art(cu(s),ttl(s))}</div>`:''}<div class="t"><b>${esc(ttl(s))}</b><small>${esc(s.artist)}</small></div></div>`:''},up=Q.slice(qi+1);
- $('#nQ').innerHTML=up.slice(0,100).map((id,k)=>rw(id,k,0)).join('')||'<p class="mut">Nothing queued.</p>';$('#pQ').innerHTML=up.slice(0,6).map((id,k)=>rw(id,k,1)).join('')||'<p class="mut">Nothing queued.</p>'}
+ $('#nQ').innerHTML=up.slice(0,100).map((id,k)=>rw(id,k,0)).join('')||'<p class="mut">Nothing queued.</p>';$('#pQ').innerHTML=up.slice(0,6).map((id,k)=>rw(id,k,1)).join('')||'<p class="mut">Nothing queued.</p>';qSheetRender()}
 function uiTime(){const real=realSrc(),s=songs.get(Q[qi]),d=real&&au.duration?au.duration:(s&&s.dur)||0,c=real?au.currentTime:resumePos,p=d?Math.min(100,c/d*100):0;
  for(const[id,cu2,du]of[['bSeek','bCur','bDur'],['nSeek','nCur','nDur'],['pSeek','pCur','pDur']]){if(seeking==id)continue;const e=$('#'+id);e.max=d||1;e.value=c;e.style.setProperty('--p',p+'%');$('#'+cu2).textContent=fm(c);$('#'+du).textContent=fm(d)}}
 function paint(){const s=songs.get(Q[qi]);
- if(!s){$('#bT').textContent='Nothing playing';$('#bS').innerHTML='';$('#bTags').innerHTML='';$('#bArt').innerHTML='';$('#rpArt').innerHTML='<div class="ph" style="background:var(--bg)"><img src="${LOGO}" alt="" style="width:58%;height:auto;opacity:.3"></div>';$('#rpT').textContent='Nothing playing';$('#rpP').textContent='';artKey='';$('#rpS').textContent='Pick a song to start';$('#pTags').innerHTML='';paintPlay();paintQ();uiTime();return}
- const a=art(cu(s),ttl(s),1),ak=s.id+':'+(s.cmod||0),cid=collOf(s.id),cl=cid&&lists.find(l=>l.id==cid),tg=(s.tags||[]).map(tag).filter(Boolean),colh=cl?`<span class="lnk" data-act="go" data-id="${esc(cl.id)}">${esc(cl.name)}</span>`:esc(s.artist||'Unknown artist'),tgh=tg.map(x=>chip(x)).join('');
+ if(!s){$('#bT').textContent='Nothing playing';$('#bS').innerHTML='';$('#bTags').innerHTML='';$('#bArt').innerHTML='';$('#rpArt').innerHTML=`<div class="ph" style="background:var(--bg)"><img src="${LOGO}" alt="" style="width:58%;height:auto;opacity:.3"></div>`;$('#rpT').textContent='Nothing playing';$('#rpP').textContent='';artKey='';$('#rpS').textContent='Pick a song to start';$('#pTags').innerHTML='';paintPlay();paintQ();uiTime();return}
+ const a=art(cu(s),ttl(s),1),ak=s.id+':'+(s.cvh||s.cmod||0),cid=collOf(s.id),cl=cid&&lists.find(l=>l.id==cid),tg=(s.tags||[]).map(tag).filter(Boolean),colh=cl?`<span class="lnk" data-act="go" data-id="${esc(cl.id)}">${esc(cl.name)}</span>`:esc(s.artist||'Unknown artist'),tgh=tg.map(x=>chip(x)).join('');
  $('#bT').textContent=ttl(s);$('#bT').title=ttl(s);$('#bS').innerHTML=colh;$('#bTags').innerHTML=tgh;if(artKey!=ak){$('#bArt').innerHTML=a;$('#rpArt').innerHTML=a;$('#nArt').innerHTML=a;artKey=ak}
  $('#rpP').textContent=s.plays?`Played ${s.plays} time${s.plays>1?'s':''}`:'Not played yet';$('#rpT').textContent=ttl(s);$('#rpS').innerHTML=colh;$('#pTags').innerHTML=tgh;
  $('#nT').textContent=ttl(s);$('#nA').textContent=(s.artist||'Unknown artist')+(s.album?' · '+s.album:'')+(s.plays?` · ${s.plays} play${s.plays>1?'s':''}`:'');
@@ -567,13 +620,21 @@ au.ontimeupdate=()=>{if(!realSrc())return;const d=au.duration||0,c=au.currentTim
  if(!counted&&d&&sess&&sess.tot>Math.min(30,d/2)){counted=1;const s=songs.get(Q[qi]);if(s){s.plays++;s.mod=Date.now();put('songs',s);if(sess)sess.played=1}}};
 setInterval(()=>{if(realSrc()&&!au.paused){flush();savePlay()}},30000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){flush();savePlay()}});addEventListener('pagehide',()=>{flush();savePlay()});
-if('mediaSession'in navigator){const m=navigator.mediaSession;m.setActionHandler('play',toggle);m.setActionHandler('pause',()=>au.pause());m.setActionHandler('previoustrack',prev);m.setActionHandler('nexttrack',()=>next());m.setActionHandler('seekto',e=>{if(realSrc())au.currentTime=e.seekTime})}
+/* lock screen / headphones: previous and next song (not +-10 s), plus a working scrubber */
+function posState(){const m=navigator.mediaSession;if(!m||!m.setPositionState)return;const d=au.duration;if(!realSrc()||!isFinite(d)||d<=0)return;try{m.setPositionState({duration:d,position:Math.min(Math.max(0,au.currentTime),d),playbackRate:au.playbackRate||1})}catch{}}
+if('mediaSession'in navigator){const m=navigator.mediaSession,h=(a,f)=>{try{m.setActionHandler(a,f)}catch{}};
+ h('play',toggle);h('pause',()=>au.pause());h('previoustrack',prev);h('nexttrack',()=>next());h('seekbackward',null);h('seekforward',null);h('seekto',e=>{if(realSrc()){au.currentTime=e.seekTime;posState()}});
+ for(const ev of['loadedmetadata','durationchange','play','pause','seeked','ratechange'])au.addEventListener(ev,()=>{posState();m.playbackState=au.paused?'paused':'playing'});
+ au.addEventListener('emptied',()=>{try{m.setPositionState()}catch{}})}
 initIcons();
 for(const[a,f]of[['bPlay',toggle],['nPlay',toggle],['pPlay',toggle],['bPrev',prev],['nPrev',prev],['pPrev',prev],['bNext',()=>next()],['nNext',()=>next()],['pNext',()=>next()]])$('#'+a).onclick=f;
 $('#nClose').onclick=()=>$('#np').hidden=true;
 for(const id of['bSeek','nSeek','pSeek']){const e=$('#'+id);e.onpointerdown=()=>seeking=id;e.onpointerup=e.onpointercancel=()=>{seeking='';uiTime()};e.oninput=ev=>{const v=+ev.target.value;if(realSrc())au.currentTime=v;else{resumePos=v;uiTime()}}}
 $('#bVol').oninput=e=>setVol(+e.target.value);$('#vol').oninput=e=>setVol(+e.target.value);$('#bMute').onclick=()=>{au.muted=!au.muted;paintMute()};
-const doShuf=()=>{shuf=!shuf?1:0;if(shuf&&qi>=0){const r=Q.splice(qi+1).sort(()=>Math.random()-.5);Q.push(...r)}paint()},doRep=()=>{rep=(rep+1)%3;paint()},doFav=()=>{if(Q[qi])fav(Q[qi])};
+const doShuf=()=>{shuf=!shuf?1:0;if(qi>=0){
+  if(shuf){Q0=Q.slice();Q.push(...shuffled(Q.splice(qi+1)))}
+  else if(Q0){const ix=new Map(Q0.map((x,i)=>[x,i])),up=Q.slice(qi+1),rest=up.filter(x=>ix.has(x)).sort((a,b)=>ix.get(a)-ix.get(b)),extra=up.filter(x=>!ix.has(x));Q.splice(qi+1,Infinity,...rest,...extra);Q0=null}
+  savePlay()}paint()},doRep=()=>{rep=(rep+1)%3;paint()},doFav=()=>{if(Q[qi])fav(Q[qi])};
 $('#nShuf').onclick=$('#bShuf').onclick=$('#pShuf').onclick=doShuf;$('#nRep').onclick=$('#bRep').onclick=$('#pRep').onclick=doRep;$('#nFav').onclick=$('#bFav').onclick=$('#pFav').onclick=doFav;
 addEventListener('pointerdown',()=>{if(realSrc())return;au.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';au.play().catch(()=>{})},{once:true});
 /* keyboard shortcuts */
@@ -596,7 +657,7 @@ function pop(anchor,items,right){closePop();const r=anchor.getBoundingClientRect
  d.onclick=e=>{const b=e.target.closest('.mi');if(b){const f=items[b.dataset.i][1];closePop();f()}};popEl=d;popOff=e=>{if(!d.contains(e.target))closePop()};document.addEventListener('mousedown',popOff,true)}
 /* ---------- tags, sorting, selection, list settings ---------- */
 const PAL=['#A9C5F5','#D9AA45','#7FC8A0','#E08A7A','#B79CE8','#6FC3D6','#C7B26B'];
-const tag=id=>lists.find(l=>l.id==id&&(l.type=='stag'||l.type=='ltag'));
+const tag=id=>memo('tags',()=>{const m=new Map();for(const l of lists)if(l.type=='stag'||l.type=='ltag')m.set(l.id,l);return m}).get(id);
 const chip=(t,mode,on)=>`<span class="chip${on?' on':''}" style="--c:${esc(t.color||PAL[0])}" ${mode?`data-act="${{rm:'tpRm',f:'filt',sf:'sfilt',e:'tagEdit',bx:'bRm',lf:'lfilt'}[mode]}" data-id="${t.id}"`:''}>${t.icon?`<img src="${t.icon}" alt="">`:''}${esc(t.name||'Tag')}${mode=='rm'?ic('x'):''}</span>`;
 const created=l=>parseInt((l.id||'').slice(1,9),36)||0;
 const sorters={az:(a,b)=>a.name.localeCompare(b.name),za:(a,b)=>b.name.localeCompare(a.name),new:(a,b)=>created(b)-created(a),old:(a,b)=>created(a)-created(b),big:(a,b)=>b.songs.length-a.songs.length};
@@ -625,7 +686,7 @@ function listSettings(id){const l=lists.find(x=>x.id==id);if(!l)return;const sr0
  sheet(`<h3>${({collection:'Collection',playlist:'Playlist',series:'Series'})[l.type]} settings</h3><label>Name</label><input id="lN" value="${esc(l.name)}"><label>Description</label><textarea id="lD" rows="3">${esc(l.desc||'')}</textarea>${detailFields(l)}<label>Tags</label><div id="tp"></div>${inh.length?`<small>Also inherits the tags of its series: ${inh.map(x=>chip(x)).join(' ')}</small>`:''}${l.type=='playlist'?`<label>Collection</label><select id="lCol"><option value="">(none)</option>${lists.filter(c=>c.type=='collection').map(c=>`<option value="${esc(c.id)}" ${l.col==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:''}${l.type!='series'?`<label>Series</label><select id="lSer"><option value="">(none)</option>${lists.filter(x=>x.type=='series').map(x=>`<option value="${esc(x.id)}" ${l.ser==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<label>Cover art</label><div class="row" style="align-items:center"><div class="sm" id="lP" style="width:70px;height:70px">${(l.type=='series'&&!l.img?serArt(l):art(l.img||lcover(l),l.name))}</div><input id="lC" type="file" accept="image/*"><button data-act="lNoImg">Use default</button></div>${l.type!='playlist'?`<label>Key art (wide image for the top of the page)</label><div class="row" style="align-items:center"><div class="kap" id="kaP">${artUrl(l.id)?`<img src="${artUrl(l.id)}" alt="">`:''}</div><input id="kaF" type="file" accept="image/*"><button data-act="kaX">Remove</button></div>`:''}<div class="row"><button class="p" data-act="lSave">Save</button><button data-act="lDel">Delete ${l.type}</button></div>`);tpRender()}
 
 /*@@ch*/
-const collMap=()=>{const m=new Map();for(const l of lists)if(l.type=='collection')for(const id of l.songs)if(!m.has(id))m.set(id,l.id);return m};
+const collMap=()=>memo('cm',()=>{const m=new Map();for(const l of lists)if(l.type=='collection')for(const id of l.songs)if(!m.has(id))m.set(id,l.id);return m});
 const collOf=id=>collMap().get(id);
 async function mkList(o){const l={id:'l'+Date.now().toString(36)+rnd(),songs:[],tags:[],mod:Date.now(),...o};lists.push(l);await put('lists',l);return l}
 async function cleanTags(){const cm=collMap();for(const s of songs.values()){if(!(s.tags||[]).length)continue;const c=cm.get(s.id),k=s.tags.filter(i=>{const x=tag(i);return x&&(x.col===undefined?!c:x.col==c)});if(k.length!=s.tags.length){s.tags=k;s.mod=Date.now();await put('songs',s)}}}
@@ -642,12 +703,13 @@ async function migrateTags(){const cm=collMap();
 let offer=new Map();
 function offerCollections(ids){const cm=collMap(),m=new Map();for(const id of ids){const s=songs.get(id);if(s&&s.album&&!cm.has(id)){if(!m.has(s.album))m.set(s.album,[]);m.get(s.album).push(id)}}
  if(!m.size)return;offer=m;sheet(`<h3>${m.size==1?'1 new album':m.size+' new albums'} found</h3><p class="mut">Make ${m.size==1?'a collection':'collections'} for ${m.size==1?'it':'them'}?</p>${[...m].map(([a,x])=>`<div class="song"><div class="t"><b>${esc(a)}</b><small>${x.length} songs${lists.some(l=>l.type=='collection'&&l.name==a)?' · added to your existing collection':''}</small></div></div>`).join('')}<div class="row"><button class="p" data-act="offerYes">Make collections</button><button data-act="offerNo">Not now</button></div>`)}
-function recents(){const cm=collMap(),seen=new Set(),out=[];for(const s of all().filter(x=>x.lp).sort((a,b)=>b.lp-a.lp)){const c=cm.get(s.id);if(c&&!seen.has(c)){seen.add(c);out.push([c,s]);if(out.length==8)break}}return out}
+function recents(){return memo('rc',recents0)}
+function recents0(){const cm=collMap(),seen=new Set(),out=[];for(const s of all().filter(x=>x.lp).sort((a,b)=>b.lp-a.lp)){const c=cm.get(s.id);if(c&&!seen.has(c)){seen.add(c);out.push([c,s]);if(out.length==8)break}}return out}
 /*@@end*/
 let pgrp='none';try{pgrp=localStorage.getItem('pgrp')||'none'}catch{}
 let grp=true;try{grp=localStorage.getItem('grp')!='0'}catch{}
 const etags=l=>{const own=l.tags||[];if(l.type!='collection'||!l.ser)return own;const s=lists.find(x=>x.id==l.ser&&x.type=='series');return[...new Set([...own,...((s&&s.tags)||[])])]};
-const serSongs=s=>[...new Set(colls().filter(c=>c.ser==s.id).sort(sorters.az).flatMap(c=>c.songs))];
+const serSongs=s=>memo('ss:'+s.id,()=>[...new Set(colls().filter(c=>c.ser==s.id).sort(sorters.az).flatMap(c=>c.songs))]);
 function serArt(s){if(s.img)return art(s.img,s.name);const us=colls().filter(c=>c.ser==s.id).sort(sorters.az).map(c=>lcover(c)).filter(Boolean).slice(0,4);
  if(!us.length)return art('',s.name);if(us.length==1)return art(us[0],s.name);return`<div class="mos">${us.map(u=>`<img loading="lazy" src="${u}" alt="">`).join('')}</div>`}
 function nKChange(v){$('#nSw').hidden=v!='collection';$('#nCw').hidden=v!='playlist';$('#nFw').hidden=v=='series'}
@@ -668,7 +730,8 @@ function facetVals(k){const m=new Map(),add=(v,c)=>{v=(v||'').trim();if(!v)retur
  for(const c of colls()){if(k=='console')splitList(c.console).forEach(v=>add(v,c));else if(k=='decade'){const y=parseInt(c.year);if(y)add(Math.floor(y/10)*10+'s',c)}else if(k=='developer')splitList(c.dev).forEach(v=>add(v,c));else if(k=='composer')splitList(c.comp).forEach(v=>add(v,c));else if(k=='tag')etags(c).forEach(i=>{const x=tag(i);if(x)add(x.name,c)})}return m}
 function heroBg(l){const u=artUrl(l.id);if(u)return`<div class="hbg" style="background-image:url('${u}')"></div>`;
  const cv=l.type=='series'?(l.img||colls().filter(c=>c.ser==l.id).map(c=>lcover(c)).find(Boolean)):lcover(l);return cv?`<div class="hbg blur" style="background-image:url('${cv}')"></div>`:''}
-function lstats(l){const isS=l.type=='series',ids=isS?serSongs(l):l.songs.filter(i=>songs.has(i)),secs=ids.reduce((n,i)=>n+((songs.get(i)||{}).dur||0),0),ev=LOG.filter(e=>isS?e.ser==l.id:e.coll==l.id);return{tracks:ids.length,len:secs,listened:ev.reduce((n,e)=>n+(e.secs||0),0),plays:ids.reduce((n,i)=>n+((songs.get(i)||{}).plays||0),0)}}
+const lstats=l=>memo('ls:'+l.id,()=>lstats0(l));
+function lstats0(l){const isS=l.type=='series',ids=isS?serSongs(l):l.songs.filter(i=>songs.has(i)),secs=ids.reduce((n,i)=>n+((songs.get(i)||{}).dur||0),0),ev=LOG.filter(e=>isS?e.ser==l.id:e.coll==l.id);return{tracks:ids.length,len:secs,listened:ev.reduce((n,e)=>n+(e.secs||0),0),plays:ids.reduce((n,i)=>n+((songs.get(i)||{}).plays||0),0)}}
 function infoGrid(l){const isS=l.type=='series',al=l.kind=='album',st=lstats(l),f=(k,v)=>v?`<div class="inf"><small>${k}</small><b>${v}</b></div>`:'',
  lk=(kind,v)=>splitList(v).map(x=>`<span class="lnk" data-act="facet" data-k="${kind}" data-v="${esc(x)}">${esc(x)}</span>`).join(', '),
  aw=(l.awards||'').split('\n').map(x=>x.trim()).filter(Boolean);
@@ -691,16 +754,22 @@ function featPicks(){const cols=colls().filter(c=>c.songs.length);if(!cols.lengt
  const rest=cols.filter(c=>!used.has(c.id));if(rest.length)push(rest[Math.floor(featSeed*rest.length)],'Random pick');return out}
 function featHtml(){const ps=featPicks();if(!ps.length)return'';const i=Math.min(featIdx,ps.length-1),{c,why}=ps[i],id=esc(c.id),st=lstats(c),anim=featAnim?' fh-in':'';featAnim=false;
  const sd=c.desc?(c.desc.length>170?c.desc.slice(0,170)+'...':c.desc):[`${c.songs.length} songs`,splitList(c.console)[0],c.year].filter(Boolean).join(' · ');
- return`<div class="hero fh${anim}"><div class="hbgw">${heroBg(c)}</div><div class="hov"></div><div class="hc"><div class="hi"><div class="fl"><span class="gold">Featured Collection</span><small>${esc(why)}</small></div><h1>${esc(c.name)}</h1><p class="desc">${esc(sd)}</p><div class="row"><button class="pill" data-act="featPlay" data-id="${id}">${ic('play')} Play Collection</button><button data-act="go" data-id="${id}">View</button></div></div></div><div class="dots">${ps.map((_,k)=>`<i class="${k==i?'on':''}" data-act="fdot" data-i="${k}"></i>`).join('')}</div></div>`}
+ return`<div class="hero fh${anim}"><div class="hbgw">${heroBg(c)}</div><div class="hov"></div><div class="hc"><div class="hi"><div class="fl"><span class="gold">Featured Collection</span><small>${esc(why)}</small></div><h1>${esc(c.name)}</h1><p class="desc">${esc(sd)}</p><div class="row"><button class="pill" data-act="featPlay" data-id="${id}">${ic('play')} Play Collection</button><button data-act="go" data-id="${id}">View</button></div></div></div><div class="dots">${ps.map((_,k)=>`<i class="${k==i?'on':''}" data-act="fdot" data-i="${k}"></i>`).join('')}</div>${ps.length>1?`<button class="fnav l" data-act="fprev" aria-label="Previous featured collection">${ic('chevL')}</button><button class="fnav r" data-act="fnext" aria-label="Next featured collection">${ic('chevR')}</button>`:''}</div>`}
 function keyRow(k,i,col){const s=songs.get(k);return`<div class="song krow" data-act="play" data-id="${k}" data-ctx="kt:${esc(col)}" data-col="${esc(col)}"><button class="ic grip" data-act="noop" data-grip="${i}" title="Drag to reorder">${ic('grip')}</button><span class="kn">${i+1}</span><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}</b><small>${esc(s.artist||'Unknown artist')}</small></div><button class="ic kb on" data-act="keyT" data-id="${k}" data-col="${esc(col)}" title="Remove from key tracks">${ic('starFill')}</button><span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic" data-act="smenu" data-id="${k}" data-ctx="${esc(col)}">${ic('more')}</button></div>`}
 let drag=null;
 document.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-grip]');if(!g)return;const row=g.closest('.krow');drag={i:+g.dataset.grip,y0:e.clientY,row,h:row.offsetHeight,n:row.parentElement.children.length,col:row.dataset.col,kind:row.dataset.kind||'keys'};row.classList.add('dragging');try{g.setPointerCapture(e.pointerId)}catch{}});
 document.addEventListener('pointermove',e=>{if(drag)drag.row.style.transform=`translateY(${e.clientY-drag.y0}px)`});
 document.addEventListener('pointerup',async e=>{if(!drag)return;const d=drag;drag=null;const to=Math.max(0,Math.min(d.n-1,d.i+Math.round((e.clientY-d.y0)/d.h)));d.row.classList.remove('dragging');d.row.style.transform='';
+ if(d.kind=='q'){const b=Math.max(qi,0),t2=Math.max(1,to);if(t2!=d.i){const[x]=Q.splice(b+d.i,1);Q.splice(b+t2,0,x);savePlay()}paintQ();return}
  if(d.kind=='ord'){if(to!=d.i){const[x]=ord.items.splice(d.i,1);ord.items.splice(to,0,x);autoNum();$('#ordL').innerHTML=ord.items.map(ordRow).join('')}return}
  if(to!=d.i){const l=lists.find(x=>x.id==d.col);if(l&&l.keys){const[x]=l.keys.splice(d.i,1);l.keys.splice(to,0,x);l.mod=Date.now();await put('lists',l)}}render()});
 document.addEventListener('pointerdown',e=>{const h=e.target.closest('.fh');fsx=h&&!e.target.closest('button,.dots')?e.clientX:null});
-document.addEventListener('pointerup',e=>{if(fsx==null)return;const dx=e.clientX-fsx;fsx=null;if(Math.abs(dx)>60){const n=featPicks().length;featIdx=(featIdx+(dx<0?1:-1)+n)%n;featAnim=true;render()}});
+document.addEventListener('pointerup',e=>{if(fsx==null)return;const dx=e.clientX-fsx;fsx=null;if(Math.abs(dx)>60)featGo(dx<0?1:-1)});
+/* hero: previous/next arrows, and it moves on by itself (paused while the pointer is over it, a window is open, or the tab is hidden) */
+const FEAT_MS=8000;let featT=0;
+function featGo(d,to,auto){const n=featPicks().length;if(!n)return;featIdx=to!=null?to:(Math.min(featIdx,n-1)+d+n)%n;featAnim=true;if(!auto)featStart();const el=$('#main .hero.fh');if(el&&S.t=='home'&&!S.q)el.outerHTML=featHtml();else render()}
+function featStart(){clearInterval(featT);featT=setInterval(()=>{if(S.t!='home'||S.q||document.hidden||fsx!=null||selMode||!sh.hidden||!$('#np').hidden)return;
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches||(matchMedia('(hover:hover)').matches&&$('#main .fh:hover')))return;if(featPicks().length>1)featGo(1,null,true)},FEAT_MS)}
 /* ---------- song sorting, track order, details ---------- */
 const tnum=s=>s.trk?((s.disc>1?s.disc+'-':'')+s.trk):'';
 function getSort(l){try{const v=localStorage.getItem('ss:'+l.id);if(v)return v}catch{}return l.type=='collection'?'track':'manual'}
@@ -734,6 +803,9 @@ function songMenu(id,ctx){const s=songs.get(id),l=lists.find(x=>x.id==ctx);
  const it=[['Play next',()=>enq(id,1)],['Add to queue',()=>enq(id,0)],['Add to playlist or collection…',()=>addMenu(id)],['Edit info'+(needs(s)?' (needs info)':''),()=>editSong(id)],[s.fav?'Remove favourite':'Favourite',()=>fav(id)],['Song details',()=>songInfo(id)]];
  if(l)it.push(['Remove from this list',async()=>{l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l);if(l.type=='collection')await cleanTags();render()}],...(getSort(l)=='manual'?[['Move up',()=>mv(l,id,-1)],['Move down',()=>mv(l,id,1)]]:[]));
  it.push(['Delete from library',()=>delSong(id)]);menu(ttl(s),it)}
+/* ---------- editable queue ---------- */
+function qRow(id,k,base){const s=songs.get(id);if(!s)return'';return`<div class="song krow" data-kind="q" data-act="jump" data-i="${base+k}">${k?`<button class="ic grip" data-act="noop" data-grip="${k}" title="Drag to reorder">${ic('grip')}</button>`:'<span style="width:34px;flex:none"></span>'}<div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${k==0?' (now)':''}</b><small>${esc(s.artist||'')}</small></div>${k?`<button class="ic" data-act="qRm" data-k="${k}" title="Remove from queue">${ic('x')}</button>`:''}</div>`}
+function qSheetRender(){const el=$('#qL');if(!el)return;const base=Math.max(qi,0);el.innerHTML=Q.slice(base,base+100).map((id,k)=>qRow(id,k,base)).join('')||'<p class="mut">Nothing queued.</p>';const c=$('#qN');if(c)c.textContent=Math.max(0,Q.length-base-1)+' up next'}
 function addMenu(id){menu('Add to…',[...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,[id])]),['New playlist with this song',()=>{pending=[id];A.newList()}]])}
 let pending=[];
 function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><div class="fg"><div><label>Disc number</label><input id="eDi" inputmode="numeric" value="${s.disc||''}"></div><div><label>Track number</label><input id="eTr" inputmode="numeric" value="${s.trk||''}"></div></div><label>Cover art</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><label>Tags</label><div id="tp"></div><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`);const col=collOf(id);tp={kind:'stag',col,sel:new Set(col?s.tags||[]:[])};tpRender()}
@@ -770,20 +842,20 @@ const A={
   lists=lists.filter(x=>x!=o);tomb[o.id]=Date.now();saveTomb();await del('lists',o.id);if(S.f==o.id)S.f=null;if(S.sf==o.id)S.sf=null;closeSheet();tagMgr();render()},
  fromTag:async()=>{const st=tag(td.id),ids=all().filter(s=>(s.tags||[]).includes(st.id)).map(s=>s.id).sort(byTitle);
   const l=await mkList({name:st.name,type:'playlist',songs:ids,col:st.col});closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
- lfilt:t=>{S.lf=S.lf==t.dataset.id?null:t.dataset.id;render()},favf:()=>{S.fav=!S.fav;S.sc=null;S.sf=null;render()},
+ lfilt:t=>{S.lf=S.lf==t.dataset.id?null:t.dataset.id;render()},favf:()=>{S.fav=!S.fav;S.sc=null;S.sf=null;S.lb=false;render()},lbf:()=>{S.lb=!S.lb;S.fav=false;S.sc=null;S.sf=null;render()},batchAll:()=>{S={t:'library',lb:true};render();scrollTo(0,0)},
  newPl:async t=>{const n=prompt('Playlist name'),h=lists.find(x=>x.id==t.dataset.id);if(n&&n.trim()){await mkList(h.type=='series'?{name:n.trim(),type:'playlist',ser:h.id}:{name:n.trim(),type:'playlist',col:h.id});render()}},
  grp:()=>{grp=!grp;try{localStorage.setItem('grp',grp?'1':'0')}catch{}render()},
- serCols:t=>{const s=lists.find(x=>x.id==t.dataset.id);sheet(`<h3>Collections in ${esc(s.name)}</h3><p class="mut">A collection can only be in one series, so ticking one moves it here.</p>${colls().sort(sorters.az).map(c=>`<label class="pk"><input type="checkbox" data-sc="${esc(c.id)}" ${c.ser==s.id?'checked':''}>${esc(c.name)}${c.ser&&c.ser!=s.id?`<small>in ${esc((lists.find(x=>x.id==c.ser)||{}).name||'another series')}</small>`:''}</label>`).join('')||'<p class="mut">No collections yet.</p>'}<button class="p" data-act="serSave" data-id="${esc(s.id)}">Save</button>`)},
+ serCols:t=>{const s=lists.find(x=>x.id==t.dataset.id);sheet(`<h3>Collections in ${esc(s.name)}</h3><p class="mut">A collection can only be in one series, so ticking one moves it here.</p>${[...colls()].sort(sorters.az).map(c=>`<label class="pk"><input type="checkbox" data-sc="${esc(c.id)}" ${c.ser==s.id?'checked':''}>${esc(c.name)}${c.ser&&c.ser!=s.id?`<small>in ${esc((lists.find(x=>x.id==c.ser)||{}).name||'another series')}</small>`:''}</label>`).join('')||'<p class="mut">No collections yet.</p>'}<button class="p" data-act="serSave" data-id="${esc(s.id)}">Save</button>`)},
  serSave:async t=>{const id=t.dataset.id;for(const b of document.querySelectorAll('#sheet [data-sc]')){const c=lists.find(x=>x.id==b.dataset.sc);if(b.checked&&c.ser!=id){c.ser=id;c.mod=Date.now();await put('lists',c)}else if(!b.checked&&c.ser==id){c.ser=undefined;c.mod=Date.now();await put('lists',c)}}closeSheet();render()},
  offerNo:()=>closeSheet(),
  offerYes:async()=>{closeSheet();let made=0;for(const[a,ids]of offer){let c=lists.find(l=>l.type=='collection'&&l.name==a);if(!c){c=await mkList({name:a,type:'collection'});made++}await toColl(c,ids)}offer=new Map();render();toast(made?`Made ${made} collection${made>1?'s':''}`:'Songs added to your collections')},
  selStart:t=>{selMode=1;sel=new Set();selCtx=t.dataset.ctx;document.body.classList.add('selecting');$('#selbar').hidden=false;$('#selN').textContent='0 selected'},
  selDone:()=>endSel(),
- selAll:()=>{$$('#main .song[data-id]').forEach(e=>{sel.add(e.dataset.id);e.classList.add('picked')});$('#selN').textContent=sel.size+' selected'},
+ selAll:()=>{$$('#main .song[data-id]').forEach(e=>{sel.add(e.dataset.id);e.classList.add('picked')});for(const m of MORE.values())for(const it of m.ids)if(typeof it=='string')sel.add(it);$('#selN').textContent=sel.size+' selected'},
  bEdit:()=>sel.size?bulkEdit():toast('Select songs first'),
  bRm:t=>{const id=t.dataset.id;bRm.has(id)?bRm.delete(id):bRm.add(id);t.classList.toggle('off')},
  bSave:async()=>{const ids=[...sel],a=$('#bA').value.trim(),b=$('#bB').value.trim(),f=$('#bC').files[0],cv=f?await fitCover(f):null;
-  for(const id of ids){const s=songs.get(id);if(!s)continue;if(a)s.artist=a;if(b)s.album=b;if(cv){s.cover=cv;s.cmod=Date.now();urls.delete(id)}
+  for(const id of ids){const s=songs.get(id);if(!s)continue;if(a)s.artist=a;if(b)s.album=b;if(cv){s.cover=cv;s.cmod=Date.now()}
    s.tags=[...new Set([...(s.tags||[]),...(tp.col?tp.sel:[])])].filter(x=>!bRm.has(x));s.mod=Date.now();await put('songs',s)}
   closeSheet();endSel();toast(`Updated ${ids.length} songs`);render()},
  bAdd:()=>{if(!sel.size)return toast('Select songs first');menu('Add to…',lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>{addTo(l,[...sel]);endSel()}]))},
@@ -802,8 +874,8 @@ const A={
  addsongs:t=>pickSongs(t.dataset.id),
  addfiles:()=>$('#file').click(),
  syncSet:()=>sheet(`<h3>Sync</h3><label>Server address (you can list several, separated by commas)</label><input id="sU" placeholder="https://192.168.1.20:8765" value="${esc(cfg.url||'')}"><label>Access token</label><input id="sT" value="${esc(cfg.token||'')}"><label class="pk"><input type="checkbox" id="sD" ${cfg.dl===false?'':'checked'}>Download songs to this device</label><button class="p" data-act="sSave">Save and sync</button>${cfg.url?' <button data-act="sOff">Turn off sync</button>':''}`),
- sSave:async()=>{cfg={url:$('#sU').value.trim(),token:$('#sT').value.trim(),dl:$('#sD').checked};await saveCfg();closeSheet();sync(1)},
- sOff:async()=>{cfg={};await del('meta','cfg');closeSheet();render();toast('Sync turned off')},
+ sSave:async()=>{const u=$('#sU').value.trim();if(u!=(cfg.url||'')){srvSeq=0;lastPush=0;await saveSyncState()}cfg={url:u,token:$('#sT').value.trim(),dl:$('#sD').checked};await saveCfg();closeSheet();sync(1)},
+ sOff:async()=>{cfg={};srvSeq=0;lastPush=0;await del('meta','cfg');await saveSyncState();closeSheet();render();toast('Sync turned off')},
 jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
  newList:t=>newDlg(t&&t.dataset&&t.dataset.k),
  mk:async()=>{const f=$('#nF').value,src=$('#nS').value;let type=$('#nK').value;const trk=(x,y)=>(x.trk||0)-(y.trk||0)||ttl(x).localeCompare(ttl(y)),serV=(type=='collection'?$('#nSe').value:'')||undefined;
@@ -820,23 +892,25 @@ jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
   const l=await mkList({name,type,songs:type=='playlist'?ids:[],col:type=='playlist'?col:undefined,ser:type=='playlist'?ser:serV});
   if(type=='collection'){const mv=await toColl(l,ids);if(mv)toast(`Moved ${mv} songs from other collections`)}
   pending=[];closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
- saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();s.tags=[...tp.sel];s.trk=parseInt($('#eTr').value)||0;s.disc=parseInt($('#eDi').value)||0;const f=$('#eC').files[0];if(f){s.cover=await fitCover(f);s.cmod=Date.now();urls.delete(s.id)}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
+ saveInfo:async t=>{const s=songs.get(t.dataset.id);s.title=$('#eT').value.trim();s.artist=$('#eA').value.trim();s.album=$('#eB').value.trim();s.tags=[...tp.sel];s.trk=parseInt($('#eTr').value)||0;s.disc=parseInt($('#eDi').value)||0;const f=$('#eC').files[0];if(f){s.cover=await fitCover(f);s.cmod=Date.now()}s.mod=Date.now();await put('songs',s);closeSheet();if(Q[qi]==s.id)paint();render()},
  pkall:()=>{pk.shown.forEach(i=>pk.sel.add(i));pkRender()},
  pkgo:()=>{const l=lists.find(x=>x.id==pk.id);closeSheet();addTo(l,[...pk.sel])},
  keyT:async t=>{const l=lists.find(x=>x.id==t.dataset.col);if(!l)return;const id=t.dataset.id,k=l.keys||(l.keys=[]),i=k.indexOf(id);if(i<0)k.push(id);else k.splice(i,1);l.mod=Date.now();await put('lists',l);render()},
  plkeys:t=>startPlay(ctxIds('kt:'+t.dataset.id),null,0,t.dataset.id),noop:()=>{},kaX:()=>{ls.artBlob=null;ls.artDel=true;$('#kaP').innerHTML=''},
- featPlay:t=>{const c=lists.find(x=>x.id==t.dataset.id),ks=ctxIds('kt:'+c.id);startPlay(ks.length?ks:ctxIds(c.id),null,0,c.id)},fdot:t=>{featIdx=+t.dataset.i;featAnim=true;render()},
+ featPlay:t=>{const c=lists.find(x=>x.id==t.dataset.id),ks=ctxIds('kt:'+c.id);startPlay(ks.length?ks:ctxIds(c.id),null,0,c.id)},fdot:t=>featGo(0,+t.dataset.i),fprev:()=>featGo(-1),fnext:()=>featGo(1),
  bf:t=>{S.bf=S.bf==t.dataset.k?null:t.dataset.k;S.bv=null;render()},bv:t=>{S.bv=S.bv==t.dataset.v?null:t.dataset.v;render()},
  facet:t=>{hist.push(S);S={t:'explore',bf:t.dataset.k,bv:t.dataset.v};render();scrollTo(0,0)},
  ordEdit:t=>ordEdit(t.dataset.id),ordNum:()=>{autoNum();$('#ordL').innerHTML=ord.items.map(ordRow).join('')},
  ordSort:()=>{const ix=new Map(ord.items.map((x,i)=>[x,i]));ord.items.sort((a,b)=>((a.disc||1)-(b.disc||1))||((a.trk||1e9)-(b.trk||1e9))||ix.get(a)-ix.get(b));$('#ordL').innerHTML=ord.items.map(ordRow).join('')},
  ordSave:async()=>{for(const x of ord.items){const s=songs.get(x.id);if(s&&((s.trk||0)!=x.trk||(s.disc||0)!=x.disc)){s.trk=x.trk;s.disc=x.disc;s.mod=Date.now();await put('songs',s)}}setSort(ord.id,'track');closeSheet();toast('Track order saved');render()},
  home:()=>{endSel();S={t:'home'};hist=[];$('#q').value='';render();scrollTo(0,0)},exv:t=>{S.ev=t.dataset.k;render()},
- syncNow:()=>sync(1),expBackup:()=>exportBackup(),impBackup:()=>$('#imp').click(),addFolder:()=>$('#dir').click(),tagMgrOpen:()=>tagMgr(),
+ syncNow:()=>sync(1),fullSync:async()=>{srvSeq=0;lastPush=0;await saveSyncState();sync(1)},expBackup:()=>exportBackup(),impBackup:()=>$('#imp').click(),addFolder:()=>$('#dir').click(),tagMgrOpen:()=>tagMgr(),
 
  add:t=>pop(t,[['Add songs',()=>$('#file').click()],['New playlist',()=>newDlg('playlist')],['New collection',()=>newDlg('collection')],['New series',()=>newDlg('series')]],true),
  expand:()=>{$('#np').hidden=false;paint()},expandM:()=>{if(matchMedia('(max-width:820px)').matches)A.expand()},
- showQ:()=>sheet(`<h3>Up next</h3>${Q.slice(Math.max(qi,0),qi+100).map((id,k)=>{const s=songs.get(id);return s?`<div class="song" data-act="jump" data-i="${Math.max(qi,0)+k}"><div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${k==0&&qi>=0?' (now)':''}</b><small>${esc(s.artist||'')}</small></div></div>`:''}).join('')||'<p class="mut">Nothing queued.</p>'}`),
+ showQ:()=>{sheet('<div class="bar" style="margin:0 0 8px;align-items:center"><h3 style="margin:0">Up next <small id="qN" style="display:inline"></small></h3><button data-act="qClear">Clear</button></div><div id="qL"></div>');qSheetRender()},
+ qRm:t=>{const b=Math.max(qi,0),k=+t.dataset.k;if(k<1)return;Q.splice(b+k,1);savePlay();paintQ()},
+ qClear:()=>{if(qi>=0)Q.length=qi+1;else Q=[];savePlay();paintQ();toast('Cleared up next')},
  resume:()=>toggle(),qshuf:t=>startPlay(ctxIds(t.dataset.id),null,1,t.dataset.id),
  attn:()=>{S={t:'library',need:true};render()},goStats:()=>{const n=new Date();S={t:'stats',sy:n.getFullYear(),sm:n.getMonth()};render()},
  hm:t=>{S.hm=t.dataset.k;render()},svTab:t=>{S.sv=t.dataset.k;render()},needf:()=>{S.need=!S.need;render()},gaToggle:()=>{S.ga=!S.ga;render()}
@@ -851,7 +925,7 @@ document.addEventListener('change',async e=>{const t=e.target;
  if(t.id=='pgSel'){pgrp=t.value;try{localStorage.setItem('pgrp',pgrp)}catch{}return render()}
  if(t.id=='syS'){S.sy=t.value===''?'':+t.value;S.sm='';return render()}
  if(t.id=='smS'){S.sm=t.value===''?'':+t.value;return render()}
- if(t.id=='scSel'){S.sc=t.value||null;S.sf=null;S.fav=false;return render()}
+ if(t.id=='scSel'){S.sc=t.value||null;S.sf=null;S.fav=false;S.lb=false;return render()}
  if(t.id=='nK')return nKChange(t.value);
  if(t.id=='tpI')return tpAdd(t.value);
  if(t.id=='sortSel'){sortK=t.value;try{localStorage.setItem('sort',sortK)}catch{}return render()}
@@ -866,11 +940,14 @@ if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.creat
 (async()=>{
  await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());
  (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
- for(const m of await idb('meta','readonly',s=>s.getAll())){if(m.id=='cfg'){const{id,...c}=m;cfg=c}if(m.id=='tomb')tomb=m.map||{};if(m.id=='logseq')logSeq=m.n||0;if(m.id=='stats')statsMeta=m}
- LOG=await idb('log','readonly',s=>s.getAll());for(const a of await idb('art','readonly',s=>s.getAll()))ART.set(a.id,{blob:a.blob,cmod:a.cmod});if(!statsMeta){statsMeta={id:'stats',start:Date.now(),legacy:all().reduce((a,s)=>a+(s.plays||0),0)};put('meta',statsMeta)}
- for(const s of songs.values())if(s.cover&&!s.cmod){s.cmod=s.added;put('songs',s)}
- for(const s of songs.values())if(s.cover&&!(s.cover.type||'').startsWith('image/')){s.cover=imgBlob(await s.cover.arrayBuffer());urls.delete(s.id);put('songs',s)}
- await migrateTags();await cleanTags();await restorePlay();render();paint();backfill();sync();addEventListener('online',()=>sync());
+ for(const m of await idb('meta','readonly',s=>s.getAll())){if(m.id=='cfg'){const{id,...c}=m;cfg=c}if(m.id=='tomb')tomb=m.map||{};if(m.id=='logseq')logSeq=m.n||0;if(m.id=='stats')statsMeta=m;if(m.id=='syncstate'){srvSeq=m.seq||0;lastPush=m.push||0}}
+ LOG=await idb('log','readonly',s=>s.getAll());for(const a of await idb('art','readonly',s=>s.getAll()))ART.set(a.id,{blob:a.blob,cmod:a.cmod});
+ for(const c of await idb('covers','readonly',s=>s.getAll())){COV.set(c.id,c.blob);WM.set(c.blob,c.id)}for(const s of songs.values())if(s.cvh&&!s.cover)s.cover=COV.get(s.cvh)||null;if(!statsMeta){statsMeta={id:'stats',start:Date.now(),legacy:all().reduce((a,s)=>a+(s.plays||0),0)};put('meta',statsMeta)}
+ for(const s of songs.values())if(s.cover&&!s.cmod)s.cmod=s.added;
+ for(const s of songs.values())if(s.cover&&!(s.cover.type||'').startsWith('image/'))s.cover=imgBlob(await s.cover.arrayBuffer());
+ {const old=[...songs.values()].filter(s=>s.cover&&!s.cvh);if(old.length){toast('Optimising cover art…');for(const s of old){await normCover(s);await put('songs',s)}}}   /* one-off: move per-song covers into the shared store */
+ await gcCovers();
+ await migrateTags();await cleanTags();await restorePlay();render();paint();backfill();sync();featStart();addEventListener('online',()=>sync());
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
 </script></body></html>

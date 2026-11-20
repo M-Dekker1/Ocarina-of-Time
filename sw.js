@@ -1,4 +1,4 @@
-const C='ocarina-v6',F=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','ocarina-logo.png'];
+const C='ocarina-v7',F=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','ocarina-logo.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>Promise.all(F.map(f=>c.add(f).catch(()=>{})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!=C).map(x=>caches.delete(x)))).then(()=>clients.claim())));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);

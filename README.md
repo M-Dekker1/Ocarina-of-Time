@@ -13,14 +13,14 @@ Your PC runs a small server that keeps your songs, playlists, tags, ratings, fav
 
 ### One-time setup on the PC
 1. Install **Python 3.8+** from python.org (tick "Add to PATH").
-2. Keep everything in this folder together on your PC (server.py needs the other files).
+2. Keep everything in this folder together on your PC (`server.py` also needs `netutil.py` and the app files).
 3. Open a terminal in the folder and run: `python setup_https.py`
    - It installs the free tool mkcert using winget if needed. If it asks you to reopen the terminal and run it again, do that.
    - Click **Yes** if Windows asks to trust the certificate.
 4. Run `python server.py` (or double-click `start-server.bat`). If Windows asks about the firewall, tick **Private networks** and allow.
 5. The window shows your **phone address**, **certificate page** and **access token**. They are also saved in `ocarina-data/connection-info.txt`.
 
-To start the server automatically with Windows: press Win+R, type `shell:startup`, and put a shortcut to `start-server-hidden.vbs` there. It runs with no window.
+To start the server automatically with Windows: press Win+R, type `shell:startup`, and put a shortcut to `start-server.bat` there. Right-click the shortcut, choose Properties, and set **Run** to **Minimized** so the window stays out of the way.
 
 ### On the PC app
 ⋯ → **Sync settings**: address `https://localhost:8765` and the token.
@@ -37,6 +37,8 @@ You can list more than one address, separated by commas (for example the IP and 
 - Your PC's address can change. In your router's settings, reserve a fixed address for the PC (look for "DHCP reservation"). If it does change, run `python setup_https.py` again and update the address in the app.
 - **Download songs to this device** (Sync settings): switch it off on a phone with limited space. Songs then show a cloud icon and stream from your PC while you're home.
 - The first sync uploads everything from the device that has the music, which can take a while. Keep the app open.
+- After the first sync, only what changed is sent in each direction, so syncing is quick even with a large library. If two devices ever seem out of step, use **Settings → Sync → Full resync** to compare everything again.
+- Cover art is stored once per distinct picture, so an album with 60 tracks keeps one copy of its cover instead of 60. The first time you open the updated app it moves existing covers into the shared store (you'll see "Optimising cover art"), and the server tidies up its old per-song cover files on the next sync.
 - Deleting a song or playlist on one device deletes it on the others at their next sync. If two devices edit the same thing, the most recent change wins.
 - Treat the token like a password. Anyone on your Wi-Fi who has it could read your library.
 - "Server not reachable": check the server window is running, both devices are on the same Wi-Fi, and your router isn't blocking devices from talking to each other ("client isolation" or "guest network").
