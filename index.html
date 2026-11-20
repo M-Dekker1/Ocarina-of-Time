@@ -205,6 +205,9 @@ button{transition:background-color .18s,color .18s,transform .12s,opacity .18s,b
 .card .art{transition:transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s}.card:active .art{transform:scale(.98)}
 @media(hover:hover){.card:hover .art{transform:translateY(-3px);box-shadow:0 14px 30px var(--sh)}.tile:hover{transform:translateY(-2px)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.ub{margin-left:10px;padding:2px 14px;background:var(--bg);color:var(--fg);border:0;border-radius:999px;font-weight:600}
+.set select{padding:9px 12px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;margin:4px 0 8px;max-width:100%}
+.set .pk{padding:4px 0}
 </style></head><body>
 <aside id="side">
 <div class="brand" data-act="home" title="Home"><img alt="Ocarina of Time" class="lg"></div>
@@ -258,7 +261,7 @@ const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let db,songs=new Map(),lists=[],S={t:'home'},hist=[];
 /* ---------- storage (IndexedDB) ---------- */
-const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('tunebox',5);r.onupgradeneeded=()=>['songs','blobs','lists','meta','log','art','covers'].forEach(n=>{if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
+const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('tunebox',6);r.onupgradeneeded=()=>['songs','blobs','lists','meta','log','art','covers','trash'].forEach(n=>{if(!r.result.objectStoreNames.contains(n))r.result.createObjectStore(n,{keyPath:'id'})});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
 const idb=(st,mode,fn)=>new Promise((res,rej)=>{const tx=db.transaction(st,mode),r=fn(tx.objectStore(st));tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error)});
 let ver=0;const bump=st=>{if(st=='songs'||st=='lists'||st=='log')ver++};
 const rawPut=(st,o)=>idb(st,'readwrite',s=>s.put(o));
@@ -268,11 +271,11 @@ const h53=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=
 const rnd=()=>Math.random().toString(36).slice(2,8),all=()=>[...songs.values()];
 const ttl=s=>s.title||s.fn.replace(/\.[^.]+$/,''),needs=s=>!s.title||!s.artist||!s.album||!s.cover;
 const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
-const art=(u,n,eager)=>u?`<img ${eager?'':'loading="lazy" '}src="${u}" alt="">`:`<div class="ph" style="background:hsl(${hue(n||'?')},42%,40%)">${esc((n||'?')[0].toUpperCase())}</div>`;
+const art=(u,n,eager)=>u?`<img ${eager?'':'loading="lazy" '}src="${esc(u)}" alt="">`:`<div class="ph" style="background:hsl(${hue(n||'?')},42%,40%)">${esc((n||'?')[0].toUpperCase())}</div>`;
 const urlOf=new WeakMap(),cu=s=>{if(!s.cover)return'';let u=urlOf.get(s.cover);if(!u){u=URL.createObjectURL(s.cover);urlOf.set(s.cover,u)}return u};
 const lcover=l=>{if(l.img)return l.img;const s=l.songs.map(i=>songs.get(i)).find(s=>s&&s.cover);return s?cu(s):''};
 const fm=x=>isFinite(x)?(x/60|0)+':'+String(x%60|0).padStart(2,'0'):'0:00';
-let tt;const toast=m=>{const e=$('#toast');e.textContent=m;e.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>e.style.opacity=0,2000)};
+let tt;const toast=(m,undo)=>{const e=$('#toast');e.textContent=m;if(undo){const b=document.createElement('button');b.className='ub';b.textContent='Undo';b.onclick=()=>{e.style.opacity=0;e.style.pointerEvents='none';clearTimeout(tt);undo()};e.append(' ',b);e.style.pointerEvents='auto'}else e.style.pointerEvents='none';e.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>{e.style.opacity=0;e.style.pointerEvents='none'},undo?7000:2000)};
 const byTitle=(a,b)=>ttl(songs.get(a)).localeCompare(ttl(songs.get(b)));
 /* ---------- caching: results are reused until songs, lists or the listening log change ---------- */
 const stamp=()=>ver+':'+LOG.length+':'+lists.length+':'+songs.size,MEMO=new Map();let memoS='';
@@ -287,9 +290,73 @@ async function normCover(s){const b=s.cover;if(!b)return;let h=WM.get(b);if(!h)h
  const canon=COV.get(h);let fresh=false;if(canon){s.cover=canon;WM.set(canon,h)}else{COV.set(h,b);WM.set(b,h);fresh=true}
  if(s.cvh!==h){s.cvh=h;s.mod=Date.now()}
  if(fresh)await rawPut('covers',{id:h,blob:b})}
-async function putSong(s){if(s.cover&&WM.get(s.cover)!==s.cvh)await normCover(s);const{cover,...rec}=s;return idb('songs','readwrite',st=>st.put(rec))}
+async function putSong(s){if(s.cover&&WM.get(s.cover)!==s.cvh)await normCover(s);stampSong(s);const{cover,...rec}=s;return idb('songs','readwrite',st=>st.put(rec))}
 async function putCover(h,b){COV.set(h,b);WM.set(b,h);await rawPut('covers',{id:h,blob:b})}
-async function gcCovers(){const used=new Set();for(const s of songs.values())if(s.cvh)used.add(s.cvh);for(const h of[...COV.keys()])if(!used.has(h)){COV.delete(h);await del('covers',h)}}
+async function gcCovers(){const used=new Set();for(const s of songs.values())if(s.cvh)used.add(s.cvh);for(const e of TRASH)if(e.kind=='song'&&e.rec.cvh)used.add(e.rec.cvh);for(const h of[...COV.keys()])if(!used.has(h)){COV.delete(h);await del('covers',h)}}
+/* ---------- validation: anything that comes from a backup or the server is checked before it is used ---------- */
+const IDRE=/^[A-Za-z0-9_-]{1,64}$/,IMGRE=/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/,COLRE=/^#[0-9a-fA-F]{3,8}$/;
+const okId=x=>typeof x=='string'&&IDRE.test(x),idList=a=>Array.isArray(a)?a.filter(okId):[],sStr=x=>typeof x=='string'?x:'',sNum=x=>Number.isFinite(+x)?+x:0;
+const LIST_TYPES=['collection','playlist','series','stag','ltag'];
+function cleanList(l){if(!l||typeof l!='object'||!okId(l.id)||!LIST_TYPES.includes(l.type))return null;const o={...l};
+ o.name=sStr(l.name);o.songs=idList(l.songs);o.mod=sNum(l.mod);if(l.tags!==undefined)o.tags=idList(l.tags);if(l.keys!==undefined)o.keys=idList(l.keys);
+ for(const k of['col','ser'])if(l[k]!==undefined&&!okId(l[k]))delete o[k];
+ for(const k of['img','icon'])if(o[k]&&!IMGRE.test(o[k]))o[k]='';
+ if(o.color!==undefined&&!COLRE.test(o.color))o.color=PAL[0];
+ for(const k of['desc','console','year','dev','pub','comp','genre','syear','awards','kind'])if(o[k]!==undefined&&typeof o[k]!='string')o[k]=sStr(o[k]);
+ if(o.acmod!==undefined)o.acmod=sNum(o.acmod);return o}
+/* ---------- song merging: each editable field carries its own timestamp (fm), so rating a song on one device and
+   renaming it on another no longer cancel each other out, and play counts only ever go up ---------- */
+const TRK=['title','artist','album','trk','disc','fav','rating','tags','cvh'],SNAP=new Map();
+const jv=v=>JSON.stringify(v===undefined?null:v),cj=o=>JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));
+function stampSong(s){const cur=TRK.map(k=>jv(s[k])),prev=SNAP.get(s.id);
+ if(prev){const t=Date.now();TRK.forEach((k,i)=>{if(prev[i]!==cur[i])(s.fm||(s.fm={}))[k]=t})}
+ SNAP.set(s.id,cur)}
+function cleanSong(r){if(!r||typeof r!='object'||!okId(r.id))return null;const o={...r};delete o.cover;
+ for(const k of['title','artist','album','fn'])o[k]=sStr(r[k]);
+ for(const k of['dur','trk','disc','plays','rating','fav','added','mod','lp','cmod','batch'])if(r[k]!==undefined)o[k]=sNum(r[k]);
+ if(r.tags!==undefined)o.tags=idList(r.tags);if(r.cvh!==undefined&&!okId(r.cvh))delete o.cvh;
+ if(r.lufs!=null)o.lufs=sNum(r.lufs);if(r.pk!=null)o.pk=sNum(r.pk);
+ if(r.fm&&typeof r.fm=='object'){o.fm={};for(const k of TRK)if(r.fm[k])o.fm[k]=sNum(r.fm[k])}else delete o.fm;return o}
+function mergeSong(s,r){const o={...s},fm={...(s.fm||{})},rf=r.fm||{},newer=(r.mod||0)>(s.mod||0);
+ if(newer)for(const k in r)if(!TRK.includes(k)&&!['fm','cover','plays','lp','lufs','pk'].includes(k))o[k]=r[k];
+ for(const k of TRK){const a=fm[k]||0,b=rf[k]||0;if(b>a||(b==a&&newer)){o[k]=r[k];if(b)fm[k]=b}}
+ o.plays=Math.max(s.plays||0,r.plays||0);o.lp=Math.max(s.lp||0,r.lp||0);
+ for(const k of['lufs','pk'])o[k]=s[k]!==undefined?s[k]:r[k];
+ o.fm=fm;
+ const same=TRK.every(k=>jv(o[k])===jv(r[k]))&&o.plays==(r.plays||0)&&o.lp==(r.lp||0)&&cj(fm)===cj(r.fm)&&jv(o.lufs)===jv(r.lufs);
+ o.mod=same?(newer?r.mod:s.mod):Date.now();   /* if the merge differs from what the server holds, bump mod so it is sent back */
+ return o}
+/* ---------- song ids from the file's content (new imports only; existing songs keep their ids) ---------- */
+async function fileId(f){const n=65536,a=new Uint8Array(await f.slice(0,n).arrayBuffer()),b=f.size>n?new Uint8Array(await f.slice(Math.max(n,f.size-n)).arrayBuffer()):new Uint8Array(0),
+ tag=new TextEncoder().encode('ocarina:'+f.size+':'),u=new Uint8Array(tag.length+a.length+b.length);u.set(tag);u.set(a,tag.length);u.set(b,tag.length+a.length);
+ if(window.crypto&&crypto.subtle){const d=new Uint8Array(await crypto.subtle.digest('SHA-256',u));return'c'+[...d.slice(0,16)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+ let s='';for(let i=0;i<u.length;i+=7)s+=String.fromCharCode(u[i]);return'c'+h53(s)+h53(f.size+':'+s.length)}
+/* ---------- trash: deleted songs and lists stay on this device for 30 days and can be restored ---------- */
+let TRASH=[];
+async function trashSongs(idArr){const at=Date.now(),es=[];
+ for(const id of idArr){const s=songs.get(id);if(!s)continue;const{cover,...rec}=s,
+   mem=lists.filter(l=>l.type!='stag'&&l.type!='ltag'&&(l.songs||[]).includes(id)).map(l=>({id:l.id,i:l.songs.indexOf(id)})),e={id:'song:'+id,kind:'song',at,rec,mem};
+  await rawPut('trash',e);TRASH=TRASH.filter(x=>x.id!=e.id);TRASH.push(e);es.push(e);await purge(id,true)}   /* the audio file stays in 'blobs' so a restore is instant */
+ await saveTomb();return es}
+async function restoreEntry(e){const r=e.rec;
+ if(e.kind=='song'){
+  if(!songs.has(r.id)){const s={...r,cover:r.cvh?(COV.get(r.cvh)||null):null,mod:Date.now()};
+   songs.set(s.id,s);delete tomb[s.id];await put('songs',s);
+   for(const m of e.mem||[]){const l=lists.find(x=>x.id==m.id);if(l&&!(l.songs||[]).includes(s.id)){l.songs.splice(Math.min(m.i,l.songs.length),0,s.id);l.mod=Date.now();await put('lists',l)}}
+   await saveTomb()}}
+ else if(!lists.some(x=>x.id==r.id)){const l={...r,mod:Date.now()},x=e.extra||{};
+  if(x.art){const c=Date.now();ART.set(l.id,{blob:x.art.blob,cmod:c});await put('art',{id:l.id,blob:x.art.blob,cmod:c});l.acmod=c}
+  lists.push(l);delete tomb[l.id];await put('lists',l);
+  for(const id of x.kids||[]){const c=lists.find(y=>y.id==id);if(c&&!c.ser){c.ser=l.id;c.mod=Date.now();await put('lists',c)}}
+  for(const t of x.stags||[])if(!lists.some(y=>y.id==t.id)){const tt={...t,mod:Date.now()};lists.push(tt);delete tomb[tt.id];await put('lists',tt)}
+  for(const[sid,tg]of x.songTags||[]){const s=songs.get(sid);if(s){s.tags=[...new Set([...(s.tags||[]),...tg])];s.mod=Date.now();await put('songs',s)}}
+  await saveTomb()}
+ TRASH=TRASH.filter(y=>y!==e);await del('trash',e.id)}
+async function dropEntry(e){TRASH=TRASH.filter(x=>x!==e);await del('trash',e.id);if(e.kind=='song'&&!songs.has(e.rec.id)){haveBlob.delete(e.rec.id);await del('blobs',e.rec.id)}}
+async function undoTrash(es){for(const e of es)await restoreEntry(e);render();toast('Restored')}
+function trashSheet(){const es=[...TRASH].sort((a,b)=>b.at-a.at),kind=e=>e.kind=='song'?'Song':({collection:'Collection',playlist:'Playlist',series:'Series'})[e.rec.type]||'Item';
+ sheet('<h3>Trash</h3><p class="mut" style="margin:0 0 10px">Deleted items are kept on this device for 30 days. Restoring a song puts it back in its playlists and on your other devices at the next sync.</p>'
+  +(es.length?`<div class="row" style="margin:0 0 8px"><button data-act="trEmpty">Empty trash</button></div>`+es.map(e=>`<div class="song" style="cursor:default"><div class="t"><b>${esc(e.kind=='song'?ttl(e.rec):(e.rec.name||'Untitled'))}</b><small>${kind(e)} · deleted ${new Date(e.at).toLocaleDateString()}</small></div><button data-act="trBack" data-id="${esc(e.id)}">Restore</button><button class="ic" data-act="trDel" data-id="${esc(e.id)}" title="Delete for good">${ic('x')}</button></div>`).join(''):'<p class="mut">The trash is empty.</p>'))}
 /* ---------- long lists are drawn in chunks as you scroll ---------- */
 const CH=120,MORE=new Map(),KEEP=new Map();let moreN=0,viewKey='';
 const itemHtml=(it,ctx)=>typeof it=='string'?row(it,ctx):it.h;
@@ -336,7 +403,7 @@ async function ogg(f){const o={},b=new Uint8Array(await f.slice(0,262144).arrayB
   if(k>0){const key=t.slice(0,k).toLowerCase(),val=t.slice(k+1).trim();if(key=='title')o.title=val;if(key=='artist')o.artist=val;if(key=='album')o.album=val;if(key=='tracknumber')o.trk=parseInt(val)||0;if(key=='discnumber')o.disc=parseInt(val)||0}}
  return o}
 async function addFiles(files){let n=0;const newIds=[],batch=Date.now();
- for(const f of files){if(!/\.(mp3|m4a|wav|ogg|oga|opus)$/i.test(f.name))continue;const id=h53(f.name+f.size);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
+ for(const f of files){if(!/\.(mp3|m4a|wav|ogg|oga|opus)$/i.test(f.name))continue;const oid=h53(f.name+f.size),id=songs.has(oid)?oid:await fileId(f);if(songs.has(id)){if(!haveBlob.has(id)){await put('blobs',{id,file:f});haveBlob.add(id);n++}continue}
   let t={};try{t=/\.mp3$/i.test(f.name)?await id3(f):/\.m4a$/i.test(f.name)?await m4a(f):/\.(ogg|oga|opus)$/i.test(f.name)?await ogg(f):{}}catch{}
   const dur=await getDur(f);const s={id,fn:f.name,dur,title:t.title||'',artist:t.artist||'',album:t.album||'',trk:t.trk||0,disc:t.disc||0,cover:t.cover||null,cmod:t.cover?Date.now():0,fav:0,rating:0,plays:0,added:Date.now(),batch,mod:Date.now()};
   songs.set(id,s);await put('songs',s);await put('blobs',{id,file:f});haveBlob.add(id);newIds.push(id);n++;if(n%5==0)toast('Adding… '+n)}
@@ -366,7 +433,7 @@ const strip=({cover,...r})=>r;
 const imgBlob=buf=>{const u=new Uint8Array(buf,0,4);return new Blob([buf],{type:u[0]==0x89?'image/png':u[0]==0x47?'image/gif':u[0]==0x52?'image/webp':'image/jpeg'})};
 async function sync(manual){
  if(!cfg.url||syncing)return;syncing=1;
- try{if(await syncOnce(manual)=='reset')await syncOnce(manual)}finally{syncing=0;render()}}
+ try{if(await syncOnce(manual)=='reset')await syncOnce(manual)}finally{syncing=0;render();setTimeout(analyseAll,1500)}}
 /* Delta sync: only records changed on this device since the last sync are sent, and only records
    changed on the server since 'srvSeq' (its change counter) come back. Audio and covers are matched by id. */
 async function syncOnce(manual){
@@ -381,13 +448,13 @@ async function syncOnce(manual){
   if(r.status==401)throw new Error('Wrong access token');if(!r.ok)throw new Error('Server error '+r.status);
   const m=await r.json();
   if(m.reset){srvSeq=0;lastPush=0;await saveSyncState();return'reset'}   /* the server was reset or restored: send everything again */
-  for(const[id,rec]of Object.entries(m.songs||{})){const s=songs.get(id);
+  for(const[id,r0]of Object.entries(m.songs||{})){const rec=cleanSong(r0);if(!rec)continue;const s=songs.get(id);
    if(tomb[id]&&rec.mod>tomb[id])delete tomb[id];
    if(!s){const n={...rec,cover:null,cmod:0};songs.set(id,n);await put('songs',n)}
-   else if(rec.mod>s.mod){let c=s.cover;if(rec.cvh&&rec.cvh!==s.cvh)c=COV.get(rec.cvh)||null;const cm=s.cmod||0;Object.assign(s,rec,{cover:c,cmod:cm});await put('songs',s)}}
-  for(const l of Object.values(m.lists||{})){if(tomb[l.id]&&l.mod>tomb[l.id])delete tomb[l.id];const ix=lists.findIndex(x=>x.id==l.id);
+   else{const o=mergeSong(s,rec);let c=s.cover;if(o.cvh&&o.cvh!==s.cvh)c=COV.get(o.cvh)||null;const cm=s.cmod||0;Object.assign(s,o,{cover:c,cmod:cm});SNAP.set(id,TRK.map(k=>jv(s[k])));bump('songs');await putSong(s)}}
+  for(const l0 of Object.values(m.lists||{})){const l=cleanList(l0);if(!l)continue;if(tomb[l.id]&&l.mod>tomb[l.id])delete tomb[l.id];const ix=lists.findIndex(x=>x.id==l.id);
    if(ix<0){lists.push(l);await put('lists',l)}else if(l.mod>lists[ix].mod){lists[ix]=l;await put('lists',l)}}
-  for(const[id,ts]of Object.entries(m.tomb||{})){
+  for(const[id,ts]of Object.entries(m.tomb||{})){if(!okId(id))continue;
    const s=songs.get(id);if(s&&(s.mod||0)<=ts){songs.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
    const li=lists.findIndex(x=>x.id==id);if(li>=0&&(lists[li].mod||0)<=ts){lists.splice(li,1);await del('lists',id)}
    if(ts>(tomb[id]||0))tomb[id]=ts}
@@ -465,7 +532,7 @@ function vHome(){if(!songs.size&&!lists.length)return EMPTY;
  const cid=cur&&collOf(cur.id),ccl=cid&&lists.find(l=>l.id==cid),paused=!realSrc()||au.paused;
  return(need?`<div class="banner" data-act="attn">${ic('alert')} ${need} song${need>1?'s':''} ${need>1?'need':'needs'} info · review ${ic('chevR')}</div>`:'')
  +featHtml()+(cur&&paused?`<div class="resume"><div class="sm">${art(cu(cur),ttl(cur))}</div><div class="t"><small>Pick up where you left off</small><b>${esc(ttl(cur))}</b><small>${esc(ccl?ccl.name:cur.artist||'')} · ${fm(realSrc()?au.currentTime:resumePos)} of ${fm(cur.dur||0)}</small></div><button class="p" data-act="resume">Resume</button></div>`:'')
- +`<div class="row"><button class="p" data-act="qshuf" data-id="all">Shuffle everything</button>${serAll.slice(0,6).map(s=>`<button data-act="qshuf" data-id="${esc(s.id)}">Shuffle ${esc(s.name)}</button>`).join('')}</div>`
+ +`<div class="row"><button class="p" data-act="qshuf" data-id="all">Shuffle everything</button></div>`
  +(rc.length?`<h2>Recently played</h2><div class="rec">${rc.map(([c,s])=>{const l=lists.find(x=>x.id==c);return card(c,l.name,ttl(s),lcover(l))}).join('')}</div>`:'')
  +(lb.ids.length?`<div class="bar" style="align-items:baseline"><h2>Recently added <small style="display:inline">${lb.ids.length} song${lb.ids.length>1?'s':''} · ${new Date(lb.at).toLocaleDateString()}</small></h2><div class="row" style="margin:0"><button data-act="plall" data-id="batch">${ic('play')} Play</button>${lb.ids.length>6?`<button data-act="batchAll">See all ${lb.ids.length}</button>`:''}</div></div>${lb.ids.slice(0,6).map(i=>row(i,'batch')).join('')}`:'')
  +(mp.length?`<div class="bar" style="align-items:baseline"><h2>Most played collections</h2>${hasLog?`<div class="chips"><span class="chip${mode=='time'?' on':''}" style="--c:var(--acc)" data-act="hm" data-k="time">Time</span><span class="chip${mode=='plays'?' on':''}" style="--c:var(--acc)" data-act="hm" data-k="plays">Plays</span></div>`:''}</div><div class="rec">${mp.map(x=>card(x.c.id,x.c.name,mode=='time'?fmtT(x.secs)+' listened':x.plays+' plays',lcover(x.c))).join('')}</div>`:'')
@@ -506,16 +573,19 @@ function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>
  +sec('Tags','<p class="mut">Rename, recolour and give icons to your tags.</p><div class="row"><button data-act="tagMgrOpen">Manage tags</button></div>')
  +sec('Library','<p class="mut" id="stu">Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button></div>')
  +sec('Backup','<p class="mut">Playlists, tags, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
+ +sec('Volume',`<p class="mut">Levels every song to the same loudness so quiet and loud soundtracks don't need the volume turned up and down. Songs are measured once and the result syncs between devices. If sound ever cuts out or stops when the phone locks, switch this off and restart the app.</p><label class="pk"><input type="checkbox" id="nmOn" ${NORM.on?'checked':''}>Normalise volume</label><label>Loudness target</label><select id="nmT">${[[-23,'Quiet (-23 LUFS)'],[-18,'Relaxed (-18 LUFS)'],[-16,'Standard (-16 LUFS)'],[-14,'Loud (-14 LUFS)']].map(([v,l])=>`<option value="${v}" ${NORM.target==v?'selected':''}>${l}</option>`).join('')}</select><p class="mut" id="nmS"></p><div class="row"><button data-act="nmRun">Measure songs now</button></div>`)
+ +sec('Trash',`<p class="mut">${TRASH.length?`${TRASH.length} deleted item${TRASH.length>1?'s':''} kept on this device for 30 days.`:'Songs and lists you delete are kept here for 30 days so you can restore them.'}</p><div class="row"><button data-act="trashOpen">Open trash</button></div>`)
  +sec('Keyboard shortcuts',SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''))+'</div>'}
 async function storageInfo(){const e=await(navigator.storage&&navigator.storage.estimate?navigator.storage.estimate():null),el=$('#stu');if(el)el.textContent=e?`${songs.size} songs · ${(e.usage/1e9).toFixed(2)} GB used on this device`:`${songs.size} songs`}
-function plGroup(p,mode){const cm=collMap();let col=p.col&&lists.find(x=>x.id==p.col&&x.type=='collection');
+function plGroup(p,mode){if(!p.col&&!p.ser)return null;const cm=collMap();let col=p.col&&lists.find(x=>x.id==p.col&&x.type=='collection');
  if(!col){const cnt=new Map();for(const id of p.songs){const c=cm.get(id);if(c)cnt.set(c,(cnt.get(c)||0)+1)}const best=[...cnt].sort((a,b)=>b[1]-a[1])[0];col=best&&lists.find(x=>x.id==best[0])}
  if(mode=='collection')return col?{id:col.id,name:col.name}:null;
  const sr=(p.ser&&lists.find(x=>x.id==p.ser&&x.type=='series'))||(col&&col.ser&&lists.find(x=>x.id==col.ser&&x.type=='series'));return sr?{id:sr.id,name:sr.name}:null}
-function vPlaylists(){const ps=sorted(pls()),cs=colls();const pc=p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,lcover(p));let body;
+function vPlaylists(){const ps=sorted(pls()),cs=colls();const pc=p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,'','go',plArt(p));let body;
  if(pgrp=='none')body=`<div class="grid" style="margin-top:14px">${ps.map(pc).join('')||'<p class="mut">No playlists yet.</p>'}</div>`;
- else{const m=new Map();for(const p of ps){const g=plGroup(p,pgrp),k=g?g.id:'';if(!m.has(k))m.set(k,{g,items:[]});m.get(k).items.push(p)}
-  body=[...m.values()].sort((a,b)=>!a.g-!b.g||(a.g&&a.g.name.localeCompare(b.g.name))).map(x=>`<div class="sh">${x.g?`<h2 data-act="go" data-id="${esc(x.g.id)}">${esc(x.g.name)} ${ic('chevR')}</h2>`:`<h2>No ${pgrp}</h2>`}</div><div class="grid">${x.items.map(pc).join('')}</div>`).join('')||'<p class="mut">No playlists yet.</p>'}
+ else{const m=new Map();for(const p of ps){const g=plGroup(p,pgrp),solo=!p.col&&!p.ser,k=g?g.id:(solo?'~solo':'');if(!m.has(k))m.set(k,{g,solo,items:[]});m.get(k).items.push(p)}
+  const rk=x=>x.solo?0:x.g?1:2;
+  body=[...m.values()].sort((a,b)=>rk(a)-rk(b)||(a.g&&b.g?a.g.name.localeCompare(b.g.name):0)).map(x=>`<div class="sh">${x.g?`<h2 data-act="go" data-id="${esc(x.g.id)}">${esc(x.g.name)} ${ic('chevR')}</h2>`:`<h2>${x.solo?'Standalone playlists':'No '+pgrp}</h2>`}</div><div class="grid">${x.items.map(pc).join('')}</div>`).join('')||'<p class="mut">No playlists yet.</p>'}
  return phead('Playlists',`<button class="p" data-act="newList" data-k="playlist">New playlist</button>`)+`<div class="bar"><div class="chips"><small style="margin-right:6px">Group by</small><select id="pgSel"><option value="none" ${pgrp=='none'?'selected':''}>Nothing</option><option value="series" ${pgrp=='series'?'selected':''}>Series</option><option value="collection" ${pgrp=='collection'?'selected':''}>Collection</option></select></div>${sortSelHtml()}</div>`+body}
 const nameOf=(k,id)=>{if(k=='song'){const s=songs.get(id);return s?ttl(s):'Deleted song'}const l=lists.find(x=>x.id==id);return l?l.name:'Deleted '+k};
 function vStats(){const y=S.sy===undefined?'':S.sy,m=(y===''||S.sm===undefined)?'':S.sm,yrs=[...new Set(LOG.map(e=>new Date(e.t).getFullYear()))].sort((a,b)=>b-a),MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -537,19 +607,19 @@ function vStats(){const y=S.sy===undefined?'':S.sy,m=(y===''||S.sm===undefined)?
 function vSeries(l){const cols=sorted(colls().filter(c=>c.ser==l.id)),ss=serSongs(l).filter(i=>songs.has(i)),set=new Set(ss),cset=new Set(cols.map(c=>c.id)),id=esc(l.id),tg=(l.tags||[]).map(tag).filter(Boolean),
   ps=sorted(pls().filter(p=>p.ser==l.id||cset.has(p.col)||p.songs.some(x=>set.has(x))));
  return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${serArt(l)}</div><div class="hi">${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}<small>Series · ${cols.length} collection${cols.length==1?'':'s'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button data-act="shuf" data-id="${id}">${ic('shuffle')} Shuffle</button><button data-act="serCols" data-id="${id}">Add collections</button><button data-act="lset" data-id="${id}">Settings</button></div></div></div></div>`
- +infoGrid(l)+`<h2>Collections</h2><div class="grid lg">${cols.map(ccard).join('')||'<p class="mut">No collections yet. Tap Add collections.</p>'}</div><div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div><div class="grid">${ps.map(p=>card(p.id,p.name,`${p.songs.length} songs`,lcover(p))).join('')||'<p class="mut">No playlists yet.</p>'}</div>`}
+ +infoGrid(l)+`<h2>Collections</h2><div class="grid lg">${cols.map(ccard).join('')||'<p class="mut">No collections yet. Tap Add collections.</p>'}</div><div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div><div class="grid">${ps.map(p=>card(p.id,p.name,`${p.songs.length} songs`,'','go',plArt(p))).join('')||'<p class="mut">No playlists yet.</p>'}</div>`}
 function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),tg=etags(l).map(tag).filter(Boolean),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
   ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),lt=lists.filter(x=>x.type=='stag'&&x.col==l.id),lf=S.lf&&lt.some(x=>x.id==S.lf)?S.lf:null,shown=lf?ids.filter(i=>(songs.get(i).tags||[]).includes(lf)):ids,ctx=lf?'view':l.id;S.viewIds=shown;
  keyCol=l.id;keySet=new Set(keys);
  return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi">${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}<small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button data-act="shuf" data-id="${id}">${ic('shuffle')} Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button><button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button></div></div></div></div>`
  +infoGrid(l)
  +`<div class="bar" style="align-items:baseline"><h2>Key tracks</h2>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`+(keys.length?`<div class="keys">${keys.map((k,i)=>keyRow(k,i,l.id)).join('')}</div>`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>')
- +`<div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`+(ps.length?`<div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,lcover(p))).join('')}</div>`:'<p class="mut">No playlists yet.</p>')
+ +`<div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`+(ps.length?`<div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${p.songs.length} songs`,'','go',plArt(p))).join('')}</div>`:'<p class="mut">No playlists yet.</p>')
  +songsHead(l,ids.length)+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(rowsHtml(shown,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>')}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  if(l.type=='series')return vSeries(l);if(l.type=='collection')return vGame(l);
  const own=lists.find(x=>x.id==l.id),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null;
- let h=`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div class="big">${art(lcover(l),l.name)}</div><div>${etags(l).length?`<div class="chips">${etags(l).map(tag).filter(Boolean).map(x=>chip(x)).join('')}</div>`:''}<small>${l.type=='collection'?'Collection':'Playlist'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${ids.length} songs · ${fmtT(ids.reduce((n,i)=>n+(songs.get(i).dur||0),0))} · ${ids.reduce((n,i)=>n+(songs.get(i).plays||0),0)} plays</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}</div></div></div>`;
+ let h=`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div class="big">${l.type=='playlist'?plArt(l):art(lcover(l),l.name)}</div><div>${etags(l).length?`<div class="chips">${etags(l).map(tag).filter(Boolean).map(x=>chip(x)).join('')}</div>`:''}<small>${l.type=='collection'?'Collection':'Playlist'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${ids.length} songs · ${fmtT(ids.reduce((n,i)=>n+(songs.get(i).dur||0),0))} · ${ids.reduce((n,i)=>n+(songs.get(i).plays||0),0)} plays</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}</div></div></div>`;
  if(l.type=='collection'){const set=new Set(l.songs);
   const ps=pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x))).map(p=>({p,s:sub(p,cs)})).sort((a,b)=>!!b.s-!!a.s||a.p.name.localeCompare(b.p.name));
   h+=`<h2>Playlists</h2><div class="grid">${ps.map(x=>card(x.p.id,x.p.name,x.s,lcover(x.p))).join('')||'<p class="mut">No playlists use songs from this collection yet.</p>'}</div>`}
@@ -560,12 +630,12 @@ function vArtists(){return`<h2>Artists</h2><div class="grid">${artistsMap().map(
 function vArtist(){const c='artist:'+S.id,ids=ctxIds(c);return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div><h1>${esc(S.id)}</h1><small>${ids.length} songs</small><div class="row"><button class="p" data-act="plall" data-id="${esc(c)}">Play</button><button data-act="shuf" data-id="${esc(c)}">Shuffle</button></div></div></div>`+rowsHtml(ids,c)}
 function vSearch(){const q=S.q.toLowerCase(),ids=all().filter(s=>(ttl(s)+' '+s.artist+' '+s.album).toLowerCase().includes(q)).sort((a,b)=>ttl(a).localeCompare(ttl(b))).map(s=>s.id).slice(0,200);S.found=ids;
  const ls=[...lists.filter(x=>x.type=='series'),...pls(),...colls().filter(c=>c.id!='all'&&c.id!='fav')].filter(l=>l.name.toLowerCase().includes(q)),cs=colls();
- return`<h2>Series, collections and playlists</h2><div class="grid">${ls.map(l=>card(l.id,l.name,l.type=='playlist'?sub(l,cs):l.type=='series'?'Series':'Collection',lcover(l),'go',l.type=='series'?serArt(l):'')).join('')||'<p class="mut">No matches.</p>'}</div><h2>Songs</h2>`+(rowsHtml(ids,'search')||'<p class="mut">No matches.</p>')}
+ return`<h2>Series, collections and playlists</h2><div class="grid">${ls.map(l=>card(l.id,l.name,l.type=='playlist'?sub(l,cs):l.type=='series'?'Series':'Collection',lcover(l),'go',l.type=='series'?serArt(l):l.type=='playlist'?plArt(l):'')).join('')||'<p class="mut">No matches.</p>'}</div><h2>Songs</h2>`+(rowsHtml(ids,'search')||'<p class="mut">No matches.</p>')}
 function navKey(){if(S.t=='list'){const l=getList(S.id);return l?({collection:'explore',series:'explore',playlist:'playlists'}[l.type]||'home'):'home'}if(S.t=='artist')return'library';return S.t}
 let lastKey='',rq=0;
 function render(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;doRender()})}
 function doRender(){keyCol=null;MORE.clear();const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');if(nk2!=lastKey)KEEP.clear();viewKey=nk2;$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
- $('#main').innerHTML=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();if(S.t=='settings'&&!S.q)storageInfo();if(io)$$('#main .more').forEach(el=>io.observe(el));if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
+ $('#main').innerHTML=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();if(S.t=='settings'&&!S.q){storageInfo();normPaint()}if(io)$$('#main .more').forEach(el=>io.observe(el));if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
 /* ---------- stats ---------- */
 let LOG=[],logSeq=0,statsMeta=null;
 const inRange=(e,y,m)=>{const d=new Date(e.t);return(y===''||y==null||d.getFullYear()==y)&&(m===''||m==null||d.getMonth()==m)};
@@ -578,6 +648,64 @@ async function syncLog(api){const pend=LOG.filter(e=>!e.sent),r=await api('/api/
 /* ---------- player ---------- */
 let artKey='';const au=new Audio();let Q=[],Q0=null,qi=-1,shuf=0,rep=0,curUrl=null,counted=0,curCtx='',resumePos=0,sess=null,lastT=0,seeking='';
 const realSrc=()=>!!au.src&&!au.src.startsWith('data:');
+/* ---------- volume normalisation ----------
+   Each song's loudness is measured once (ITU BS.1770 / EBU R128 style, K-weighted and gated) and the result is saved on the song,
+   so it syncs to your other devices. Playback then goes through a Web Audio gain that brings every song to the same target level,
+   never boosting past the song's own peak, with a limiter as a safety net. */
+au.crossOrigin='anonymous';   /* required so streamed songs can pass through Web Audio */
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform=='MacIntel'&&navigator.maxTouchPoints>1);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms)),tick=()=>sleep(0);
+let NORM={on:true,target:-16};try{const v=localStorage.getItem('norm');if(v!==null)NORM.on=v=='1';const t=parseFloat(localStorage.getItem('normT'));if(isFinite(t))NORM.target=t}catch{}
+const G={ctx:null,gain:null};
+function ensureGraph(){
+ if(!G.ctx){if(!NORM.on)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  try{let ctx;try{ctx=new AC({latencyHint:'playback'})}catch{ctx=new AC()}
+   const src=ctx.createMediaElementSource(au),gain=ctx.createGain(),lim=ctx.createDynamicsCompressor();
+   lim.threshold.value=-1;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.003;lim.release.value=.1;
+   src.connect(gain);gain.connect(lim);lim.connect(ctx.destination);
+   ctx.onstatechange=()=>{if(ctx.state!='running'&&!au.paused)ctx.resume().catch(()=>{})};
+   G.ctx=ctx;G.gain=gain;try{navigator.audioSession.type='playback'}catch{}}
+  catch(e){console.warn('Volume levelling unavailable',e);return}}
+ if(G.ctx.state!='running')G.ctx.resume().catch(()=>{})}
+const gainFor=s=>{if(!NORM.on||!s||s.lufs==null)return 1;let g=Math.pow(10,(NORM.target-s.lufs)/20);if(s.pk>0)g=Math.min(g,.97/s.pk);return Math.max(.1,Math.min(g,4))};
+function applyGain(smooth){if(!G.gain)return;const g=gainFor(songs.get(Q[qi])),p=G.gain.gain,t=G.ctx.currentTime;
+ try{p.cancelScheduledValues(t);if(smooth)p.setTargetAtTime(g,t,.1);else p.setValueAtTime(g,t)}catch{p.value=g}}
+/* K-weighting filters for any sample rate (the BS.1770 pre-filter shelf and the RLB high-pass) */
+function kFilters(fs){const pi=Math.PI;let f0=1681.974450955533,Gd=3.999843853973347,Q=.7071752369554196,K=Math.tan(pi*f0/fs);
+ const Vh=Math.pow(10,Gd/20),Vb=Math.pow(Vh,.4996667741545416),a0=1+K/Q+K*K,
+  s1={b0:(Vh+Vb*K/Q+K*K)/a0,b1:2*(K*K-Vh)/a0,b2:(Vh-Vb*K/Q+K*K)/a0,a1:2*(K*K-1)/a0,a2:(1-K/Q+K*K)/a0};
+ f0=38.13547087602444;Q=.5003270373238773;K=Math.tan(pi*f0/fs);const a0b=1+K/Q+K*K;
+ return{s1,s2:{a1:2*(K*K-1)/a0b,a2:(1-K/Q+K*K)/a0b}}}
+async function loudness(buf){const fs=buf.sampleRate,n=buf.length,nch=Math.min(buf.numberOfChannels,2),{s1,s2}=kFilters(fs),bin=Math.max(1,Math.round(fs*.1)),nb=Math.floor(n/bin);
+ if(nb<4)return null;const e=new Float64Array(nb),lim=nb*bin,SL=1<<19;let peak=0;
+ for(let c=0;c<nch;c++){const x=buf.getChannelData(c);let x1=0,x2=0,y1=0,y2=0,u1=0,u2=0,v1=0,v2=0,j=0,k=0,acc=0;
+  for(let st=0;st<lim;st+=SL){const en=Math.min(lim,st+SL);
+   for(let i=st;i<en;i++){const xi=x[i],ax=xi<0?-xi:xi;if(ax>peak)peak=ax;
+    const y=s1.b0*xi+s1.b1*x1+s1.b2*x2-s1.a1*y1-s1.a2*y2;x2=x1;x1=xi;y2=y1;y1=y;
+    const v=y-2*u1+u2-s2.a1*v1-s2.a2*v2;u2=u1;u1=y;v2=v1;v1=v;
+    acc+=v*v;if(++k==bin){e[j++]+=acc;acc=0;k=0}}
+   await tick()}}
+ if(nch==1)for(let i=0;i<nb;i++)e[i]*=2;   /* a mono file is played through both speakers */
+ const z=[];for(let b=0;b+3<nb;b++)z.push((e[b]+e[b+1]+e[b+2]+e[b+3])/(4*bin));
+ const L=v=>-.691+10*Math.log10(v),abs=z.filter(v=>v>0&&L(v)>-70);if(!abs.length)return null;
+ const m1=abs.reduce((a,v)=>a+v,0)/abs.length,thr=L(m1)-10,rel=abs.filter(v=>L(v)>thr),m2=rel.reduce((a,v)=>a+v,0)/rel.length;
+ return{lufs:L(m2),peak}}
+async function decodeFile(f){const data=await f.arrayBuffer(),OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;let ctx;
+ try{ctx=new OC(2,1,22050)}catch{ctx=new OC(2,1,44100)}   /* decoding at a lower rate halves the memory needed */
+ return await new Promise((res,rej)=>{try{const p=ctx.decodeAudioData(data,res,rej);if(p&&p.then)p.then(res,rej)}catch(e){rej(e)}})}
+const FAILED=new Set();let anQ=Promise.resolve(),analysing=0;const INFL=new Map();
+async function analyse1(s){if(!songs.has(s.id))return;const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)return;
+ const lim=IOS?360:600;let r=null,failed=false;
+ if(b.file.size>40e6||(s.dur&&s.dur>lim)){r=null}   /* too long to decode safely: left at normal volume */
+ else{try{r=await loudness(await decodeFile(b.file))}catch(e){failed=true}}
+ if(failed&&IOS){FAILED.add(s.id);return}   /* might just be low memory: don't record a permanent failure from a phone */
+ s.lufs=r?Math.round(r.lufs*10)/10:null;s.pk=r?Math.round(r.peak*1000)/1000:null;s.mod=Date.now();await put('songs',s)}
+function analyseSong(s){if(INFL.has(s.id))return INFL.get(s.id);const p=anQ.then(()=>analyse1(s)).catch(()=>{FAILED.add(s.id)}).finally(()=>INFL.delete(s.id));anQ=p;INFL.set(s.id,p);return p}
+async function analyseAll(){if(analysing||!NORM.on||IOS)return;analysing=1;let n=0;   /* phones only measure the song that is playing; the PC measures the library and it syncs across */
+ try{for(const s of[...songs.values()]){if(!NORM.on)break;if(s.lufs!==undefined||FAILED.has(s.id)||!haveBlob.has(s.id)||!songs.has(s.id))continue;
+   await analyseSong(s);if(++n%10==0){applyGain(true);render()}await sleep(120)}}
+ finally{analysing=0;if(n){applyGain(true);render()}}}
+function normPaint(){const el=$('#nmS');if(!el)return;const done=all().filter(s=>s.lufs!==undefined).length;el.textContent=`${done} of ${songs.size} songs measured${analysing?' (measuring now…)':''}${IOS?'. This device only measures the song that is playing; songs measured on your PC arrive with sync.':''}`}
 function sessNew(s){const c=collOf(s.id),cl=c&&lists.find(l=>l.id==c),pl=lists.find(l=>l.id==curCtx&&l.type=='playlist');sess={song:s.id,coll:c,ser:cl&&cl.ser,pl:pl&&pl.id,secs:0,tot:0,played:0,t:Date.now()};lastT=0}
 async function flush(){const x=sess;if(!x||(x.secs<1&&!x.played))return;const e={id:'e'+Date.now().toString(36)+rnd(),t:x.t,song:x.song,coll:x.coll,ser:x.ser,pl:x.pl,secs:Math.round(x.secs),play:x.played};x.secs=0;x.played=0;x.t=Date.now();LOG.push(e);await put('log',e)}
 const savePlay=()=>{if(qi<0||!Q.length)return;put('meta',{id:'play',q:Q.slice(qi,qi+300),pos:realSrc()?au.currentTime:resumePos,ctx:curCtx})};
@@ -586,6 +714,7 @@ async function playAt(i,o={}){if(i<0||i>=Q.length)return;await flush();qi=i;coun
  const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b&&!cfg.url)return toast('Audio file missing');
  if(curUrl)URL.revokeObjectURL(curUrl);curUrl=b?URL.createObjectURL(b.file):null;au.src=b?curUrl:(activeBase||bases()[0])+'/api/audio/'+s.id+'?t='+encodeURIComponent(cfg.token);
  if(o.pos)au.addEventListener('loadedmetadata',()=>{au.currentTime=o.pos},{once:true});
+ ensureGraph();applyGain();if(NORM.on&&b&&s.lufs===undefined)analyseSong(s).then(()=>{if(Q[qi]==s.id)applyGain(true)});
  au.play().catch(()=>{});paint();savePlay()}
 function startPlay(ids,id,sf,ctx){if(!ids.length)return;if(sf!==undefined)shuf=sf;curCtx=ctx||'';ids=ids.slice();
  if(shuf){const f=id||ids[Math.random()*ids.length|0];Q0=ids.slice();Q=[f,...shuffled(ids.filter(x=>x!=f))];playAt(0)}else{Q0=null;Q=ids;playAt(id?ids.indexOf(id):0)}}
@@ -616,6 +745,10 @@ function paint(){const s=songs.get(Q[qi]);
 au.onloadedmetadata=()=>{const s=songs.get(Q[qi]);if(s&&!s.dur&&au.src==curUrl&&au.duration>0&&isFinite(au.duration)){s.dur=au.duration;put('songs',s);render()}};
 au.onplay=paintPlay;au.onpause=()=>{paintPlay();flush();savePlay()};
 au.onended=async()=>{if(!realSrc())return;await flush();next(1)};
+let errSkips=0;au.addEventListener('playing',()=>{errSkips=0});
+au.addEventListener('error',()=>{if(!realSrc())return;const s=songs.get(Q[qi]);if(!s)return;const local=!!curUrl&&au.src==curUrl;
+ toast(local?`Couldn't play "${ttl(s)}"`:`"${ttl(s)}" isn't on this device and the server can't be reached`);
+ if(errSkips<3&&qi<Q.length-1){errSkips++;setTimeout(()=>{if(au.error)next()},1500)}else errSkips=0});
 au.ontimeupdate=()=>{if(!realSrc())return;const d=au.duration||0,c=au.currentTime;if(sess&&!au.paused){const dt=c-lastT;if(dt>0&&dt<2){sess.secs+=dt;sess.tot+=dt}}lastT=c;uiTime();
  if(!counted&&d&&sess&&sess.tot>Math.min(30,d/2)){counted=1;const s=songs.get(Q[qi]);if(s){s.plays++;s.mod=Date.now();put('songs',s);if(sess)sess.played=1}}};
 setInterval(()=>{if(realSrc()&&!au.paused){flush();savePlay()}},30000);
@@ -636,7 +769,7 @@ const doShuf=()=>{shuf=!shuf?1:0;if(qi>=0){
   else if(Q0){const ix=new Map(Q0.map((x,i)=>[x,i])),up=Q.slice(qi+1),rest=up.filter(x=>ix.has(x)).sort((a,b)=>ix.get(a)-ix.get(b)),extra=up.filter(x=>!ix.has(x));Q.splice(qi+1,Infinity,...rest,...extra);Q0=null}
   savePlay()}paint()},doRep=()=>{rep=(rep+1)%3;paint()},doFav=()=>{if(Q[qi])fav(Q[qi])};
 $('#nShuf').onclick=$('#bShuf').onclick=$('#pShuf').onclick=doShuf;$('#nRep').onclick=$('#bRep').onclick=$('#pRep').onclick=doRep;$('#nFav').onclick=$('#bFav').onclick=$('#pFav').onclick=doFav;
-addEventListener('pointerdown',()=>{if(realSrc())return;au.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';au.play().catch(()=>{})},{once:true});
+addEventListener('pointerdown',()=>{ensureGraph();if(realSrc())return;au.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';au.play().catch(()=>{})},{once:true});
 /* keyboard shortcuts */
 const SHORTCUTS=[['Space','Play or pause'],['Left / Right','Seek back or forward 10 seconds'],['Shift + Left / Right','Previous or next song'],['Up / Down','Volume'],['M','Mute'],['S','Shuffle'],['R','Repeat'],['F','Favourite the current song'],['Q','Show the queue'],['/','Search'],['Esc','Close a window or the full screen player']];
 const shortcutsHelp=()=>sheet('<h3>Keyboard shortcuts</h3>'+SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''));
@@ -658,7 +791,7 @@ function pop(anchor,items,right){closePop();const r=anchor.getBoundingClientRect
 /* ---------- tags, sorting, selection, list settings ---------- */
 const PAL=['#A9C5F5','#D9AA45','#7FC8A0','#E08A7A','#B79CE8','#6FC3D6','#C7B26B'];
 const tag=id=>memo('tags',()=>{const m=new Map();for(const l of lists)if(l.type=='stag'||l.type=='ltag')m.set(l.id,l);return m}).get(id);
-const chip=(t,mode,on)=>`<span class="chip${on?' on':''}" style="--c:${esc(t.color||PAL[0])}" ${mode?`data-act="${{rm:'tpRm',f:'filt',sf:'sfilt',e:'tagEdit',bx:'bRm',lf:'lfilt'}[mode]}" data-id="${t.id}"`:''}>${t.icon?`<img src="${t.icon}" alt="">`:''}${esc(t.name||'Tag')}${mode=='rm'?ic('x'):''}</span>`;
+const chip=(t,mode,on)=>`<span class="chip${on?' on':''}" style="--c:${esc(t.color||PAL[0])}" ${mode?`data-act="${{rm:'tpRm',f:'filt',sf:'sfilt',e:'tagEdit',bx:'bRm',lf:'lfilt'}[mode]}" data-id="${t.id}"`:''}>${t.icon?`<img src="${esc(t.icon)}" alt="">`:''}${esc(t.name||'Tag')}${mode=='rm'?ic('x'):''}</span>`;
 const created=l=>parseInt((l.id||'').slice(1,9),36)||0;
 const sorters={az:(a,b)=>a.name.localeCompare(b.name),za:(a,b)=>b.name.localeCompare(a.name),new:(a,b)=>created(b)-created(a),old:(a,b)=>created(a)-created(b),big:(a,b)=>b.songs.length-a.songs.length};
 let sortK='az';try{sortK=localStorage.getItem('sort')||'az'}catch{}
@@ -679,7 +812,7 @@ function tagEdit(id,kind,col){const o=id&&tag(id);td=o?{...o}:{id:null,type:kind
 function nFChange(v){const s=$('#nS');s.hidden=!(v=='album'||v=='stag');if(v=='album')s.innerHTML=[...new Set(all().map(x=>x.album).filter(Boolean))].sort().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');if(v=='stag')s.innerHTML=lists.filter(l=>l.type=='stag'&&l.col).map(l=>`<option value="${l.id}">${esc((lists.find(c=>c.id==l.col)||{}).name||'')}: ${esc(l.name)}</option>`).join('')||'<option value="">(no song tags yet)</option>';$('#nN').placeholder=v=='every'?'(names come from the albums)':'Name'}
 function endSel(){if(!selMode)return;selMode=0;sel=new Set();document.body.classList.remove('selecting');$('#selbar').hidden=true;$$('.song.picked').forEach(e=>e.classList.remove('picked'))}
 function toggleSel(t){const id=t.dataset.id;sel.has(id)?sel.delete(id):sel.add(id);t.classList.toggle('picked',sel.has(id));$('#selN').textContent=sel.size+' selected'}
-async function purge(id){songs.delete(id);haveBlob.delete(id);tomb[id]=Date.now();await del('songs',id);await del('blobs',id);for(const l of lists)if(l.type!='stag'&&l.type!='ltag'&&(l.songs||[]).includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}
+async function purge(id,keep){songs.delete(id);if(!keep)haveBlob.delete(id);tomb[id]=Date.now();await del('songs',id);if(!keep)await del('blobs',id);for(const l of lists)if(l.type!='stag'&&l.type!='ltag'&&(l.songs||[]).includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}
 function bulkEdit(){const ids=[...sel],present=new Set(ids.flatMap(i=>(songs.get(i)||{}).tags||[]));bRm=new Set();const cm=collMap(),cs=new Set(ids.map(i=>cm.get(i)));tp={kind:'stag',col:cs.size==1?[...cs][0]:undefined,sel:new Set()};
  sheet(`<h3>Edit ${ids.length} songs</h3><label>Artist</label><input id="bA" placeholder="Leave blank to keep each song's artist"><label>Album</label><input id="bB" placeholder="Leave blank to keep each song's album"><label>Add tags</label><div id="tp"></div>${present.size?`<label>Remove tags (tap to mark)</label><div class="chips">${[...present].map(tag).filter(Boolean).map(x=>chip(x,'bx')).join('')}</div>`:''}<label>Cover art (applies to all)</label><input id="bC" type="file" accept="image/*"><button class="p" data-act="bSave">Apply to ${ids.length} songs</button>`);tpRender()}
 function listSettings(id){const l=lists.find(x=>x.id==id);if(!l)return;const sr0=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null,inh=sr0?(sr0.tags||[]).map(tag).filter(Boolean):[];ls={id,img:l.img||'',artBlob:null,artDel:false};tp={kind:'ltag',sel:new Set(l.tags||[])};
@@ -710,12 +843,16 @@ let pgrp='none';try{pgrp=localStorage.getItem('pgrp')||'none'}catch{}
 let grp=true;try{grp=localStorage.getItem('grp')!='0'}catch{}
 const etags=l=>{const own=l.tags||[];if(l.type!='collection'||!l.ser)return own;const s=lists.find(x=>x.id==l.ser&&x.type=='series');return[...new Set([...own,...((s&&s.tags)||[])])]};
 const serSongs=s=>memo('ss:'+s.id,()=>[...new Set(colls().filter(c=>c.ser==s.id).sort(sorters.az).flatMap(c=>c.songs))]);
+function plArt(p){if(p.img)return art(p.img,p.name);const seen=new Set(),us=[];
+ for(const i of p.songs||[]){const s=songs.get(i);if(!s||!s.cover)continue;const k=s.cvh||i;if(seen.has(k))continue;seen.add(k);us.push(cu(s));if(us.length==4)break}
+ const mos=a=>`<div class="mos">${a.map(u=>`<img loading="lazy" src="${esc(u)}" alt="">`).join('')}</div>`;
+ return us.length>=4?mos(us):us.length>=2?mos(us.slice(0,2)):us.length?art(us[0],p.name):art('',p.name)}
 function serArt(s){if(s.img)return art(s.img,s.name);const us=colls().filter(c=>c.ser==s.id).sort(sorters.az).map(c=>lcover(c)).filter(Boolean).slice(0,4);
  if(!us.length)return art('',s.name);if(us.length==1)return art(us[0],s.name);return`<div class="mos">${us.map(u=>`<img loading="lazy" src="${u}" alt="">`).join('')}</div>`}
 function nKChange(v){$('#nSw').hidden=v!='collection';$('#nCw').hidden=v!='playlist';$('#nFw').hidden=v=='series'}
 function newDlg(type){const sers=lists.filter(l=>l.type=='series'),cl=lists.filter(l=>l.type=='collection'),opt=x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`;
-  sheet(`<h3>New</h3><label>Name</label><input id="nN" placeholder="e.g. The Legend of Zelda: Ocarina of Time"><label>Type</label><select id="nK"><option value="collection">Collection</option><option value="playlist">Playlist</option><option value="series">Series</option></select><div id="nSw"><label>Series (optional)</label><select id="nSe"><option value="">(none)</option>${sers.map(opt).join('')}</select></div><div id="nCw" hidden><label>Inside</label><select id="nC">${cl.length?`<optgroup label="Collections">${cl.map(opt).join('')}</optgroup>`:''}${sers.length?`<optgroup label="Series">${sers.map(opt).join('')}</optgroup>`:''}</select></div><div id="nFw"><label>Start with</label><select id="nF"><option value="">Nothing (empty)</option><option value="album">Songs from an album</option><option value="stag">Songs with a song tag (makes a playlist)</option><option value="every">One collection for every unsorted album</option></select><select id="nS" hidden></select></div><button class="p" data-act="mk">Create</button>`);
-  if(type){$('#nK').value=type;nKChange(type)}if(pending.length){$('#nK').value='playlist';nKChange('playlist');const c=collOf(pending[0]);if(c)$('#nC').value=c}}
+  sheet(`<h3>New</h3><label>Name</label><input id="nN" placeholder="e.g. The Legend of Zelda: Ocarina of Time"><label>Type</label><select id="nK"><option value="collection">Collection</option><option value="playlist">Playlist</option><option value="series">Series</option></select><div id="nSw"><label>Series (optional)</label><select id="nSe"><option value="">(none)</option>${sers.map(opt).join('')}</select></div><div id="nCw" hidden><label>Belongs to (optional)</label><select id="nC"><option value="">None: a playlist on its own</option>${cl.length?`<optgroup label="Collections">${cl.map(opt).join('')}</optgroup>`:''}${sers.length?`<optgroup label="Series">${sers.map(opt).join('')}</optgroup>`:''}</select></div><div id="nFw"><label>Start with</label><select id="nF"><option value="">Nothing (empty)</option><option value="album">Songs from an album</option><option value="stag">Songs with a song tag (makes a playlist)</option><option value="every">One collection for every unsorted album</option></select><select id="nS" hidden></select></div><button class="p" data-act="mk">Create</button>`);
+  if(type){$('#nK').value=type;nKChange(type)}if(pending.length){$('#nK').value='playlist';nKChange('playlist')}}
 
 /* ---------- key art, facets, hero ---------- */
 const ART=new Map();let keyCol=null,keySet=new Set(),featIdx=0,fsx=null,featAnim=false;const featSeed=Math.random();
@@ -792,8 +929,7 @@ async function rate(n){const s=songs.get(Q[qi]);if(!s)return;s.rating=s.rating==
 async function addTo(l,ids){if(l.type=='collection'){const n0=l.songs.length,mv=await toColl(l,ids),n=l.songs.length-n0;toast(n?`Added ${n}${mv?` (moved ${mv} from other collections)`:''}`:'Already in there');render();return}
  const have=new Set(l.songs);let n=0;for(const i of ids)if(!have.has(i)){l.songs.push(i);n++}l.mod=Date.now();await put('lists',l);toast(n?`Added ${n}`:'Already in there');render()}
 async function mv(l,id,d){const i=l.songs.indexOf(id),j=i+d;if(j<0||j>=l.songs.length)return;[l.songs[i],l.songs[j]]=[l.songs[j],l.songs[i]];l.mod=Date.now();await put('lists',l);render()}
-async function delSong(id){if(!confirm('Delete this song from your library?'))return;songs.delete(id);haveBlob.delete(id);tomb[id]=Date.now();saveTomb();await del('songs',id);await del('blobs',id);
- for(const l of lists){if(l.songs.includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}render()}
+async function delSong(id){if(!songs.has(id)||!confirm('Delete this song from your library?'))return;const es=await trashSongs([id]);render();toast('Song deleted',()=>undoTrash(es))}
 const sh=$('#sheet');
 function sheet(h){sh.innerHTML=`<div class="bk"></div><div class="pn">${h}</div>`;sh.hidden=false}
 const closeSheet=()=>{sh.hidden=true;sh.innerHTML=''};
@@ -806,21 +942,37 @@ function songMenu(id,ctx){const s=songs.get(id),l=lists.find(x=>x.id==ctx);
 /* ---------- editable queue ---------- */
 function qRow(id,k,base){const s=songs.get(id);if(!s)return'';return`<div class="song krow" data-kind="q" data-act="jump" data-i="${base+k}">${k?`<button class="ic grip" data-act="noop" data-grip="${k}" title="Drag to reorder">${ic('grip')}</button>`:'<span style="width:34px;flex:none"></span>'}<div class="sm">${art(cu(s),ttl(s))}</div><div class="t"><b>${esc(ttl(s))}${k==0?' (now)':''}</b><small>${esc(s.artist||'')}</small></div>${k?`<button class="ic" data-act="qRm" data-k="${k}" title="Remove from queue">${ic('x')}</button>`:''}</div>`}
 function qSheetRender(){const el=$('#qL');if(!el)return;const base=Math.max(qi,0);el.innerHTML=Q.slice(base,base+100).map((id,k)=>qRow(id,k,base)).join('')||'<p class="mut">Nothing queued.</p>';const c=$('#qN');if(c)c.textContent=Math.max(0,Q.length-base-1)+' up next'}
-function addMenu(id){menu('Add to…',[...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,[id])]),['New playlist with this song',()=>{pending=[id];A.newList()}]])}
+function addMenu(id){menu('Add to…',[['New playlist…',()=>newPlaylistWith([id])],...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,[id])])])}
+async function newPlaylistWith(ids){const n=prompt('Name for the new playlist');if(!n||!n.trim())return null;const l=await mkList({name:n.trim(),type:'playlist',songs:[...new Set(ids)]});toast(`Made "${l.name}" with ${l.songs.length} song${l.songs.length==1?'':'s'}`);render();return l}
 let pending=[];
 function editSong(id){const s=songs.get(id);sheet(`<h3>Edit info</h3><label>Title</label><input id="eT" value="${esc(s.title)}"><label>Artist</label><input id="eA" value="${esc(s.artist)}"><label>Album (sets its auto collection)</label><input id="eB" value="${esc(s.album)}"><div class="fg"><div><label>Disc number</label><input id="eDi" inputmode="numeric" value="${s.disc||''}"></div><div><label>Track number</label><input id="eTr" inputmode="numeric" value="${s.trk||''}"></div></div><label>Cover art</label><div class="sm" id="eP" style="width:90px;height:90px;margin:4px 0 8px">${art(cu(s),ttl(s))}</div><input id="eC" type="file" accept="image/*"><label>Tags</label><div id="tp"></div><button class="p" data-act="saveInfo" data-id="${id}">Save changes</button>`);const col=collOf(id);tp={kind:'stag',col,sel:new Set(col?s.tags||[]:[])};tpRender()}
 let pk={sel:new Set()};
 function pickSongs(lid){pk={sel:new Set(),id:lid};const l=lists.find(x=>x.id==lid);
- sheet(`<h3>Add songs to ${esc(l.name)}</h3><label>Pick from</label><select id="pS"><option value="all">All songs</option><option value="free">Songs not in a collection</option>${colls().map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}${pls().filter(p=>p.id!=lid).map(p=>`<option value="${esc(p.id)}">Playlist: ${esc(p.name)}</option>`).join('')}</select><input id="pQ" type="search" placeholder="Filter"><div id="pL"></div><button class="p" data-act="pkgo" id="pG">Add 0</button>`);pkRender()}
-function pkRender(){const l=lists.find(x=>x.id==pk.id),have=new Set(l.songs),src={songs:ctxIds($('#pS').value)},q=$('#pQ').value.toLowerCase();
- const ids=src.songs.filter(i=>songs.has(i)&&!have.has(i)&&(ttl(songs.get(i))+' '+songs.get(i).artist).toLowerCase().includes(q)).slice(0,100);pk.shown=ids;
- $('#pL').innerHTML=(ids.length?'<button data-act="pkall">Select shown</button>':'<p class="mut">Nothing to add here.</p>')+ids.map(i=>`<label class="pk"><input type="checkbox" data-pk="${i}" ${pk.sel.has(i)?'checked':''}>${esc(ttl(songs.get(i)))}<small>${esc(songs.get(i).artist)}</small></label>`).join('');$('#pG').textContent='Add '+pk.sel.size}
+ sheet(`<h3>Add songs to ${esc(l.name)}</h3><label>Pick from</label><select id="pS"><option value="all">All songs</option><option value="free">Songs not in a collection</option>${lists.filter(x=>x.type=='series').map(x=>`<option value="${esc(x.id)}">Series: ${esc(x.name)}</option>`).join('')}${colls().map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}${pls().filter(p=>p.id!=lid).map(p=>`<option value="${esc(p.id)}">Playlist: ${esc(p.name)}</option>`).join('')}</select><input id="pkQ" type="search" placeholder="Filter by song, artist or collection"><div id="pL"></div><button class="p" data-act="pkgo" id="pG">Add 0</button>`);pkRender()}
+function pkRender(){const l=lists.find(x=>x.id==pk.id),have=new Set(l.songs),src={songs:ctxIds($('#pS').value)},q=$('#pkQ').value.toLowerCase(),sub=i=>{const c=collOf(i),cl=c&&lists.find(x=>x.id==c);return cl?cl.name:(songs.get(i).artist||'')};
+ const ids=src.songs.filter(i=>songs.has(i)&&!have.has(i)&&(ttl(songs.get(i))+' '+songs.get(i).artist+' '+sub(i)).toLowerCase().includes(q)).slice(0,300);pk.shown=ids;
+ $('#pL').innerHTML=(ids.length?'<button data-act="pkall">Select shown</button>':'<p class="mut">Nothing to add here.</p>')+ids.map(i=>`<label class="pk"><input type="checkbox" data-pk="${i}" ${pk.sel.has(i)?'checked':''}>${esc(ttl(songs.get(i)))}<small>${esc(sub(i))}</small></label>`).join('');$('#pG').textContent='Add '+pk.sel.size}
 const setTheme=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('th',t)}catch{}};
 const curTheme=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
-function exportBackup(){const d={v:1,at:Date.now(),songs:all().map(({cover,...r})=>r),lists};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:'application/json'}));a.download='ocarina-of-time-backup.json';a.click()}
-async function importBackup(f){try{const d=JSON.parse(await f.text());let n=0;
- for(const r of d.songs||[]){const s=songs.get(r.id);if(s&&(r.mod>s.mod||s.mod==s.added)){Object.assign(s,r,{cover:s.cover||null});await put('songs',s);n++}}
- for(const l of d.lists||[]){const o=lists.find(x=>x.id==l.id);if(!o){lists.push(l);await put('lists',l);n++}else if(l.mod>o.mod){Object.assign(o,l);await put('lists',o);n++}}
+const BK_PREFS=['sort','pgrp','grp','norm','normT'];
+async function exportBackup(){toast('Preparing backup…');
+ const rd=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=()=>r('');f.readAsDataURL(b)});
+ const art=[];for(const[id,a]of ART)art.push({id,cmod:a.cmod,data:await rd(a.blob)});
+ const prefs={};for(const k of BK_PREFS)try{const v=localStorage.getItem(k);if(v!==null)prefs[k]=v}catch{}
+ const d={v:2,at:Date.now(),songs:all().map(({cover,...r})=>r),lists,log:LOG.map(({sent,seq,...e})=>e),art,prefs};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:'application/json'}));a.download='ocarina-of-time-backup.json';a.click();toast('Backup saved')}
+async function importBackup(f){try{const d=JSON.parse(await f.text());if(!d||typeof d!='object')throw 0;let n=0;
+ for(const r0 of d.songs||[]){const r=cleanSong(r0),s=r&&songs.get(r.id);if(s&&(r.mod>s.mod||s.mod==s.added)){const cv=s.cover||null;Object.assign(s,r,{cover:cv});SNAP.set(s.id,TRK.map(k=>jv(s[k])));await put('songs',s);n++}}
+ for(const l0 of d.lists||[]){const l=cleanList(l0);if(!l)continue;const o=lists.find(x=>x.id==l.id);if(!o){lists.push(l);await put('lists',l);n++}else if(l.mod>o.mod){Object.assign(o,l);await put('lists',o);n++}}
+ const have=new Set(LOG.map(e=>e.id));
+ for(const e of d.log||[]){if(!e||!okId(e.id)||have.has(e.id))continue;have.add(e.id);
+  const x={id:e.id,t:sNum(e.t),song:okId(e.song)?e.song:undefined,coll:okId(e.coll)?e.coll:undefined,ser:okId(e.ser)?e.ser:undefined,pl:okId(e.pl)?e.pl:undefined,secs:sNum(e.secs),play:e.play?1:0,sent:0};
+  LOG.push(x);await put('log',x);n++}
+ for(const a of d.art||[]){if(!okId(a.id)||typeof a.data!='string'||!IMGRE.test(a.data))continue;const cur=ART.get(a.id),cm=sNum(a.cmod);if(cur&&cur.cmod>=cm)continue;
+  const b=await(await fetch(a.data)).blob();ART.set(a.id,{blob:b,cmod:cm});await put('art',{id:a.id,blob:b,cmod:cm});n++}
+ const p=d.prefs||{};for(const k of BK_PREFS)if(typeof p[k]=='string')try{localStorage.setItem(k,p[k])}catch{}
+ if(p.sort&&sorters[p.sort])sortK=p.sort;if(['none','series','collection'].includes(p.pgrp))pgrp=p.pgrp;if(p.grp!==undefined)grp=p.grp!='0';
+ if(p.norm!==undefined)NORM.on=p.norm=='1';if(isFinite(parseFloat(p.normT)))NORM.target=parseFloat(p.normT);
  toast(n+' items restored');render()}catch{toast('That file is not an Ocarina of Time backup')}}
 const A={
  go:t=>{endSel();hist.push(S);S={t:'list',id:t.dataset.id};render();scrollTo(0,0)},
@@ -858,19 +1010,27 @@ const A={
   for(const id of ids){const s=songs.get(id);if(!s)continue;if(a)s.artist=a;if(b)s.album=b;if(cv){s.cover=cv;s.cmod=Date.now()}
    s.tags=[...new Set([...(s.tags||[]),...(tp.col?tp.sel:[])])].filter(x=>!bRm.has(x));s.mod=Date.now();await put('songs',s)}
   closeSheet();endSel();toast(`Updated ${ids.length} songs`);render()},
- bAdd:()=>{if(!sel.size)return toast('Select songs first');menu('Add to…',lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>{addTo(l,[...sel]);endSel()}]))},
+ bAdd:()=>{if(!sel.size)return toast('Select songs first');menu('Add to…',[['New playlist…',async()=>{const l=await newPlaylistWith([...sel]);if(l)endSel()}],...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>{addTo(l,[...sel]);endSel()}])])},
  bMore:()=>{if(!sel.size)return toast('Select songs first');const src=lists.find(x=>x.id==selCtx&&(x.type=='playlist'||x.type=='collection'));
   const it=[['Favourite all',async()=>{for(const id of sel){const s=songs.get(id);s.fav=1;s.mod=Date.now();await put('songs',s)}endSel();render()}]];
   if(src)it.push(['Remove from this list',async()=>{src.songs=src.songs.filter(x=>!sel.has(x));src.mod=Date.now();await put('lists',src);if(src.type=='collection')await cleanTags();endSel();render()}]);
-  it.push(['Delete from library',async()=>{if(!confirm(`Delete ${sel.size} songs from your library?`))return;for(const id of [...sel])await purge(id);saveTomb();endSel();render()}]);menu(sel.size+' songs',it)},
+  it.push(['Delete from library',async()=>{if(!confirm(`Delete ${sel.size} songs from your library?`))return;const es=await trashSongs([...sel]);endSel();render();toast(`${es.length} song${es.length==1?'':'s'} deleted`,()=>undoTrash(es))}]);menu(sel.size+' songs',it)},
  lNoImg:()=>{const l=lists.find(x=>x.id==ls.id);ls.img='';$('#lP').innerHTML=l.type=='series'?serArt({...l,img:''}):art(lcover({songs:l.songs}),l.name)},
  lSave:async()=>{if(ls.pending)await ls.pending;const l=lists.find(x=>x.id==ls.id),n=$('#lN').value.trim();if(!n)return toast('Enter a name');Object.assign(l,{name:n,desc:$('#lD').value.trim(),tags:[...tp.sel],img:ls.img,mod:Date.now()});if($('#lCol'))l.col=$('#lCol').value||undefined;if($('#lSer'))l.ser=$('#lSer').value||undefined;
   for(const[k,i]of[['console','dCon'],['year','dYear'],['dev','dDev'],['pub','dPub'],['comp','dComp'],['genre','dGen'],['syear','dSY'],['awards','dAw']]){const e=$('#'+i);if(e)l[k]=e.value.trim()}
   if($('#dKind'))l.kind=$('#dKind').value;
   if(ls.artBlob){const c=Date.now();ART.set(l.id,{blob:ls.artBlob,cmod:c});await put('art',{id:l.id,blob:ls.artBlob,cmod:c});l.acmod=c}
   else if(ls.artDel&&ART.has(l.id)){ART.delete(l.id);await del('art',l.id);l.acmod=0}await put('lists',l);closeSheet();render()},
- lDel:async()=>{const l=lists.find(x=>x.id==ls.id);if(l&&ART.has(l.id)){ART.delete(l.id);del('art',l.id)}if(!l||!confirm(`Delete "${l.name}"? Songs stay in your library.`))return;lists=lists.filter(x=>x!=l);tomb[l.id]=Date.now();saveTomb();if(l.type=='series'){for(const c of lists.filter(x=>x.type=='collection'&&x.ser==l.id)){c.ser=undefined;c.mod=Date.now();await put('lists',c)}}
-  if(l.type=='collection'){const ts=lists.filter(x=>x.type=='stag'&&x.col==l.id);for(const x of ts){tomb[x.id]=Date.now();await del('lists',x.id)}lists=lists.filter(x=>!ts.includes(x));saveTomb();await cleanTags()}await del('lists',l.id);closeSheet();S=hist.pop()||{t:'home'};render()},
+ lDel:async()=>{const l=lists.find(x=>x.id==ls.id);if(!l||!confirm(`Delete "${l.name}"? Songs stay in your library, and you can restore it from Settings, Trash.`))return;
+  const e={id:'list:'+l.id,kind:'list',at:Date.now(),rec:l,extra:{}},a=ART.get(l.id);if(a)e.extra.art={blob:a.blob,cmod:a.cmod};
+  if(l.type=='series')e.extra.kids=lists.filter(x=>x.type=='collection'&&x.ser==l.id).map(x=>x.id);
+  let ts=[];if(l.type=='collection'){ts=lists.filter(x=>x.type=='stag'&&x.col==l.id);const tid=new Set(ts.map(x=>x.id));e.extra.stags=ts;e.extra.songTags=all().filter(s=>(s.tags||[]).some(i=>tid.has(i))).map(s=>[s.id,s.tags.filter(i=>tid.has(i))])}
+  await rawPut('trash',e);TRASH=TRASH.filter(x=>x.id!=e.id);TRASH.push(e);
+  if(a){ART.delete(l.id);await del('art',l.id)}
+  lists=lists.filter(x=>x!=l);tomb[l.id]=Date.now();
+  if(l.type=='series'){for(const c of lists.filter(x=>x.type=='collection'&&x.ser==l.id)){c.ser=undefined;c.mod=Date.now();await put('lists',c)}}
+  if(ts.length){for(const x of ts){tomb[x.id]=Date.now();await del('lists',x.id)}lists=lists.filter(x=>!ts.includes(x))}
+  await saveTomb();if(l.type=='collection')await cleanTags();await del('lists',l.id);closeSheet();S=hist.pop()||{t:'home'};render();toast(`Deleted "${l.name}"`,()=>undoTrash([e]))},
  addsongs:t=>pickSongs(t.dataset.id),
  addfiles:()=>$('#file').click(),
  syncSet:()=>sheet(`<h3>Sync</h3><label>Server address (you can list several, separated by commas)</label><input id="sU" placeholder="https://192.168.1.20:8765" value="${esc(cfg.url||'')}"><label>Access token</label><input id="sT" value="${esc(cfg.token||'')}"><label class="pk"><input type="checkbox" id="sD" ${cfg.dl===false?'':'checked'}>Download songs to this device</label><button class="p" data-act="sSave">Save and sync</button>${cfg.url?' <button data-act="sOff">Turn off sync</button>':''}`),
@@ -888,7 +1048,7 @@ jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
   if(f=='album'){ids=all().filter(s=>s.album==src).sort(trk).map(s=>s.id);name=name||src}
   if(!name)return toast('Enter a name');
   ids=ids.concat(pending);
-  if(type=='playlist'){const h=lists.find(x=>x.id==$('#nC').value);if(!col){if(h&&h.type=='series')ser=h.id;else col=h?h.id:collOf(ids[0])}if(!col&&!ser)return toast('Create a collection or series first, then add playlists to it')}
+  if(type=='playlist'){const h=lists.find(x=>x.id==$('#nC').value);if(!col&&h){if(h.type=='series')ser=h.id;else col=h.id}}
   const l=await mkList({name,type,songs:type=='playlist'?ids:[],col:type=='playlist'?col:undefined,ser:type=='playlist'?ser:serV});
   if(type=='collection'){const mv=await toColl(l,ids);if(mv)toast(`Moved ${mv} songs from other collections`)}
   pending=[];closeSheet();hist.push(S);S={t:'list',id:l.id};render()},
@@ -908,20 +1068,28 @@ jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
 
  add:t=>pop(t,[['Add songs',()=>$('#file').click()],['New playlist',()=>newDlg('playlist')],['New collection',()=>newDlg('collection')],['New series',()=>newDlg('series')]],true),
  expand:()=>{$('#np').hidden=false;paint()},expandM:()=>{if(matchMedia('(max-width:820px)').matches)A.expand()},
- showQ:()=>{sheet('<div class="bar" style="margin:0 0 8px;align-items:center"><h3 style="margin:0">Up next <small id="qN" style="display:inline"></small></h3><button data-act="qClear">Clear</button></div><div id="qL"></div>');qSheetRender()},
+ showQ:()=>{sheet('<div class="bar" style="margin:0 0 8px;align-items:center"><h3 style="margin:0">Up next <small id="qN" style="display:inline"></small></h3><div class="row" style="margin:0"><button data-act="qSave">Save as playlist</button><button data-act="qClear">Clear</button></div></div><div id="qL"></div>');qSheetRender()},
  qRm:t=>{const b=Math.max(qi,0),k=+t.dataset.k;if(k<1)return;Q.splice(b+k,1);savePlay();paintQ()},
  qClear:()=>{if(qi>=0)Q.length=qi+1;else Q=[];savePlay();paintQ();toast('Cleared up next')},
  resume:()=>toggle(),qshuf:t=>startPlay(ctxIds(t.dataset.id),null,1,t.dataset.id),
  attn:()=>{S={t:'library',need:true};render()},goStats:()=>{const n=new Date();S={t:'stats',sy:n.getFullYear(),sm:n.getMonth()};render()},
- hm:t=>{S.hm=t.dataset.k;render()},svTab:t=>{S.sv=t.dataset.k;render()},needf:()=>{S.need=!S.need;render()},gaToggle:()=>{S.ga=!S.ga;render()}
+ hm:t=>{S.hm=t.dataset.k;render()},svTab:t=>{S.sv=t.dataset.k;render()},needf:()=>{S.need=!S.need;render()},gaToggle:()=>{S.ga=!S.ga;render()},
+ qSave:async()=>{const ids=[...new Set(Q)].filter(i=>songs.has(i));if(!ids.length)return toast('The queue is empty');const l=await newPlaylistWith(ids);if(l){closeSheet();hist.push(S);S={t:'list',id:l.id};render();scrollTo(0,0)}},
+ trashOpen:()=>trashSheet(),
+ trBack:async t=>{const e=TRASH.find(x=>x.id==t.dataset.id);if(!e)return;await restoreEntry(e);trashSheet();render();toast('Restored')},
+ trDel:async t=>{const e=TRASH.find(x=>x.id==t.dataset.id);if(!e)return;await dropEntry(e);trashSheet();render()},
+ trEmpty:async()=>{if(!confirm('Permanently delete everything in the trash?'))return;for(const e of[...TRASH])await dropEntry(e);trashSheet();render()},
+ nmRun:()=>{if(!NORM.on)return toast('Turn on Normalise volume first');if(IOS)return toast('This device measures the song that is playing. Your PC measures the rest.');toast('Measuring songs in the background');analyseAll().then(normPaint);normPaint()}
 };
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 $$('.nv').forEach(b=>b.onclick=()=>{endSel();S={t:b.dataset.page};hist=[];$('#q').value='';render();scrollTo(0,0)});
 $('#file').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#dir').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#imp').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=''};
-document.addEventListener('input',e=>{if(e.target.id=='pQ')pkRender();else if(e.target.id=='q'){S.q=e.target.value.trim();render()}else if(e.target.dataset&&e.target.dataset.ord!=null){ord.items[+e.target.dataset.ord][e.target.dataset.f]=parseInt(e.target.value)||0}else if(e.target.id=='exq'){S.eq=e.target.value;$('#exGrid').innerHTML=exBody()}else if(e.target.id=='tN'||e.target.id=='tK'){td.name=$('#tN').value;td.color=$('#tK').value;$('#tPv').innerHTML=chip(td)}});
+document.addEventListener('input',e=>{if(e.target.id=='pkQ')pkRender();else if(e.target.id=='q'){S.q=e.target.value.trim();render()}else if(e.target.dataset&&e.target.dataset.ord!=null){ord.items[+e.target.dataset.ord][e.target.dataset.f]=parseInt(e.target.value)||0}else if(e.target.id=='exq'){S.eq=e.target.value;$('#exGrid').innerHTML=exBody()}else if(e.target.id=='tN'||e.target.id=='tK'){td.name=$('#tN').value;td.color=$('#tK').value;$('#tPv').innerHTML=chip(td)}});
 document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id=='nmOn'){NORM.on=t.checked;try{localStorage.setItem('norm',NORM.on?'1':'0')}catch{}if(NORM.on){ensureGraph();analyseAll()}applyGain(true);return toast(NORM.on?'Volume levelling on':'Volume levelling off (restart the app to remove it completely)')}
+ if(t.id=='nmT'){NORM.target=parseFloat(t.value);try{localStorage.setItem('normT',String(NORM.target))}catch{}return applyGain(true)}
  if(t.id=='pgSel'){pgrp=t.value;try{localStorage.setItem('pgrp',pgrp)}catch{}return render()}
  if(t.id=='syS'){S.sy=t.value===''?'':+t.value;S.sm='';return render()}
  if(t.id=='smS'){S.sm=t.value===''?'':+t.value;return render()}
@@ -938,16 +1106,16 @@ document.addEventListener('change',async e=>{const t=e.target;
  if(t.id=='tI'&&t.files[0]){const f=t.files[0];td.pending=busy('[data-act=tagSave]',async()=>{const d=await toData(f,64,true);if(d)td.icon=d;else toast(BADIMG);const p=$('#tPv');if(p)p.innerHTML=chip(td)});await td.pending;return}
 if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`}else if(t.id=='pS')pkRender();else if(t.dataset.pk){t.checked?pk.sel.add(t.dataset.pk):pk.sel.delete(t.dataset.pk);$('#pG').textContent='Add '+pk.sel.size}});
 (async()=>{
- await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));lists=await idb('lists','readonly',s=>s.getAll());
+ await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));for(const s of songs.values())SNAP.set(s.id,TRK.map(k=>jv(s[k])));lists=await idb('lists','readonly',s=>s.getAll());
  (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
  for(const m of await idb('meta','readonly',s=>s.getAll())){if(m.id=='cfg'){const{id,...c}=m;cfg=c}if(m.id=='tomb')tomb=m.map||{};if(m.id=='logseq')logSeq=m.n||0;if(m.id=='stats')statsMeta=m;if(m.id=='syncstate'){srvSeq=m.seq||0;lastPush=m.push||0}}
- LOG=await idb('log','readonly',s=>s.getAll());for(const a of await idb('art','readonly',s=>s.getAll()))ART.set(a.id,{blob:a.blob,cmod:a.cmod});
+ LOG=await idb('log','readonly',s=>s.getAll());TRASH=await idb('trash','readonly',s=>s.getAll());{const cut=Date.now()-30*864e5;for(const e of TRASH.filter(x=>x.at<cut))await dropEntry(e)}for(const a of await idb('art','readonly',s=>s.getAll()))ART.set(a.id,{blob:a.blob,cmod:a.cmod});
  for(const c of await idb('covers','readonly',s=>s.getAll())){COV.set(c.id,c.blob);WM.set(c.blob,c.id)}for(const s of songs.values())if(s.cvh&&!s.cover)s.cover=COV.get(s.cvh)||null;if(!statsMeta){statsMeta={id:'stats',start:Date.now(),legacy:all().reduce((a,s)=>a+(s.plays||0),0)};put('meta',statsMeta)}
  for(const s of songs.values())if(s.cover&&!s.cmod)s.cmod=s.added;
  for(const s of songs.values())if(s.cover&&!(s.cover.type||'').startsWith('image/'))s.cover=imgBlob(await s.cover.arrayBuffer());
  {const old=[...songs.values()].filter(s=>s.cover&&!s.cvh);if(old.length){toast('Optimising cover art…');for(const s of old){await normCover(s);await put('songs',s)}}}   /* one-off: move per-song covers into the shared store */
  await gcCovers();
- await migrateTags();await cleanTags();await restorePlay();render();paint();backfill();sync();featStart();addEventListener('online',()=>sync());
+ await migrateTags();await cleanTags();await restorePlay();render();paint();backfill();sync();featStart();setTimeout(()=>analyseAll(),6000);addEventListener('online',()=>sync());
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
 </script></body></html>
