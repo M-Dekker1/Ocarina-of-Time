@@ -592,7 +592,7 @@ function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>
  +sec('Library','<p class="mut" id="stu">Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button></div>')
  +sec('Backup','<p class="mut">Playlists, tags, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
  +sec('Volume',`<p class="mut">Levels every song to the same loudness so quiet and loud soundtracks don't need the volume turned up and down. Songs are measured once and the result syncs between devices. If sound ever cuts out or stops when the phone locks, switch this off and restart the app.</p><label class="pk"><input type="checkbox" id="nmOn" ${NORM.on?'checked':''}>Normalise volume</label><label>Loudness target</label><select id="nmT">${[[-23,'Quiet (-23 LUFS)'],[-18,'Relaxed (-18 LUFS)'],[-16,'Standard (-16 LUFS)'],[-14,'Loud (-14 LUFS)']].map(([v,l])=>`<option value="${v}" ${NORM.target==v?'selected':''}>${l}</option>`).join('')}</select><p class="mut" id="nmS"></p><div class="row"><button data-act="nmRun">Measure songs now</button></div>`)
- +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. Only plays when nothing else is playing.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label>`)
+ +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks (or random songs, if you haven't starred any key tracks yet) as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. It plays when nothing is playing, including when your music is paused, and is skipped while a song is actively playing. ${colls().filter(c=>(c.keys||[]).length).length} of ${colls().length} collections have key tracks.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label>`)
  +sec('Trash',`<p class="mut">${TRASH.length?`${TRASH.length} deleted item${TRASH.length>1?'s':''} kept on this device for 30 days.`:'Songs and lists you delete are kept here for 30 days so you can restore them.'}</p><div class="row"><button data-act="trashOpen">Open trash</button></div>`)
  +sec('Keyboard shortcuts',SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''))+'</div>'}
 async function storageInfo(){const e=await(navigator.storage&&navigator.storage.estimate?navigator.storage.estimate():null),el=$('#stu');if(el)el.textContent=e?`${songs.size} songs · ${(e.usage/1e9).toFixed(2)} GB used on this device`:`${songs.size} songs`}
@@ -744,7 +744,7 @@ function seek(d){if(realSrc())au.currentTime=Math.max(0,Math.min(au.duration||1e
 const paintMute=()=>$('#bMute').innerHTML=ic(au.muted||au.volume==0?'mute':'volume');
 function setVol(v){v=Math.max(0,Math.min(1,v));au.volume=v;au.muted=false;$('#bVol').value=v;$('#vol').value=v;$('#bVol').style.setProperty('--p',v*100+'%');paintMute()}
 function enq(id,now){if(!Q.length){startPlay([id],id);return}if(now)Q.splice(qi+1,0,id);else Q.push(id);paintQ();toast(now?'Playing next':'Added to queue')}
-function paintPlay(){const h=ic(!realSrc()||au.paused?'play':'pause');for(const id of['bPlay','nPlay'])$('#'+id).innerHTML=h;nativeState()}
+function paintPlay(){const h=ic(!realSrc()||au.paused?'play':'pause');for(const id of['bPlay','nPlay'])$('#'+id).innerHTML=h}
 function paintQ(){const rw=(id,k,small)=>{const s=songs.get(id);return s?`<div class="song" data-act="jump" data-i="${qi+1+k}">${small?`<div class="sm">${art(cu(s),ttl(s))}</div>`:''}<div class="t"><b>${esc(ttl(s))}</b><small>${esc(s.artist)}</small></div></div>`:''},up=Q.slice(qi+1);
  $('#nQ').innerHTML=up.slice(0,100).map((id,k)=>rw(id,k,0)).join('')||'<p class="mut">Nothing queued.</p>';paintRp(up,rw);qSheetRender()}
 function uiTime(){const real=realSrc(),s=songs.get(Q[qi]),d=real&&au.duration?au.duration:(s&&s.dur)||0,c=real?au.currentTime:resumePos,p=d?Math.min(100,c/d*100):0;
@@ -786,11 +786,8 @@ const doShuf=()=>{const was=shuf;shuf=(shuf+1)%3;if(qi>=0){
   else if(Q0){const ix=new Map(Q0.map((x,i)=>[x,i])),up=Q.slice(qi+1),rest=up.filter(x=>ix.has(x)).sort((a,b)=>ix.get(a)-ix.get(b)),extra=up.filter(x=>!ix.has(x));Q.splice(qi+1,Infinity,...rest,...extra);Q0=null}
   savePlay()}toast(['Shuffle off','Shuffle on','Smart shuffle on'][shuf]);paint()},doRep=()=>{rep=(rep+1)%3;toast(['Repeat off','Repeat all','Repeat one'][rep]);paint()},doFav=()=>{if(Q[qi])fav(Q[qi])};
 $('#nShuf').onclick=$('#bShuf').onclick=doShuf;$('#nRep').onclick=$('#bRep').onclick=doRep;$('#nFav').onclick=$('#bFav').onclick=doFav;
-/* the Ocarina desktop app (Windows taskbar buttons) talks to the page through window.ocarinaNative; in a browser this does nothing */
-function nativeState(){if(!window.ocarinaNative)return;const s=songs.get(Q[qi]);try{ocarinaNative.state({has:!!s,playing:!!(realSrc()&&!au.paused),fav:!!(s&&s.fav)})}catch{}}
-if(window.ocarinaNative)ocarinaNative.onAction(a=>{({prev,next:()=>next(),toggle,fav:doFav}[a]||(()=>{}))()});
 try{if(localStorage.getItem('rpo')=='1')document.body.classList.add('rpo')}catch{}
-addEventListener('pointerdown',()=>{ensureGraph();if(realSrc())return;au.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';au.play().catch(()=>{})},{once:true});
+addEventListener('pointerdown',()=>{ensureGraph();if(realSrc())return;try{pv.muted=true;pv.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';pv.play().then(()=>pv.pause()).catch(()=>{}).finally(()=>{pv.muted=false})}catch{}au.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';au.play().catch(()=>{})},{once:true});
 /* keyboard shortcuts */
 const SHORTCUTS=[['Space','Play or pause'],['Left / Right','Seek back or forward 10 seconds'],['Shift + Left / Right','Previous or next song'],['Up / Down','Volume'],['M','Mute'],['F','Favourite the current song'],['Q','Show or hide the now playing panel'],['E','Edit the current song'],['S','Cycle shuffle: off, on, smart'],['R','Cycle repeat'],['/','Search'],['Esc','Close a window or the full screen player']];
 const shortcutsHelp=()=>sheet('<h3>Keyboard shortcuts</h3>'+SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''));
@@ -1065,25 +1062,29 @@ document.addEventListener('contextmenu',e=>{const r=e.target.closest&&e.target.c
 /* ---------- collection preview: opening a collection plays 3 seconds from each of three random key tracks, quietly,
    on a separate player. It is never logged, never shows as now playing, and fades out the moment real playback starts ---------- */
 const pv=new Audio();pv.preload='auto';let pvTok=0,pvFor='',pvTimer=0,pvTimerFor='',pvUrl=null,pvF=0;
-const PV={on:true};try{const v=localStorage.getItem('prev');PV.on=v===null?matchMedia('(hover:hover) and (pointer:fine)').matches:v=='1'}catch{}
-const pvLevel=()=>au.muted?0:Math.min(1,au.volume)*.8;
+const PV={on:true};try{const v=localStorage.getItem('prev');PV.on=v===null?true:v=='1'}catch{}
+const pvLevel=()=>au.muted?0:Math.min(1,au.volume)*.8,playingNow=()=>realSrc()&&!au.paused&&!au.ended;   /* a real song is actively playing (paused or finished songs don't count) */
 function pvFade(to,ms){const id=++pvF,from=pv.volume,t0=performance.now();return new Promise(res=>{const step=()=>{if(id!==pvF)return res();const k=Math.min(1,(performance.now()-t0)/ms);try{pv.volume=Math.max(0,Math.min(1,from+(to-from)*k))}catch{}if(k<1)setTimeout(step,30);else res()};step()})}
 function stopPreview(clear){const tk=++pvTok;if(clear)pvFor='';if(!pv.src||pv.paused)return;pvFade(0,250).then(()=>{if(pvTok===tk)pv.pause()})}
 async function startPreview(l){stopPreview(true);const tok=pvTok;pvFor=l.id;
- const keys=shuffled((l.keys||[]).filter(i=>songs.has(i)&&haveBlob.has(i))).slice(0,3);
- for(const id of keys){if(tok!==pvTok||!au.paused)return;
-  const b=await idb('blobs','readonly',st=>st.get(id));if(tok!==pvTok)return;if(!b)continue;const s=songs.get(id);
-  if(pvUrl)URL.revokeObjectURL(pvUrl);pvUrl=URL.createObjectURL(b.file);pv.volume=0;pv.src=pvUrl;
-  try{await new Promise((res,rej)=>{pv.onloadedmetadata=res;pv.onerror=()=>rej(new Error('load'));setTimeout(()=>rej(new Error('slow')),4000)});
+ const online=!!cfg.url,usable=i=>songs.has(i)&&(haveBlob.has(i)||online);
+ let keys=(l.keys||[]).filter(usable);if(!keys.length)keys=(l.songs||[]).filter(usable);   /* no key tracks starred yet: use songs from the collection */
+ for(const id of shuffled(keys).slice(0,3)){if(tok!==pvTok||playingNow())return;
+  const s=songs.get(id),b=haveBlob.has(id)?await idb('blobs','readonly',st=>st.get(id)):null;if(tok!==pvTok)return;
+  if(pvUrl){URL.revokeObjectURL(pvUrl);pvUrl=null}
+  if(b){pvUrl=URL.createObjectURL(b.file);pv.src=pvUrl}else if(online)pv.src=(activeBase||bases()[0])+'/api/audio/'+id+'?t='+encodeURIComponent(cfg.token);else continue;   /* not downloaded: stream it from your PC */
+  pv.volume=0;
+  try{await new Promise((res,rej)=>{pv.onloadedmetadata=res;pv.onerror=()=>rej(new Error('load'));setTimeout(()=>rej(new Error('slow')),5000)});
    const d=isFinite(pv.duration)?pv.duration:(s.dur||0);if(d>40)pv.currentTime=Math.min(d-6,d*(.1+Math.random()*.3));   /* skip quiet intros */
-   if(tok!==pvTok)return;await pv.play()}catch{continue}
-  if(tok!==pvTok){pv.pause();return}
+   if(tok!==pvTok||playingNow())return;await pv.play()}catch(e){console.info('Preview skipped:',e&&e.message);continue}
+  if(tok!==pvTok||playingNow()){pv.pause();return}
   await pvFade(pvLevel(),300);if(tok!==pvTok)return;await sleep(2400);if(tok!==pvTok)return;await pvFade(0,300);if(tok!==pvTok)return;pv.pause()}}
 function syncPreview(){const l=S.t=='list'&&!S.q?lists.find(x=>x.id==S.id&&x.type=='collection'):null;
  if(!l||!PV.on){clearTimeout(pvTimer);pvTimer=0;pvTimerFor='';if(pvFor)stopPreview(true);return}
  if(pvFor==l.id||pvTimerFor==l.id)return;
  if(pvFor)stopPreview(true);clearTimeout(pvTimer);pvTimerFor=l.id;
- pvTimer=setTimeout(()=>{pvTimer=0;pvTimerFor='';if(S.t=='list'&&S.id==l.id&&!S.q&&au.paused&&!document.hidden&&sh.hidden&&(l.keys||[]).length)startPreview(l)},600)}
+ pvTimer=setTimeout(()=>{pvTimer=0;pvTimerFor='';if(!(S.t=='list'&&S.id==l.id&&!S.q))return;pvFor=l.id;   /* one attempt per visit */
+  if(!playingNow()&&!document.hidden&&sh.hidden)startPreview(l)},600)}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPreview()});
 const A={
  go:t=>{endSel();hist.push(S);S={t:'list',id:t.dataset.id};render();scrollTo(0,0)},
