@@ -307,7 +307,7 @@ async function normCover(s){const b=s.cover;if(!b)return;let h=WM.get(b);if(!h)h
  const canon=COV.get(h);let fresh=false;if(canon){s.cover=canon;WM.set(canon,h)}else{COV.set(h,b);WM.set(b,h);fresh=true}
  if(s.cvh!==h){s.cvh=h;s.mod=Date.now()}
  if(fresh)await rawPut('covers',{id:h,blob:b})}
-async function putSong(s){if(s.cover&&WM.get(s.cover)!==s.cvh)await normCover(s);stampSong(s);const{cover,...rec}=s;return idb('songs','readwrite',st=>st.put(rec))}
+async function putSong(s){if(s.cover){const h=WM.get(s.cover);if(!h||h!==s.cvh)await normCover(s)}stampSong(s);const{cover,...rec}=s;return idb('songs','readwrite',st=>st.put(rec))}
 async function putCover(h,b){COV.set(h,b);WM.set(b,h);await rawPut('covers',{id:h,blob:b})}
 async function gcCovers(){const used=new Set();for(const s of songs.values())if(s.cvh)used.add(s.cvh);for(const e of TRASH)if(e.kind=='song'&&e.rec.cvh)used.add(e.rec.cvh);for(const h of[...COV.keys()])if(!used.has(h)){COV.delete(h);await del('covers',h)}}
 /* ---------- validation: anything that comes from a backup or the server is checked before it is used ---------- */
@@ -350,6 +350,13 @@ async function fileId(f){const n=65536,a=new Uint8Array(await f.slice(0,n).array
  let s='';for(let i=0;i<u.length;i+=7)s+=String.fromCharCode(u[i]);return'c'+h53(s)+h53(f.size+':'+s.length)}
 /* ---------- trash: deleted songs and lists stay on this device for 30 days and can be restored ---------- */
 let TRASH=[];
+/* Songs imported before the cover fix lost their art when the app closed. The audio is still stored, so read the embedded art from it again. */
+async function repairCovers(){let n=0,looked=0;
+ for(const s of[...songs.values()]){if(s.cvh||s.cover||!haveBlob.has(s.id))continue;
+  const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)continue;looked++;let t={};
+  try{const f=b.file;t=/\.mp3$/i.test(s.fn)?await id3(f):/\.m4a$/i.test(s.fn)?await m4a(f):/\.(ogg|oga|opus)$/i.test(s.fn)?await ogg(f):{}}catch{}
+  if(t.cover){s.cover=t.cover;s.cmod=Date.now();s.mod=Date.now();await put('songs',s);if(++n%10==0)render()}}
+ if(n)render();return{n,looked}}
 async function trashSongs(idArr){const at=Date.now(),es=[];
  for(const id of idArr){const s=songs.get(id);if(!s)continue;const{cover,...rec}=s,
    mem=lists.filter(l=>l.type!='stag'&&l.type!='ltag'&&(l.songs||[]).includes(id)).map(l=>({id:l.id,i:l.songs.indexOf(id)})),e={id:'song:'+id,kind:'song',at,rec,mem};
@@ -589,7 +596,7 @@ function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>
  return phead('Settings')+'<div class="setg">'
  +sec('Sync',`<p class="mut">${sc?`Connected to ${esc(bases()[0]||sc)}${lastSync?' · last synced '+new Date(lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}.`:'Keep your PC and phone in step over your home Wi-Fi.'}</p><div class="row"><button class="p" data-act="syncSet">${sc?'Edit connection':'Set up sync'}</button>${sc?'<button data-act="syncNow">Sync now</button><button data-act="fullSync">Full resync</button>':''}</div>`)
  +sec('Tags','<p class="mut">Rename, recolour and give icons to your tags.</p><div class="row"><button data-act="tagMgrOpen">Manage tags</button></div>')
- +sec('Library','<p class="mut" id="stu">Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button></div>')
+ +sec('Library','<p class="mut" id="stu">Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button><button data-act="fixCovers">Recover missing cover art</button></div>')
  +sec('Backup','<p class="mut">Playlists, tags, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
  +sec('Volume',`<p class="mut">Levels every song to the same loudness so quiet and loud soundtracks don't need the volume turned up and down. Songs are measured once and the result syncs between devices. If sound ever cuts out or stops when the phone locks, switch this off and restart the app.</p><label class="pk"><input type="checkbox" id="nmOn" ${NORM.on?'checked':''}>Normalise volume</label><label>Loudness target</label><select id="nmT">${[[-23,'Quiet (-23 LUFS)'],[-18,'Relaxed (-18 LUFS)'],[-16,'Standard (-16 LUFS)'],[-14,'Loud (-14 LUFS)']].map(([v,l])=>`<option value="${v}" ${NORM.target==v?'selected':''}>${l}</option>`).join('')}</select><p class="mut" id="nmS"></p><div class="row"><button data-act="nmRun">Measure songs now</button></div>`)
  +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks (or random songs, if you haven't starred any key tracks yet) as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. It plays when nothing is playing, including when your music is paused, and is skipped while a song is actively playing. ${colls().filter(c=>(c.keys||[]).length).length} of ${colls().length} collections have key tracks.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label>`)
@@ -1188,6 +1195,7 @@ jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
  resume:()=>toggle(),qshuf:t=>startPlay(ctxIds(t.dataset.id),null,shuf==2?2:1,t.dataset.id),
  attn:()=>{S={t:'library',need:true};render()},goStats:()=>{const n=new Date();S={t:'stats',sy:n.getFullYear(),sm:n.getMonth()};render()},
  hm:t=>{S.hm=t.dataset.k;render()},svTab:t=>{S.sv=t.dataset.k;render()},needf:()=>{S.need=!S.need;render()},gaToggle:()=>{S.ga=!S.ga;render()},
+ fixCovers:async()=>{toast('Looking for cover art…');const r=await repairCovers();toast(r.n?`Recovered cover art for ${r.n} song${r.n>1?'s':''}`:r.looked?'No embedded cover art found in those songs. Add covers by hand in Edit info.':'Every song already has its cover art');if(r.n&&cfg.url)sync()},
  rpToggle:()=>toggleRp(),rpTab:t=>{rpTabK=t.dataset.k;lastNow='';paintQ()},queue:()=>matchMedia('(min-width:821px)').matches?toggleRp():A.showQ(),
  rsc:t=>{const r=t.parentElement.querySelector('.rec');r.scrollBy({left:(+t.dataset.d)*Math.max(200,r.clientWidth*.85),behavior:'smooth'})},
  qSave:async()=>{const ids=[...new Set(Q)].filter(i=>songs.has(i));if(!ids.length)return toast('The queue is empty');const l=await newPlaylistWith(ids);if(l){closeSheet();hist.push(S);S={t:'list',id:l.id};render();scrollTo(0,0)}},
@@ -1232,7 +1240,8 @@ if(t.id=='eC'){const f=t.files[0];if(f)$('#eP').innerHTML=`<img src="${URL.creat
  for(const s of songs.values())if(s.cover&&!(s.cover.type||'').startsWith('image/'))s.cover=imgBlob(await s.cover.arrayBuffer());
  {const old=[...songs.values()].filter(s=>s.cover&&!s.cvh);if(old.length){toast('Optimising cover art…');for(const s of old){await normCover(s);await put('songs',s)}}}   /* one-off: move per-song covers into the shared store */
  await gcCovers();
- await migrateTags();await cleanTags();await restorePlay();render();paint();backfill();sync();featStart();setTimeout(()=>analyseAll(),6000);addEventListener('online',()=>sync());
+ await migrateTags();await cleanTags();await restorePlay();render();paint();backfill();sync();featStart();setTimeout(()=>analyseAll(),6000);
+ setTimeout(async()=>{if(await idb('meta','readonly',s=>s.get('coverfix')))return;const r=await repairCovers();await rawPut('meta',{id:'coverfix',at:Date.now(),n:r.n});if(r.n){toast(`Recovered cover art for ${r.n} song${r.n>1?'s':''}`);if(cfg.url)sync()}},3500);addEventListener('online',()=>sync());
  if(navigator.storage?.persist)navigator.storage.persist();
  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js')})();
 </script></body></html>
