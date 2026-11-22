@@ -1,7 +1,7 @@
 # Ocarina of Time
 
 ## 1. Put the app online (GitHub Pages)
-1. Upload everything in this folder to your GitHub repository (replace the old files) and commit.
+1. Upload everything in this folder to your GitHub repository (replace the old files) and commit. This includes the `sounds` folder, which holds the songs the logo plays.
 2. New repository? **Settings → Pages → Deploy from a branch → main → / (root)**.
 3. Open `https://YOUR-USERNAME.github.io/REPO/` online once, then install it:
    - **Windows:** install icon in the Edge or Chrome address bar.
@@ -13,7 +13,7 @@ Your PC runs a small server that keeps your songs, playlists, tags, ratings, fav
 
 ### One-time setup on the PC
 1. Install **Python 3.8+** from python.org (tick "Add to PATH").
-2. Keep everything in this folder together on your PC (`server.py` also needs `netutil.py` and the app files).
+2. Keep everything in this folder together on your PC (`server.py` also needs `netutil.py`, the `sounds` folder and the app files).
 3. Open a terminal in the folder and run: `python setup_https.py`
    - It installs the free tool mkcert using winget if needed. If it asks you to reopen the terminal and run it again, do that.
    - Click **Yes** if Windows asks to trust the certificate.

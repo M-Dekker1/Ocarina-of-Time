@@ -246,10 +246,10 @@ body:not(.playing) .eq i{animation-play-state:paused}
 /* ===== Ken Burns on key art (the fade mask lives on the wrapper so it stays put while the image moves) ===== */
 .hbgw{-webkit-mask-image:linear-gradient(#000 40%,transparent 100%);mask-image:linear-gradient(#000 40%,transparent 100%)}
 .hbg{-webkit-mask-image:none;mask-image:none}
-.hbg:not(.blur){transform-origin:62% 38%;will-change:transform;animation:kb 48s ease-in-out infinite alternate}
-.hbg.blur{animation:kbb 60s ease-in-out infinite alternate}
-@keyframes kb{from{transform:scale(1)}to{transform:scale(1.14) translate3d(-1.5%,-1%,0)}}
-@keyframes kbb{from{transform:scale(1.3)}to{transform:scale(1.42) translate3d(1%,1%,0)}}
+.hbg:not(.blur){transform-origin:62% 38%;will-change:transform;animation:kb 20s ease-in-out infinite alternate}
+.hbg.blur{animation:kbb 26s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.2) translate3d(-2.5%,-1.5%,0)}}
+@keyframes kbb{from{transform:scale(1.3)}to{transform:scale(1.5) translate3d(2%,2%,0)}}
 /* ===== marquee ===== */
 .mq-run{text-overflow:clip!important}
 .mqi{display:inline-block;white-space:nowrap;animation:mq var(--mqd,8s) ease-in-out infinite}
@@ -291,6 +291,10 @@ main,#top{max-width:1760px}#top{margin:0 auto}
  .rec .card{width:150px}.rec2 .card{width:190px}.rw{--ah:150px}.rw.rec2{--ah:190px}
  .hero.fh{height:400px}.fh .hi h1{font-size:52px}.hi h1{font-size:46px}.hcov{width:220px;height:220px}.jb{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}}
 @media(min-width:2000px){.grid{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))}.grid.lg{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}}
+/* ===== the logo wobbles while the ocarina plays ===== */
+.brand img,.mbrand img{transform-origin:50% 65%}
+body.oc-play img.lg{animation:ocShake .55s ease-in-out infinite}
+@keyframes ocShake{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-4deg) translate(-1px,-1px)}40%{transform:rotate(3deg) translate(1px,0)}60%{transform:rotate(-3deg) translate(-1px,1px)}80%{transform:rotate(2deg) translate(1px,-1px)}}
 </style></head><body>
 <aside id="side">
 <div class="brand" data-act="home" title="Home"><img alt="Ocarina of Time" class="lg"></div>
@@ -669,7 +673,7 @@ function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>
  +sec('Library','<p class="mut" id="stu" data-live>Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button><button data-act="fixCovers">Recover missing cover art</button></div>')
  +sec('Backup','<p class="mut">Playlists, tags, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
  +sec('Volume',`<p class="mut">Levels every song to the same loudness so quiet and loud soundtracks don't need the volume turned up and down. Songs are measured once and the result syncs between devices. If sound ever cuts out or stops when the phone locks, switch this off and restart the app.</p><label class="pk"><input type="checkbox" id="nmOn" ${NORM.on?'checked':''}>Normalise volume</label><label>Loudness target</label><select id="nmT">${[[-23,'Quiet (-23 LUFS)'],[-18,'Relaxed (-18 LUFS)'],[-16,'Standard (-16 LUFS)'],[-14,'Loud (-14 LUFS)']].map(([v,l])=>`<option value="${v}" ${NORM.target==v?'selected':''}>${l}</option>`).join('')}</select><p class="mut" id="nmS" data-live></p><div class="row"><button data-act="nmRun">Measure songs now</button></div>`)
- +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks (or random songs, if you haven't starred any key tracks yet) as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. It plays when nothing is playing, including when your music is paused, and is skipped while a song is actively playing. ${colls().filter(c=>(c.keys||[]).length).length} of ${colls().length} collections have key tracks.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label>`)
+ +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks (or random songs, if you haven't starred any key tracks yet) as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. It plays when nothing is playing, including when your music is paused, and is skipped while a song is actively playing. ${colls().filter(c=>(c.keys||[]).length).length} of ${colls().length} collections have key tracks.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label><label for="pvVol">Preview volume: <b id="pvVolV">${Math.round(PV.vol*100)}%</b> of the main volume</label><input type="range" id="pvVol" min="0" max="1" step=".01" value="${PV.vol}">`)
  +sec('Trash',`<p class="mut">${TRASH.length?`${TRASH.length} deleted item${TRASH.length>1?'s':''} kept on this device for 30 days.`:'Songs and lists you delete are kept here for 30 days so you can restore them.'}</p><div class="row"><button data-act="trashOpen">Open trash</button></div>`)
  +sec('Keyboard shortcuts',SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''))+'</div>'}
 async function storageInfo(){const e=await(navigator.storage&&navigator.storage.estimate?navigator.storage.estimate():null),el=$('#stu');if(el)el.textContent=e?`${songs.size} songs · ${(e.usage/1e9).toFixed(2)} GB used on this device`:`${songs.size} songs`}
@@ -1058,7 +1062,7 @@ function pkRender(){const l=lists.find(x=>x.id==pk.id),have=new Set(l.songs),src
  $('#pL').innerHTML=(ids.length?'<button data-act="pkall">Select shown</button>':'<p class="mut">Nothing to add here.</p>')+ids.map(i=>`<label class="pk"><input type="checkbox" data-pk="${i}" ${pk.sel.has(i)?'checked':''}>${esc(ttl(songs.get(i)))}<small>${esc(sub(i))}</small></label>`).join('');$('#pG').textContent='Add '+pk.sel.size}
 const setTheme=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('th',t)}catch{}};
 const curTheme=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
-const BK_PREFS=['sort','pgrp','grp','norm','normT','prev'];
+const BK_PREFS=['sort','pgrp','grp','norm','normT','prev','prevVol'];
 async function exportBackup(){toast('Preparing backup…');
  const rd=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=()=>r('');f.readAsDataURL(b)});
  const art=[];for(const[id,a]of ART)art.push({id,cmod:a.cmod,data:await rd(a.blob)});
@@ -1076,7 +1080,7 @@ async function importBackup(f){try{const d=JSON.parse(await f.text());if(!d||typ
   const b=await(await fetch(a.data)).blob();ART.set(a.id,{blob:b,cmod:cm});await put('art',{id:a.id,blob:b,cmod:cm});n++}
  const p=d.prefs||{};for(const k of BK_PREFS)if(typeof p[k]=='string')try{localStorage.setItem(k,p[k])}catch{}
  if(p.sort&&sorters[p.sort])sortK=p.sort;if(['none','series','collection'].includes(p.pgrp))pgrp=p.pgrp;if(p.grp!==undefined)grp=p.grp!='0';
- if(p.norm!==undefined)NORM.on=p.norm=='1';if(p.prev!==undefined)PV.on=p.prev=='1';if(isFinite(parseFloat(p.normT)))NORM.target=parseFloat(p.normT);
+ if(p.norm!==undefined)NORM.on=p.norm=='1';if(p.prev!==undefined)PV.on=p.prev=='1';if(isFinite(parseFloat(p.prevVol)))PV.vol=Math.max(0,Math.min(1,parseFloat(p.prevVol)));if(isFinite(parseFloat(p.normT)))NORM.target=parseFloat(p.normT);
  toast(n+' items restored');render()}catch{toast('That file is not an Ocarina of Time backup')}}
 /* ---------- smart shuffle: a weighted random order that favours songs you rate highly, favourite or haven't heard yet,
    avoids anything played recently, and tries not to play two songs from the same collection back to back ---------- */
@@ -1145,8 +1149,8 @@ document.addEventListener('contextmenu',e=>{const r=e.target.closest&&e.target.c
 /* ---------- collection preview: opening a collection plays 3 seconds from each of three random key tracks, quietly,
    on a separate player. It is never logged, never shows as now playing, and fades out the moment real playback starts ---------- */
 const pv=new Audio();pv.preload='auto';let pvTok=0,pvFor='',pvTimer=0,pvTimerFor='',pvUrl=null,pvF=0;
-const PV={on:true};try{const v=localStorage.getItem('prev');PV.on=v===null?true:v=='1'}catch{}
-const pvLevel=()=>au.muted?0:Math.min(1,au.volume)*.8,playingNow=()=>realSrc()&&!au.paused&&!au.ended;   /* a real song is actively playing (paused or finished songs don't count) */
+const PV={on:true,vol:.8};try{const v=localStorage.getItem('prev');PV.on=v===null?true:v=='1';const v0=parseFloat(localStorage.getItem('prevVol'));if(isFinite(v0))PV.vol=Math.max(0,Math.min(1,v0))}catch{}
+const pvLevel=()=>au.muted?0:Math.min(1,au.volume)*PV.vol,playingNow=()=>realSrc()&&!au.paused&&!au.ended;   /* a real song is actively playing (paused or finished songs don't count) */
 function pvFade(to,ms){const id=++pvF,from=pv.volume,t0=performance.now();return new Promise(res=>{const step=()=>{if(id!==pvF)return res();const k=Math.min(1,(performance.now()-t0)/ms);try{pv.volume=Math.max(0,Math.min(1,from+(to-from)*k))}catch{}if(k<1)setTimeout(step,30);else res()};step()})}
 function stopPreview(clear){const tk=++pvTok;if(clear)pvFor='';if(!pv.src||pv.paused)return;pvFade(0,250).then(()=>{if(pvTok===tk)pv.pause()})}
 async function startPreview(l){stopPreview(true);const tok=pvTok;pvFor=l.id;
@@ -1260,7 +1264,7 @@ jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
  ordEdit:t=>ordEdit(t.dataset.id),ordNum:()=>{autoNum();$('#ordL').innerHTML=ord.items.map(ordRow).join('')},
  ordSort:()=>{const ix=new Map(ord.items.map((x,i)=>[x,i]));ord.items.sort((a,b)=>((a.disc||1)-(b.disc||1))||((a.trk||1e9)-(b.trk||1e9))||ix.get(a)-ix.get(b));$('#ordL').innerHTML=ord.items.map(ordRow).join('')},
  ordSave:async()=>{for(const x of ord.items){const s=songs.get(x.id);if(s&&((s.trk||0)!=x.trk||(s.disc||0)!=x.disc)){s.trk=x.trk;s.disc=x.disc;s.mod=Date.now();await put('songs',s)}}setSort(ord.id,'track');closeSheet();toast('Track order saved');render()},
- home:()=>{endSel();S={t:'home'};hist=[];$('#q').value='';render();scrollTo(0,0)},exv:t=>{S.ev=t.dataset.k;render()},
+ home:()=>{ocarinaPlay();endSel();S={t:'home'};hist=[];$('#q').value='';render();scrollTo(0,0)},exv:t=>{S.ev=t.dataset.k;render()},
  syncNow:()=>sync(1),fullSync:async()=>{srvSeq=0;lastPush=0;await saveSyncState();sync(1)},expBackup:()=>exportBackup(),impBackup:()=>$('#imp').click(),addFolder:()=>$('#dir').click(),tagMgrOpen:()=>tagMgr(),
 
  add:t=>pop(t,[['Add songs',()=>$('#file').click()],['New playlist',()=>newDlg('playlist')],['New collection',()=>newDlg('collection')],['New series',()=>newDlg('series')]],true),
@@ -1364,6 +1368,17 @@ setTimeout(()=>{try{if(localStorage.getItem('rpHint')!='1'&&!document.body.class
  for(const id in AL){const e=document.getElementById(id);if(e&&!e.hasAttribute('aria-label'))e.setAttribute('aria-label',AL[id])}
  $$('#stars span,#bStars span').forEach(x=>{x.setAttribute('role','button');x.setAttribute('aria-label',x.dataset.n+(x.dataset.n==1?' star':' stars'))})})();
 document.addEventListener('keydown',e=>{if(e.key!='Enter'||e.ctrlKey||e.metaKey||e.altKey)return;const t=e.target;if(t&&t.matches&&t===document.activeElement&&t.matches('.song,.card,.jbt')){e.preventDefault();t.click()}});
+/* ---------- preview volume slider ---------- */
+document.addEventListener('input',e=>{if(e.target.id!='pvVol')return;PV.vol=+e.target.value;const v=$('#pvVolV');if(v)v.textContent=Math.round(PV.vol*100)+'%';if(!pv.paused&&pv.volume>0){pvF++;try{pv.volume=pvLevel()}catch{}}});   /* a preview that is playing follows the slider live */
+document.addEventListener('change',e=>{if(e.target.id=='pvVol'){try{localStorage.setItem('prevVol',String(PV.vol))}catch{}}});
+/* ---------- the ocarina: click the logo and it plays a song ---------- */
+const OC_SONGS=['zeldas-lullaby','eponas-theme','suns-song','sarias-song','song-of-time','song-of-storms'].map(n=>'sounds/'+n+'.mp3'),ocAudio=new Audio(),OC_URL=new Map();let ocLast=-1,ocTok=0;
+const ocDone=()=>document.body.classList.remove('oc-play');ocAudio.onended=ocAudio.onerror=ocDone;
+async function ocarinaPlay(){const tk=++ocTok;ocAudio.pause();document.body.classList.add('oc-play');   /* the shake starts straight away, even while the file loads */
+ let i;do{i=Math.random()*OC_SONGS.length|0}while(i===ocLast&&OC_SONGS.length>1);ocLast=i;
+ try{let u=OC_URL.get(i);if(!u){const r=await fetch(OC_SONGS[i]);if(!r.ok)throw new Error('missing');u=URL.createObjectURL(await r.blob());OC_URL.set(i,u)}   /* loaded as a blob so it also plays offline and on iOS */
+  if(tk!==ocTok)return;ocAudio.src=u;ocAudio.volume=au.muted?0:Math.min(1,au.volume);await ocAudio.play()}
+ catch(e){if(tk===ocTok)ocDone()}}
 (async()=>{
  await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));for(const s of songs.values())SNAP.set(s.id,TRK.map(k=>jv(s[k])));lists=await idb('lists','readonly',s=>s.getAll());
  (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
