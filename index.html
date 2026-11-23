@@ -308,7 +308,7 @@ body.oc-play img.lg{animation:ocShake .55s ease-in-out infinite}
  #bStars,.sepv,#bExp,.npv input{display:none}
 }
 @media(min-width:821px) and (max-width:900px){#bFav{display:none}.npc{width:260px}}
-</style></head><body>
+.meta{display:flex;align-items:center;gap:8px;margin-bottom:6px}.meta small{display:inline}.mc{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:9px;font-weight:800;font-size:18px;color:#10231a}.mc.g{background:#00ce7a}.mc.y{background:#ffbd3f}.mc.r{background:#ff6874}</style></head><body>
 <aside id="side">
 <div class="brand" data-act="home" title="Home"><img alt="Ocarina of Time" class="lg"></div>
 <div class="navs">
@@ -405,7 +405,7 @@ function cleanList(l){if(!l||typeof l!='object'||!okId(l.id)||!LIST_TYPES.includ
  for(const k of['col','ser','cat'])if(l[k]!==undefined&&!okId(l[k]))delete o[k];if(o.smart&&typeof o.smart!='object')delete o.smart;
  for(const k of['img','icon'])if(o[k]&&!IMGRE.test(o[k]))o[k]='';
  if(o.color!==undefined&&!COLRE.test(o.color))o.color=PAL[0];
- for(const k of['desc','console','year','dev','pub','comp','genre','syear','awards','kind'])if(o[k]!==undefined&&typeof o[k]!='string')o[k]=sStr(o[k]);
+ for(const k of['desc','console','year','dev','pub','comp','genre','syear','awards','kind','meta'])if(o[k]!==undefined&&typeof o[k]!='string')o[k]=sStr(o[k]);
  if(o.acmod!==undefined)o.acmod=sNum(o.acmod);return o}
 /* ---------- song merging: each editable field carries its own timestamp (fm), so rating a song on one device and
    renaming it on another no longer cancel each other out, and play counts only ever go up ---------- */
@@ -730,9 +730,9 @@ function vSeries(l){const cols=sorted(colls().filter(c=>c.ser==l.id)),ss=serSong
 function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),tg=etags(l).map(tag).filter(Boolean),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
   ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),lt=lists.filter(x=>x.type=='stag'&&x.col==l.id),lf=S.lf&&lt.some(x=>x.id==S.lf)?S.lf:null,shown=lf?ids.filter(i=>(songs.get(i).tags||[]).includes(lf)):ids,ctx=lf?'view':l.id;S.viewIds=shown;
  keyCol=l.id;keySet=new Set(keys);
- return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi">${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}<small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`
+ return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi">${tg.length?`<div class="chips">${tg.map(x=>chip(x)).join('')}</div>`:''}${metaBadge(l)}<small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`
  +infoGrid(l)
- +`<div class="bar" style="align-items:baseline"><h2>Key tracks</h2>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`+(keys.length?`<div class="keys">${keys.map((k,i)=>keyRow(k,i,l.id)).join('')}</div>`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>')
+ +`<div class="bar" style="align-items:baseline"><h2>Key tracks</h2>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`+(keys.length?`<div class="keys">${(XP.has('kt:'+l.id)?keys:keys.slice(0,10)).map((k,i)=>keyRow(k,i,l.id)).join('')}</div>${moreBtn('kt:'+l.id,keys.length,10,'key tracks')}`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>')
  +`<div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`+(ps.length?`<div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${pn(p.songs.length,'song')}`,'','go',plArt(p))).join('')}</div>`:'<p class="mut">No playlists yet.</p>')
  +songsHead(l,ids.length)+(lt.length?`<div class="chips">${lt.map(x=>chip(x,'lf',lf==x.id)).join('')}</div>`:'')+(rowsHtml(shown,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>')}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
@@ -994,12 +994,12 @@ function infoGrid(l){const isS=l.type=='series',al=l.kind=='album',st=lstats(l),
   :al?[f('Artist',esc(l.dev||'')),f('Label',esc(l.pub||'')),f('Released',esc(l.year||'')),f('Genre',esc(l.genre||''))]
   :[f('Console',lk('console',l.console)),f('Released',esc(l.year||'')),f('Developer',lk('developer',l.dev)),f('Publisher',esc(l.pub||'')),f('Composer',lk('composer',l.comp)),f('Genre',esc(l.genre||'')),f('Soundtrack released',esc(l.syear||''))];
  items.push(f('Tracks',st.tracks),f('Total length',fmtT(st.len)),f('You have listened',st.listened?fmtT(st.listened):'Not yet'),f('Times played',st.plays));
- return`<div class="info"><h2>${isS?'Series information':al?'Album information':'Game information'}</h2><div class="igrid">${items.join('')}</div>${aw.length?`<div class="awl">${aw.map(a=>`<div class="aw">${ic('trophy')}<span>${esc(a)}</span></div>`).join('')}</div>`:''}</div>`}
+ return`<div class="info"><h2>${isS?'Series information':al?'Album information':'Game information'}</h2><div class="igrid">${items.join('')}</div>${aw.length?`<div class="awl">${(XP.has('aw:'+l.id)?aw:aw.slice(0,5)).map(a=>`<div class="aw">${ic('trophy')}<span>${esc(a)}</span></div>`).join('')}${moreBtn('aw:'+l.id,aw.length,5,'awards')}</div>`:''}</div>`}
 function detailFields(l){if(l.type=='playlist')return'';const isS=l.type=='series',vals=(fl)=>[...new Set(lists.filter(x=>x.type=='collection'||x.type=='series').flatMap(x=>splitList(x[fl])))].sort(),
  dl=(id,a)=>`<datalist id="dl-${id}">${a.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`,inp=(id,lab,val,d)=>`<div><label>${lab}</label><input id="${id}" value="${esc(val||'')}" ${d?`list="dl-${d}"`:''}></div>`;
  if(isS)return`<label style="display:block;margin-top:6px"><b>Series details</b></label><div class="fg">${inp('dYear','First released',l.year)}${inp('dDev','Developer',l.dev,'dev')}${inp('dPub','Publisher',l.pub)}${inp('dGen','Genre',l.genre,'gen')}</div><label>Awards (one per line)</label><textarea id="dAw" rows="2">${esc(l.awards||'')}</textarea>${dl('dev',vals('dev'))}${dl('gen',vals('genre'))}`;
  return`<div id="dBox" class="${l.kind=='album'?'isAlbum':'isGame'}"><label>Type</label><select id="dKind"><option value="game" ${l.kind!='album'?'selected':''}>Game soundtrack</option><option value="album" ${l.kind=='album'?'selected':''}>Album</option></select>
- <div class="fg"><div class="gonly">${inp('dCon','Console(s), comma separated',l.console,'con')}</div>${inp('dYear','Released',l.year)}${inp('dDev','<span class="gonly">Developer</span><span class="aonly">Artist</span>',l.dev,'dev')}${inp('dPub','<span class="gonly">Publisher</span><span class="aonly">Label</span>',l.pub)}<div class="gonly">${inp('dComp','Composer(s)',l.comp,'comp')}</div>${inp('dGen','Genre',l.genre,'gen')}<div class="gonly">${inp('dSY','Soundtrack released',l.syear)}</div></div>
+ <div class="fg"><div class="gonly">${inp('dCon','Console(s), comma separated',l.console,'con')}</div>${inp('dYear','Released',l.year)}${inp('dDev','<span class="gonly">Developer</span><span class="aonly">Artist</span>',l.dev,'dev')}${inp('dPub','<span class="gonly">Publisher</span><span class="aonly">Label</span>',l.pub)}<div class="gonly">${inp('dComp','Composer(s)',l.comp,'comp')}</div>${inp('dGen','Genre',l.genre,'gen')}<div class="gonly">${inp('dSY','Soundtrack released',l.syear)}</div><div class="gonly">${inp('dMeta','Metacritic score (0-100)',l.meta)}</div></div>
  <label>Awards (one per line)</label><textarea id="dAw" rows="2" placeholder="The Game Awards 2018: Best Score">${esc(l.awards||'')}</textarea></div>${dl('con',vals('console'))}${dl('dev',vals('dev'))}${dl('comp',vals('comp'))}${dl('gen',vals('genre'))}`}
 function featPicks(){const cols=colls().filter(c=>c.songs.length);if(!cols.length)return[];const out=[],used=new Set(),push=(c,why)=>{if(c&&!used.has(c.id)){used.add(c.id);out.push({c,why})}};
  const lastP=c=>Math.max(0,...c.songs.map(i=>(songs.get(i)||{}).lp||0)),ac=agg(e=>e.coll),pl=c=>c.songs.reduce((n,i)=>n+((songs.get(i)||{}).plays||0),0),score=c=>LOG.length?(ac.get(c.id)||{secs:0}).secs:pl(c);
@@ -1229,7 +1229,7 @@ const A={
   it.push(['Delete from library',async()=>{if(!confirm(`Delete ${sel.size} songs from your library?`))return;const es=await trashSongs([...sel]);endSel();render();toast(`${es.length} song${es.length==1?'':'s'} deleted`,()=>undoTrash(es))}]);menu(sel.size+' songs',it)},
  lNoImg:()=>{const l=lists.find(x=>x.id==ls.id);ls.img='';$('#lP').innerHTML=l.type=='series'?serArt({...l,img:''}):art(lcover({songs:l.songs}),l.name)},
  lSave:async()=>{if(ls.pending)await ls.pending;const l=lists.find(x=>x.id==ls.id),n=$('#lN').value.trim();if(!n)return toast('Enter a name');Object.assign(l,{name:n,desc:$('#lD').value.trim(),tags:[...tp.sel],img:ls.img,mod:Date.now()});if($('#lCol'))l.col=$('#lCol').value||undefined;if($('#lSer'))l.ser=$('#lSer').value||undefined;
-  for(const[k,i]of[['console','dCon'],['year','dYear'],['dev','dDev'],['pub','dPub'],['comp','dComp'],['genre','dGen'],['syear','dSY'],['awards','dAw']]){const e=$('#'+i);if(e)l[k]=e.value.trim()}
+  for(const[k,i]of[['console','dCon'],['year','dYear'],['dev','dDev'],['pub','dPub'],['comp','dComp'],['genre','dGen'],['syear','dSY'],['awards','dAw'],['meta','dMeta']]){const e=$('#'+i);if(e)l[k]=e.value.trim()}
   if($('#dKind'))l.kind=$('#dKind').value;
   if(ls.artBlob){const c=Date.now();ART.set(l.id,{blob:ls.artBlob,cmod:c});await put('art',{id:l.id,blob:ls.artBlob,cmod:c});l.acmod=c}
   else if(ls.artDel&&ART.has(l.id)){ART.delete(l.id);await del('art',l.id);l.acmod=0}await put('lists',l);closeSheet();render()},
@@ -1478,6 +1478,12 @@ A.spSave=async()=>{const n=$('#spN').value.trim();if(!n)return toast('Enter a na
 /* skip tracking: Next within the first 30 seconds (or first third of a short song) counts as a skip and lowers the song's smart shuffle weight */
 function recordSkip(){const s=songs.get(Q[qi]);if(!s||!realSrc()||counted)return;const d=au.duration||s.dur||0;if(!(au.currentTime<Math.min(30,d?d/3:30)))return;s.sk=(s.sk||0)+1;s.skl=Date.now();s.mod=Date.now();put('songs',s)}
 function skipNext(){recordSkip();next()}
+
+/* ===== collapsible long lists (awards, key tracks) and Metacritic badge ===== */
+const XP=new Set();
+const moreBtn=(key,n,lim,noun)=>n>lim?`<div class="row" style="margin-top:6px"><button data-act="xpTog" data-k="${esc(key)}">${XP.has(key)?'Show fewer':`Show all ${n} ${noun}`}</button></div>`:'';
+A.xpTog=t=>{const k=t.dataset.k;XP.has(k)?XP.delete(k):XP.add(k);render()};
+function metaBadge(l){if(l.kind=='album')return'';const n=parseInt(l.meta);if(!(n>=0&&n<=100))return'';return`<div class="meta"><span class="mc ${n>=75?'g':n>=50?'y':'r'}" title="Metacritic score">${n}</span><small>Metacritic</small></div>`}
 
 (async()=>{
  await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));for(const s of songs.values())SNAP.set(s.id,TRK.map(k=>jv(s[k])));lists=await idb('lists','readonly',s=>s.getAll());
