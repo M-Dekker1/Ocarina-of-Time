@@ -295,7 +295,20 @@ main,#top{max-width:1760px}#top{margin:0 auto}
 .brand img,.mbrand img{transform-origin:50% 65%}
 body.oc-play img.lg{animation:ocShake .55s ease-in-out infinite}
 @keyframes ocShake{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-4deg) translate(-1px,-1px)}40%{transform:rotate(3deg) translate(1px,0)}60%{transform:rotate(-3deg) translate(-1px,1px)}80%{transform:rotate(2deg) translate(1px,-1px)}}
-.tcg{margin:4px 0 12px}.tcg small{display:block;margin-bottom:4px}.chip.part{border-style:dashed}</style></head><body>
+.tcg{margin:4px 0 12px}.tcg small{display:block;margin-bottom:4px}.chip.part{border-style:dashed}/* bottom bar (desktop widths): the song info gets the spare room on the left, the controls stay centred */
+@media(min-width:821px){
+ .npl{width:auto;flex:1 1 0;min-width:216px}
+ .npc{flex:none;width:min(46%,680px);padding:0 12px}
+ .npv{width:auto;flex:1 1 0;min-width:0;justify-content:flex-end}
+}
+/* narrower desktop windows: drop the extras so nothing wraps or overlaps (Edit, queue and volume buttons stay, plus the full screen player via the song info) */
+@media(min-width:821px) and (max-width:1100px){
+ .npc{width:300px}
+ .ctls{flex-wrap:nowrap}
+ #bStars,.sepv,#bExp,.npv input{display:none}
+}
+@media(min-width:821px) and (max-width:900px){#bFav{display:none}.npc{width:260px}}
+</style></head><body>
 <aside id="side">
 <div class="brand" data-act="home" title="Home"><img alt="Ocarina of Time" class="lg"></div>
 <div class="navs">
