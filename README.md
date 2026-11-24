@@ -9,7 +9,7 @@
 
 ## 2. Set up syncing over your home Wi-Fi
 
-Your PC runs a small server that keeps your songs, playlists, tags, ratings, favourites, play counts and cover art. Each device syncs with it when the app starts (or via ⋯ → Sync now) while you're on your home Wi-Fi and the PC is on. Away from home nothing syncs and the app works as normal.
+Your PC runs a small server that keeps your songs, playlists, ratings, favourites, play counts and cover art. Each device syncs with it when the app starts (or via ⋯ → Sync now) while you're on your home Wi-Fi and the PC is on. Away from home nothing syncs and the app works as normal.
 
 ### One-time setup on the PC
 1. Install **Python 3.8+** from python.org (tick "Add to PATH").
@@ -45,4 +45,4 @@ You can list more than one address, separated by commas (for example the IP and 
 - If sync works on your iPhone but your PC browser blocks it, install the app on the PC from `https://localhost:8765` instead of GitHub Pages.
 
 ## 3. Backups
-⋯ → **Export backup** saves your playlists, tags, favourites, ratings and play counts. With sync on, the `ocarina-data` folder on your PC holds a full copy of everything, including the audio.
+⋯ → **Export backup** saves your playlists, favourites, ratings and play counts. With sync on, the `ocarina-data` folder on your PC holds a full copy of everything, including the audio.
