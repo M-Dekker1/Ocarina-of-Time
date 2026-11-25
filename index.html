@@ -67,7 +67,6 @@ input[type=file]::file-selector-button:hover{background:var(--raise)}
 .nv .i{width:21px;height:21px}.nv:hover{color:var(--fg);background:var(--raise)}.nv.on{background:var(--raise);color:var(--acc)}
 #content{margin-left:calc(var(--sbw) + var(--g)*2);margin-right:var(--rpm);transition:margin-right .34s var(--ease)}
 #top{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:var(--s3);align-items:center;padding:var(--s4) var(--s5) var(--s3);max-width:1760px;margin:0 auto}
-#q{flex:1;max-width:560px;min-width:0;background:var(--card);padding:var(--s3) var(--s4)}
 #top .p{margin-left:auto;white-space:nowrap}
 main{padding:var(--s2) var(--s5) calc(var(--npH) + var(--navH) + var(--s5));max-width:1760px;margin:0 auto}
 body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:var(--npH);background:var(--bg);z-index:8;pointer-events:none}
@@ -276,7 +275,6 @@ body.hint #rpTab{animation:tabPulse 1.8s ease-in-out 4}
 /* ===== Entrance animations ===== */
 .pg{animation:pgIn .34s var(--ease)}
 .fh-in .hi{animation:heroIn .45s var(--ease)}.fh-in .hbgw{animation:fadeIn .5s ease}
-#rpArt img,#bArt img,#nArt img{animation:fadeIn .4s ease}
 .chart .col i{transform-origin:bottom;animation:grow .6s var(--ease) both}.brow .tr i{transform-origin:left;animation:growX .6s var(--ease) both}
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -327,23 +325,88 @@ body.hint #rpTab{animation:tabPulse 1.8s ease-in-out 4}
 #nArt{width:min(100%,360px,46vh)}}
 @media(hover:none){.rarr,.ed{display:none}}
 
+/* ===== Stage 2: search in sidebar, crossfades, collection hero ===== */
+#content{position:relative}
+.sbsearch{position:relative;display:flex;align-items:center;gap:var(--s2);margin:0 var(--s1) var(--s4)}
+.sbsearch .sbi{position:absolute;left:12px;top:50%;margin-top:-8px;width:16px;height:16px;color:var(--mut);pointer-events:none}
+#q{flex:1;min-width:0;width:100%;background:var(--bg);padding:var(--s2) var(--s3) var(--s2) 36px}
+.sbx,.nvs{display:none}
+#bArt,#rpArt,#nArt{position:relative}
+.xf{position:absolute;inset:0;opacity:0;transition:opacity .4s ease}.xf.in{opacity:1}
+#npBg .bgl{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .45s ease}#npBg .bgl.in{opacity:1}
+.npn small .lnk{color:inherit}.npn small .lnk:hover{color:var(--fg);text-decoration:underline}
+
+body.herotop{padding-top:0}
+body.herotop main{padding:0;max-width:none}
+body.herotop #top{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:0;background:transparent;pointer-events:none}
+body.herotop #top>*{pointer-events:auto}
+body.herotop .mbrand{display:none}
+.hero.ct{border-radius:0;margin:0;min-height:440px;padding:calc(84px + env(safe-area-inset-top,0px)) 0 var(--s6)}
+.hero.ct .hbgw{-webkit-mask-image:linear-gradient(#000 52%,transparent 100%);mask-image:linear-gradient(#000 52%,transparent 100%)}
+.hero.ct .hbg{background-position:center 30%}
+.hero.ct .hov{background:linear-gradient(180deg,rgba(8,26,18,.6),transparent 160px),linear-gradient(90deg,rgba(8,26,18,.85),rgba(8,26,18,.3) 62%,transparent),linear-gradient(0deg,var(--bg) 2%,transparent 62%)}
+.hero.ct .hc{max-width:1760px;margin:0 auto;padding:0 var(--s5)}
+.hero.ct .hcov{width:220px;height:220px}
+.hero.ct .desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}
+.hback{position:absolute;z-index:3;top:calc(var(--s4) + env(safe-area-inset-top,0px));left:max(var(--s5),calc((100% - 1760px)/2 + var(--s5)));min-height:40px;padding:0 var(--s4) 0 var(--s3);border:1px solid var(--line);border-radius:var(--r-md);background:color-mix(in srgb,var(--bg) 55%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--fg)}
+.hback:hover{background:color-mix(in srgb,var(--bg) 80%,transparent)}
+.hmeta{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);margin:var(--s3) 0 0}
+.hm{display:inline-flex;align-items:center;gap:var(--s2);font-size:var(--fs-md);color:color-mix(in srgb,var(--fg) 88%,transparent)}
+.hm .i{width:20px;height:20px;color:var(--acc)}.hm .cic{width:20px;height:20px;object-fit:contain;flex:none}
+.hm .lnk{color:inherit}.hm .lnk:hover{text-decoration:underline}
+.cwrap{max-width:1760px;margin:0 auto;padding:var(--s5) var(--s5) calc(var(--npH) + var(--navH) + var(--s5))}
+.cgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s5);align-items:start}
+.cmain,.cside{min-width:0}
+.cside{display:flex;flex-direction:column;gap:var(--s4)}.cside .info{margin:0}
+.cside .igrid{grid-template-columns:1fr 1fr}.inf b{overflow-wrap:anywhere}
+@media(min-width:1100px){.cgrid{grid-template-columns:minmax(0,1fr) minmax(300px,380px)}}
+.pnl{background:var(--card);border-radius:var(--r-xl);padding:var(--s5)}
+.pnlh h2{margin:0;display:flex;align-items:center;gap:var(--s3);font-size:var(--fs-xl)}.pnlh .i{color:var(--acc)}
+.sub{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;margin:var(--s5) 0 var(--s2)}
+.sub h3{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-lg);font-weight:650}.sub h3 .i{color:var(--acc)}.sub h3 .gi{color:var(--gold)}
+.music .bar:has(>h2){margin:var(--s5) 0 var(--s2)}
+.music .rw{margin-top:var(--s1)}
+.keys .krow:not(.now){background:color-mix(in srgb,var(--gold) 7%,transparent)}
+.keys .krow+.krow{margin-top:2px}.keys .sm{width:48px;height:48px}
+.composer{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;margin:var(--s4) 0 0;padding-top:var(--s3);border-top:1px solid var(--line);color:var(--mut);font-size:var(--fs-md)}
+.composer .i{color:var(--acc)}.composer b{font-weight:600}.composer .lnk{color:var(--fg)}
+.sm.ci{display:grid;place-items:center;color:var(--acc)}.sm.ci .i{width:24px;height:24px}.sm.ci img{width:28px;height:28px;object-fit:contain}
+.icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:var(--s2);margin:var(--s2) 0 var(--s3)}
+.icb{min-height:52px;padding:0;color:var(--acc)}.icb .i{width:26px;height:26px}.icb.on{background:var(--raise);border-color:var(--acc)}
+@media(min-width:1500px){.cgrid{grid-template-columns:minmax(0,1fr) 400px}}
+@media(max-width:820px){
+.sbsearch{display:none}
+.nvs{display:flex;flex:0 0 44px}.nvs .i{width:22px;height:22px}
+body.srch .sbsearch{display:flex;position:fixed;left:0;right:0;top:0;z-index:30;margin:0;padding:calc(var(--s3) + env(safe-area-inset-top,0px)) var(--s3) var(--s3);background:var(--bg);border-bottom:1px solid var(--line)}
+body.srch .sbsearch .sbi{left:calc(var(--s3) + 12px)}
+body.srch .sbx{display:inline-flex}
+.hero.ct{min-height:0;padding:calc(64px + env(safe-area-inset-top,0px)) 0 var(--s5)}
+.hero.ct .hc{padding:0 var(--s4)}.hero.ct .hcov{width:120px;height:120px}
+.hback{left:var(--s4)}
+.cwrap{padding:var(--s4) var(--s4) calc(var(--npH) + var(--navH) + var(--s5))}
+.pnl{padding:var(--s4);border-radius:var(--r-lg)}
+.keys .dur,.keys .kn{display:none}.keys .krow{gap:var(--s2)}.keys .sm{width:44px;height:44px}
+}
+
 /* ===== Reduced motion ===== */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style></head><body>
 <aside id="side">
 <div class="brand" data-act="home" title="Home"><img alt="Ocarina of Time" class="lg"></div>
+<div class="sbsearch"><svg class="i sbi" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="q" type="search" placeholder="Search" title="Search songs, series, collections and playlists" aria-label="Search songs, series, collections and playlists" autocomplete="off"><button class="ic sbx" data-act="srchClose" aria-label="Close search"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
 <div class="navs">
 <button class="nv on" data-page="home"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/></svg><span>Home</span></button>
 <button class="nv" data-page="explore"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span>Explore</span></button>
 <button class="nv" data-page="library"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Library</span></button>
 <button class="nv" data-page="playlists"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h6"/><path d="M18 12v6"/><circle cx="16" cy="18" r="2"/></svg><span>Playlists</span></button>
 <button class="nv" data-page="stats"><svg class="i" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Stats</span></button>
+<button class="nv nvs" data-act="srch" aria-label="Search" title="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
 </div>
 <div class="sp"></div>
 <div class="navb"><button class="nv" data-page="settings"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button></div>
 </aside>
 <div id="content">
-<div id="top"><div class="mbrand" data-act="home"><img alt="Ocarina of Time" class="lg"></div><input id="q" type="search" placeholder="Search songs, series, collections and playlists"><button class="p" data-act="add" title="Add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
+<div id="top"><div class="mbrand" data-act="home"><img alt="Ocarina of Time" class="lg"></div><button class="p" data-act="add" title="Add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
 <main id="main"></main>
 </div>
 <aside id="rp">
@@ -423,11 +486,11 @@ async function gcCovers(){const used=new Set();for(const s of songs.values())if(
 /* ---------- validation: anything that comes from a backup or the server is checked before it is used ---------- */
 const IDRE=/^[A-Za-z0-9_-]{1,64}$/,IMGRE=/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/;
 const okId=x=>typeof x=='string'&&IDRE.test(x),idList=a=>Array.isArray(a)?a.filter(okId):[],sStr=x=>typeof x=='string'?x:'',sNum=x=>Number.isFinite(+x)?+x:0;
-const LIST_TYPES=['collection','playlist','series'];
+const LIST_TYPES=['collection','playlist','series','cicon'];
 function cleanList(l){if(!l||typeof l!='object'||!okId(l.id)||!LIST_TYPES.includes(l.type))return null;const o={...l};
  o.name=sStr(l.name);o.songs=idList(l.songs);o.mod=sNum(l.mod);for(const k of['tags','cat','color','icon','meta'])delete o[k];if(l.keys!==undefined)o.keys=idList(l.keys);
  for(const k of['col','ser'])if(l[k]!==undefined&&!okId(l[k]))delete o[k];if(o.smart&&typeof o.smart!='object')delete o.smart;
- if(o.img&&!IMGRE.test(o.img))o.img='';
+ if(o.img&&!IMGRE.test(o.img))o.img='';if(o.bi!==undefined&&!(typeof o.bi=='string'&&CON_BI.includes(o.bi)))delete o.bi;
  
  for(const k of['desc','console','year','dev','pub','comp','genre','syear','awards','kind'])if(o[k]!==undefined&&typeof o[k]!='string')o[k]=sStr(o[k]);
  if(o.acmod!==undefined)o.acmod=sNum(o.acmod);return o}
@@ -710,6 +773,7 @@ function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>
  +sec('Sync',`<p class="mut">${sc?`Connected to ${esc(bases()[0]||sc)}${lastSync?' · last synced '+new Date(lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}.`:'Keep your PC and phone in step over your home Wi-Fi.'}</p><div class="row"><button class="p" data-act="syncSet">${sc?'Edit connection':'Set up sync'}</button>${sc?'<button data-act="syncNow">Sync now</button><button data-act="fullSync">Full resync</button>':''}</div>`)
  
  +sec('Library','<p class="mut" id="stu" data-live>Checking storage...</p><div class="row"><button data-act="addfiles">Add songs</button><button data-act="addFolder">Add a whole folder</button><button data-act="fixCovers">Recover missing cover art</button></div>')
+ +sec('Console icons','<p class="mut">Choose the icon shown beside each console on collection pages. An icon is shared by every collection that uses that console.</p><div class="row"><button data-act="conIcons">Choose icons</button></div>')
  +sec('Backup','<p class="mut">Playlists, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
  +sec('Volume',`<p class="mut">Levels every song to the same loudness so quiet and loud soundtracks don't need the volume turned up and down. Songs are measured once and the result syncs between devices. If sound ever cuts out or stops when the phone locks, switch this off and restart the app.</p><label class="pk"><input type="checkbox" id="nmOn" ${NORM.on?'checked':''}>Normalise volume</label><label>Loudness target</label><select id="nmT">${[[-23,'Quiet (-23 LUFS)'],[-18,'Relaxed (-18 LUFS)'],[-16,'Standard (-16 LUFS)'],[-14,'Loud (-14 LUFS)']].map(([v,l])=>`<option value="${v}" ${NORM.target==v?'selected':''}>${l}</option>`).join('')}</select><p class="mut" id="nmS" data-live></p><div class="row"><button data-act="nmRun">Measure songs now</button></div>`)
  +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks (or random songs, if you haven't starred any key tracks yet) as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. It plays when nothing is playing, including when your music is paused, and is skipped while a song is actively playing. ${colls().filter(c=>(c.keys||[]).length).length} of ${colls().length} collections have key tracks.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label><label for="pvVol">Preview volume: <b id="pvVolV">${Math.round(PV.vol*100)}%</b> of the main volume</label><input type="range" id="pvVol" min="0" max="1" step=".01" value="${PV.vol}">`)
@@ -753,14 +817,6 @@ function vSeries(l){const cols=sorted(colls().filter(c=>c.ser==l.id)),ss=serSong
   ps=sorted(pls().filter(p=>p.ser==l.id||cset.has(p.col)||p.songs.some(x=>set.has(x))));
  return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${serArt(l)}</div><div class="hi"><small>Series · ${cols.length} collection${cols.length==1?'':'s'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button data-act="serCols" data-id="${id}">Add collections</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`
  +infoGrid(l)+`<h2>Collections</h2><div class="grid lg">${cols.map(ccard).join('')||'<p class="mut">No collections yet. Tap Add collections.</p>'}</div><div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div><div class="grid">${ps.map(p=>card(p.id,p.name,`${pn(p.songs.length,'song')}`,'','go',plArt(p))).join('')||'<p class="mut">No playlists yet.</p>'}</div>`}
-function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
-  ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),shown=ids,ctx=l.id;
- keyCol=l.id;keySet=new Set(keys);
- return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi"><small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`
- +infoGrid(l)
- +`<div class="bar" style="align-items:baseline"><h2>Key tracks</h2>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`+(keys.length?`<div class="keys">${(XP.has('kt:'+l.id)?keys:keys.slice(0,10)).map((k,i)=>keyRow(k,i,l.id)).join('')}</div>${moreBtn('kt:'+l.id,keys.length,10,'key tracks')}`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>')
- +`<div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`+(ps.length?`<div class="grid">${ps.map(p=>card(p.id,p.name,sub(p,cs)||`${pn(p.songs.length,'song')}`,'','go',plArt(p))).join('')}</div>`:'<p class="mut">No playlists yet.</p>')
- +songsHead(l,ids.length)+(rowsHtml(shown,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>')}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  if(l.type=='series')return vSeries(l);if(l.type=='collection')return vGame(l);
  const own=lists.find(x=>x.id==l.id),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null;
@@ -781,7 +837,7 @@ let lastKey='',rq=0;
 /* make clickable non-button elements (chips, tiles, links) reachable by keyboard */
 function a11y(){$$('#main [data-act],#rp .chip[data-act]').forEach(e=>{if(e.tabIndex<0&&!/^(BUTTON|INPUT|SELECT|A)$/.test(e.tagName)){e.tabIndex=0;e.setAttribute('role','button')}})}
 function render(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;doRender()})}
-function doRender(){keyCol=null;MORE.clear();const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');if(nk2!=lastKey)KEEP.clear();viewKey=nk2;$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
+function doRender(){keyCol=null;MORE.clear();const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');if(nk2!=lastKey)KEEP.clear();viewKey=nk2;{const hl=!S.q&&S.t=='list'&&getList(S.id);document.body.classList.toggle('herotop',!!(hl&&hl.type=='collection'))}$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
  const html=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();mqClear();if(nk2!=lastKey)$('#main').innerHTML=html;else patchMain(html);if(S.t=='settings'&&!S.q){storageInfo();normPaint()}if(io)$$('#main .more').forEach(el=>io.observe(el));recAll();syncPreview();markNow();a11y();if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
 /* ---------- stats ---------- */
 let LOG=[],logSeq=0,statsMeta=null;
@@ -793,7 +849,7 @@ async function syncLog(api){const pend=LOG.filter(e=>!e.sent),r=await api('/api/
  for(const e of m.events)if(!have.has(e.id)){const n={...e,sent:1};LOG.push(n);await put('log',n)}
  logSeq=m.seq;await put('meta',{id:'logseq',n:logSeq})}
 /* ---------- player ---------- */
-let artKey='';const au=new Audio();let Q=[],Q0=null,qi=-1,shuf=0,rep=0,curUrl=null,counted=0,curCtx='',resumePos=0,sess=null,lastT=0,seeking='';
+let artKey='',lastPaintId=null;const au=new Audio();let Q=[],Q0=null,qi=-1,shuf=0,rep=0,curUrl=null,counted=0,curCtx='',resumePos=0,sess=null,lastT=0,seeking='';
 const realSrc=()=>!!au.src&&!au.src.startsWith('data:');
 /* ---------- volume normalisation ----------
    Each song's loudness is measured once (ITU BS.1770 / EBU R128 style, K-weighted and gated) and the result is saved on the song,
@@ -878,11 +934,11 @@ function paintQ(){const rw=(id,k,small)=>{const s=songs.get(id);return s?`<div c
 function uiTime(){const real=realSrc(),s=songs.get(Q[qi]),d=real&&au.duration?au.duration:(s&&s.dur)||0,c=real?au.currentTime:resumePos,p=d?Math.min(100,c/d*100):0;
  for(const[id,cu2,du]of[['bSeek','bCur','bDur'],['nSeek','nCur','nDur']]){if(seeking==id)continue;const e=$('#'+id);e.max=d||1;e.value=c;e.style.setProperty('--p',p+'%');$('#'+cu2).textContent=fm(c);$('#'+du).textContent=fm(d)}}
 function paint(){const s=songs.get(Q[qi]);paintModes();markNow();
- if(!s){setTint(null);$('#bT').textContent='Nothing playing';$('#bS').innerHTML='';$('#bArt').innerHTML='';$('#rpArt').innerHTML=`<div class="ph" style="background:var(--bg)"><img src="${LOGO}" alt="" style="width:58%;height:auto;opacity:.3"></div>`;$('#rpT').textContent='Nothing playing';$('#rpP').textContent='';artKey='';$('#npBg').style.backgroundImage='none';$('#rpS').textContent='Pick a song to start';paintPlay();paintQ();uiTime();return}
+ if(!s){setTint(null);$('#bT').textContent='Nothing playing';$('#bS').innerHTML='';$('#bArt').innerHTML='';$('#rpArt').innerHTML=`<div class="ph" style="background:var(--bg)"><img src="${LOGO}" alt="" style="width:58%;height:auto;opacity:.3"></div>`;$('#rpT').textContent='Nothing playing';$('#rpP').textContent='';artKey='';setNpBg('');$('#rpS').textContent='Pick a song to start';paintPlay();paintQ();uiTime();return}
  const a=art(cu(s),ttl(s),1),ak=s.id+':'+(s.cvh||s.cmod||0),cid=collOf(s.id),cl=cid&&lists.find(l=>l.id==cid),colh=cl?`<span class="lnk" role="link" tabindex="0" data-act="go" data-id="${esc(cl.id)}">${esc(cl.name)}</span>`:esc(s.artist||'Unknown artist');
- $('#bT').textContent=ttl(s);$('#bT').title=ttl(s);$('#bS').innerHTML=colh;if(artKey!=ak){$('#bArt').innerHTML=a;$('#rpArt').innerHTML=a;$('#nArt').innerHTML=a;artKey=ak;setTint(s);$('#npBg').style.backgroundImage=s.cover?`url("${cu(s)}")`:'none'}
+ $('#bT').textContent=ttl(s);$('#bT').title=ttl(s);$('#bS').innerHTML=colh;if(artKey!=ak){crossArt($('#bArt'),a);crossArt($('#rpArt'),a);crossArt($('#nArt'),a);artKey=ak;setTint(s);setNpBg(s.cover?cu(s):'')}
  $('#rpP').textContent=s.plays?`Played ${s.plays} time${s.plays>1?'s':''}`:'Not played yet';$('#rpT').textContent=ttl(s);$('#rpS').innerHTML=colh;
- $('#nT').textContent=ttl(s);$('#nA').textContent=(s.artist||'Unknown artist')+(s.album?' · '+s.album:'')+(s.plays?` · ${s.plays} play${s.plays>1?'s':''}`:'');
+ $('#nT').textContent=ttl(s);setHtml($('#nA'),nAHtml(s,cl));if(s.id!==lastPaintId){if(lastPaintId&&!mqR())fadeText();lastPaintId=s.id}
  const hi=ic(s.fav?'heartFill':'heart');for(const id of['nFav','bFav']){$('#'+id).innerHTML=hi;$('#'+id).classList.toggle('on',!!s.fav)}
  $$('#stars span,#bStars span').forEach(x=>x.classList.toggle('on',+x.dataset.n<=s.rating));
   paintPlay();paintQ();uiTime();
@@ -923,14 +979,14 @@ addEventListener('pointerdown',()=>{ensureGraph();if(realSrc())return;try{pv.mut
 const SHORTCUTS=[['Space','Play or pause'],['Left / Right','Seek back or forward 10 seconds'],['Shift + Left / Right','Previous or next song'],['Up / Down','Volume'],['M','Mute'],['F','Favourite the current song'],['Q','Show or hide the now playing panel'],['E','Edit the current song'],['S','Cycle shuffle: off, on, smart'],['R','Cycle repeat'],['/','Search'],['Esc','Close a window or the full screen player']];
 const shortcutsHelp=()=>sheet('<h3>Keyboard shortcuts</h3>'+SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''));
 document.addEventListener('keydown',e=>{const t=e.target,k=e.key;if(e.ctrlKey||e.metaKey||e.altKey)return;
- if(k=='Escape'){closeSheet();closePop();closeNp();return}
+ if(k=='Escape'){closeSheet();closePop();closeNp();closeSrch();return}
  if(t.tagName=='TEXTAREA'||t.tagName=='SELECT'||t.isContentEditable||(t.tagName=='INPUT'&&t.type!='range'&&t.type!='checkbox'))return;
  if(t.tagName=='INPUT'&&t.type=='range'&&k.startsWith('Arrow'))return;
  const stop=()=>{e.preventDefault();if(t.tagName=='BUTTON')t.blur()};
  if(k==' '){stop();toggle()}else if(k=='ArrowRight'){stop();e.shiftKey?skipNext():seek(10)}else if(k=='ArrowLeft'){stop();e.shiftKey?prev():seek(-10)}
  else if(k=='ArrowUp'){stop();setVol(au.volume+.05)}else if(k=='ArrowDown'){stop();setVol(au.volume-.05)}
  else if(k=='m'||k=='M'){au.muted=!au.muted;paintMute()}else if(k=='s'||k=='S')doShuf();else if(k=='r'||k=='R')doRep();else if(k=='f'||k=='F')doFav();
- else if(k=='q'||k=='Q')A.queue();else if(k=='e'||k=='E'){if(Q[qi])editSong(Q[qi],'')}else if(k=='/'){e.preventDefault();$('#q').focus()}else if(k=='?')shortcutsHelp()});
+ else if(k=='q'||k=='Q')A.queue();else if(k=='e'||k=='E'){if(Q[qi])editSong(Q[qi],'')}else if(k=='/'){e.preventDefault();focusSearch()}else if(k=='?')shortcutsHelp()});
 /* popover menu (Add) */
 let popEl=null,popOff=null;
 function closePop(){if(popEl){popEl.remove();popEl=null}if(popOff){document.removeEventListener('mousedown',popOff,true);popOff=null}}
@@ -1195,8 +1251,8 @@ function syncPreview(){const l=S.t=='list'&&!S.q?lists.find(x=>x.id==S.id&&x.typ
   if(!playingNow()&&!document.hidden&&sh.hidden)startPreview(l)},600)}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopPreview()});
 const A={
- go:t=>{endSel();hist.push(S);S={t:'list',id:t.dataset.id};render();scrollTo(0,0)},
- artist:t=>{endSel();hist.push(S);S={t:'artist',id:t.dataset.id};render();scrollTo(0,0)},
+ go:t=>{closeNp();endSel();hist.push(S);S={t:'list',id:t.dataset.id};render();scrollTo(0,0)},
+ artist:t=>{closeNp();endSel();hist.push(S);S={t:'artist',id:t.dataset.id};render();scrollTo(0,0)},
  back:()=>{endSel();S=hist.pop()||{t:'home'};render()},
  play:t=>selMode?toggleSel(t):startPlay(ctxIds(t.dataset.ctx),t.dataset.id,undefined,t.dataset.ctx),
  plall:t=>startPlay(ctxIds(t.dataset.id),null,0,t.dataset.id),
@@ -1290,7 +1346,7 @@ jump:t=>{closeSheet();playAt(+t.dataset.i)},rate:t=>rate(+t.dataset.n),
  nmRun:()=>{if(!NORM.on)return toast('Turn on Normalise volume first');if(IOS)return toast('This device measures the song that is playing. Your PC measures the rest.');toast('Measuring songs in the background');analyseAll().then(normPaint);normPaint()}
 };
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
-$$('.nv').forEach(b=>b.onclick=()=>{endSel();S={t:b.dataset.page};hist=[];$('#q').value='';render();scrollTo(0,0)});
+$$('.nv[data-page]').forEach(b=>b.onclick=()=>{endSel();S={t:b.dataset.page};hist=[];$('#q').value='';render();scrollTo(0,0)});
 $('#file').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#dir').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#imp').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=''};
@@ -1429,6 +1485,87 @@ function skipNext(){recordSkip();next()}
 const XP=new Set();
 const moreBtn=(key,n,lim,noun)=>n>lim?`<div class="row" style="margin-top:6px"><button data-act="xpTog" data-k="${esc(key)}">${XP.has(key)?'Show fewer':`Show all ${n} ${noun}`}</button></div>`:'';
 A.xpTog=t=>{const k=t.dataset.k;XP.has(k)?XP.delete(k):XP.add(k);render()};
+/* ===== Stage 2: crossfades, search overlay, console icons, collection page ===== */
+Object.assign(ICONS,{
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+ console:'<rect x="2" y="9" width="20" height="8" rx="2"/><path d="M6 13h6M17 13h.01M5 17v2M19 17v2"/>',
+ handheld:'<rect x="3" y="3" width="18" height="18" rx="3"/><rect x="7" y="6" width="10" height="7" rx="1"/><path d="M8 17h2M9 16v2M15.5 16.5h.01M17.5 17.5h.01"/>',
+ pc:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+ mobile:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+ arcade:'<circle cx="9" cy="6" r="2.5"/><path d="M9 8.5V14"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M15 17.5h.01M18 17.5h.01"/>',
+ vr:'<path d="M3 8h18v8a2 2 0 0 1-2 2h-4l-2-3h-2l-2 3H5a2 2 0 0 1-2-2z"/>'});
+const mqR=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+/* art in the bottom bar, side panel and full screen player fades from the old song's picture to the new one */
+function crossArt(el,html){if(!el)return;
+ if(!el.firstElementChild||mqR()){clearTimeout(el._xf);el.innerHTML=html;return}
+ const n=document.createElement('div');n.className='xf';n.innerHTML=html;el.appendChild(n);void n.offsetWidth;n.classList.add('in');
+ clearTimeout(el._xf);el._xf=setTimeout(()=>el.replaceChildren(...n.childNodes),460)}
+function setNpBg(u){const el=$('#npBg');if(!el||el._u===u)return;el._u=u||'';const old=[...el.children];
+ if(u){const n=document.createElement('div');n.className='bgl';n.style.backgroundImage=`url("${u}")`;el.appendChild(n);void n.offsetWidth;n.classList.add('in')}
+ else old.forEach(c=>c.classList.remove('in'));
+ setTimeout(()=>old.forEach(c=>c.remove()),mqR()?0:520)}
+function fadeText(){for(const id of['bT','bS','rpT','rpS','rpP','nT','nA']){const e=$('#'+id);if(e&&e.animate)e.animate([{opacity:0},{opacity:1}],{duration:400,easing:'ease'})}}
+function nAHtml(s,cl){const p=[];
+ if(cl)p.push(`<span class="lnk" role="link" tabindex="0" data-act="go" data-id="${esc(cl.id)}">${esc(cl.name)}</span>`);
+ if(s.artist)p.push(`<span class="lnk" role="link" tabindex="0" data-act="artist" data-id="${esc(s.artist)}">${esc(s.artist)}</span>`);else if(!cl)p.push('Unknown artist');
+ if(s.album&&!(cl&&cl.name==s.album))p.push(esc(s.album));
+ if(s.plays)p.push(`${s.plays} play${s.plays>1?'s':''}`);return p.join(' · ')}
+/* search lives in the sidebar; on a phone it opens as an overlay from the bottom bar */
+const mobileNav=()=>matchMedia('(max-width:820px)').matches;
+function openSrch(){document.body.classList.add('srch');setTimeout(()=>$('#q').focus(),30)}
+function closeSrch(){if(document.body.classList.contains('srch')){document.body.classList.remove('srch');$('#q').blur()}}
+function focusSearch(){if(mobileNav())openSrch();else $('#q').focus()}
+A.srch=()=>document.body.classList.contains('srch')?closeSrch():openSrch();A.srchClose=()=>closeSrch();
+document.addEventListener('click',e=>{if(document.body.classList.contains('srch')&&!e.target.closest('.sbsearch,.nvs'))closeSrch()});
+$('#q').addEventListener('keydown',e=>{if(e.key=='Enter'&&mobileNav())closeSrch()});
+/* console icons: one icon per console name, shared by every collection that uses that console.
+   Stored as a small list record (type 'cicon'), so it syncs, backs up and restores with everything else. */
+const CON_BI=['gamepad','console','handheld','pc','mobile','arcade','vr'];
+const conKey=n=>String(n||'').trim().toLowerCase().replace(/\s+/g,' '),conId=n=>'ci'+h53(conKey(n));
+const guessCon=n=>{n=conKey(n);return/switch|\bds\b|3ds|game ?boy|gba|psp|vita|deck|handheld|\bally\b|game ?gear|lynx/.test(n)?'handheld':/\bpc\b|windows|steam|\bmac|linux|\bdos\b|computer/.test(n)?'pc':/phone|\bios\b|android|mobile|ipad/.test(n)?'mobile':/arcade/.test(n)?'arcade':/\bvr\b|quest|\bvive\b|rift|psvr|oculus/.test(n)?'vr':'console'};
+const conRec=n=>memo('conmap',()=>{const m=new Map();for(const l of lists)if(l.type=='cicon')m.set(l.id,l);return m}).get(conId(n));
+function conIcon(n){const r=conRec(n);return r&&r.img?`<img class="cic" src="${esc(r.img)}" alt="">`:ic(r&&CON_BI.includes(r.bi)?r.bi:guessCon(n))}
+function conList(){const m=new Map();for(const c of colls())for(const n of splitList(c.console)){const k=conKey(n);if(!m.has(k))m.set(k,n)}return[...m.values()].sort((a,b)=>a.localeCompare(b))}
+async function conSave(n,o){const id=conId(n);let r=lists.find(l=>l.id==id);if(!r){r={id,type:'cicon',name:n,songs:[],mod:0};lists.push(r)}
+ delete r.img;delete r.bi;Object.assign(r,o);r.mod=Date.now();if(tomb[id]){delete tomb[id];await saveTomb()}await put('lists',r)}
+async function conReset(n){const id=conId(n),r=lists.find(l=>l.id==id);if(!r)return;lists=lists.filter(x=>x!==r);tomb[id]=Date.now();await saveTomb();await del('lists',id)}
+async function toIcon(f,max=64){try{let b;try{b=await createImageBitmap(f)}catch{b=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('decode'));i.src=URL.createObjectURL(f)})}
+ let w=b.width||b.naturalWidth,h=b.height||b.naturalHeight;if(!w||!h)w=h=max;const k=max/Math.max(w,h),c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+ c.getContext('2d').drawImage(b,0,0,c.width,c.height);return c.toDataURL('image/png')}catch{return''}}
+let conName='';
+function conSheet(){const cs=conList();
+ sheet('<h3>Console icons</h3><p class="mut" style="margin:0 0 10px">An icon you choose here is used by every collection that has that console. Consoles appear here once you have entered them in a collection\'s settings.</p>'
+ +(cs.length?cs.map(n=>{const r=conRec(n);return`<div class="song" style="cursor:default"><div class="sm ci">${conIcon(n)}</div><div class="t"><b>${esc(n)}</b><small>${r?(r.img?'Your own icon':'Built-in icon'):'Automatic'}</small></div><button data-act="conPick" data-n="${esc(n)}">Change</button></div>`}).join(''):'<p class="mut">No consoles yet.</p>'))}
+A.conIcons=()=>conSheet();
+A.conPick=t=>{conName=t.dataset.n;const r=conRec(conName),cur=r&&r.bi;
+ sheet(`<h3>Icon for ${esc(conName)}</h3><div class="icons">${CON_BI.map(b=>`<button class="icb${cur==b?' on':''}" data-act="conBi" data-b="${b}" title="${b}" aria-label="${b}">${ic(b)}</button>`).join('')}</div><label>Or upload your own (PNG, JPEG, WebP or SVG)</label><input id="conF" type="file" accept="image/*"><div class="row"><button data-act="conReset">Use automatic icon</button><button data-act="conIcons">Back</button></div>`)};
+A.conBi=async t=>{await conSave(conName,{bi:t.dataset.b});conSheet();render()};
+A.conReset=async()=>{await conReset(conName);conSheet();render()};
+document.addEventListener('change',async e=>{const t=e.target;if(t.id!='conF'||!t.files[0])return;const d=await toIcon(t.files[0]);if(!d)return toast(BADIMG);await conSave(conName,{img:d});conSheet();render();toast('Icon saved')});
+/* collection page */
+function heroMeta(l){const al=l.kind=='album',it=[],m=(i,t)=>`<span class="hm">${i}<span>${t}</span></span>`,
+ lk=(k,v)=>`<span class="lnk" role="link" tabindex="0" data-act="facet" data-k="${k}" data-v="${esc(v)}">${esc(v)}</span>`;
+ if(!al)for(const n of splitList(l.console).slice(0,3))it.push(m(conIcon(n),lk('console',n)));
+ if(l.year)it.push(m(ic('calendar'),esc(l.year)));
+ if(l.dev)it.push(m(ic('users'),al?esc(l.dev):splitList(l.dev).map(x=>lk('developer',x)).join(', ')));
+ if(l.genre)it.push(m(ic('tag'),esc(l.genre)));
+ return it.length?`<div class="hmeta">${it.join('')}</div>`:''}
+function collInfo(l){const al=l.kind=='album',st=lstats(l),f=(k,v)=>v||v===0?`<div class="inf"><small>${k}</small><b>${v}</b></div>`:'',
+ sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),aw=(l.awards||'').split('\n').map(x=>x.trim()).filter(Boolean),
+ items=[f('Series',sr?`<span class="lnk" role="link" tabindex="0" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''),f(al?'Label':'Publisher',esc(l.pub||'')),f('Soundtrack released',al?'':esc(l.syear||'')),
+  f('Tracks',st.tracks),f('Total length',fmtT(st.len)),f('You have listened',st.listened?fmtT(st.listened):'Not yet'),f('Times played',st.plays)];
+ return`<div class="info"><h2>${al?'Album information':'Game information'}</h2><div class="igrid">${items.join('')}</div>${aw.length?`<div class="awl">${(XP.has('aw:'+l.id)?aw:aw.slice(0,5)).map(a=>`<div class="aw">${ic('trophy')}<span>${esc(a)}</span></div>`).join('')}${moreBtn('aw:'+l.id,aw.length,5,'awards')}</div>`:''}</div>`}
+function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
+  ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),ctx=l.id,comp=splitList(l.comp),KL=5;
+ keyCol=l.id;keySet=new Set(keys);
+ const hero=`<div class="hero ct"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><button class="hback" data-act="back" aria-label="Back">${ic('back')} Back</button><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi"><small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc" title="${esc(l.desc)}">${esc(l.desc)}</p>`:''}${heroMeta(l)}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`;
+ const keyH=`<div class="sub"><h3>${ic('starFill','gi')} Key tracks</h3>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`
+  +(keys.length?`<div class="keys">${(XP.has('kt:'+l.id)?keys:keys.slice(0,KL)).map((k,i)=>keyRow(k,i,l.id)).join('')}</div>${moreBtn('kt:'+l.id,keys.length,KL,'key tracks')}`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>');
+ const plH=`<div class="sub"><h3>${ic('queue')} Playlists</h3><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`
+  +(ps.length?rec(ps.map(p=>card(p.id,p.name,pn(p.songs.length,'song'),'','go',plArt(p))).join(''),'rec2'):'<p class="mut">No playlists yet.</p>');
+ const compH=comp.length?`<div class="composer">${ic('note')}<span>Composed by <b>${comp.map(x=>`<span class="lnk" role="link" tabindex="0" data-act="facet" data-k="composer" data-v="${esc(x)}">${esc(x)}</span>`).join(', ')}</b></span></div>`:'';
+ const music=`<section class="pnl music"><div class="pnlh"><h2>${ic('note')} Music</h2></div>${keyH}${plH}${songsHead(l,ids.length)}${rowsHtml(ids,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>'}${compH}</section>`;
+ return hero+`<div class="cwrap"><div class="cgrid"><div class="cmain">${music}</div><aside class="cside">${collInfo(l)}</aside></div></div>`}
 (async()=>{
  await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));for(const s of songs.values())SNAP.set(s.id,TRK.map(k=>jv(s[k])));lists=await idb('lists','readonly',s=>s.getAll());
  (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
