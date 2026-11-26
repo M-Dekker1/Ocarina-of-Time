@@ -420,6 +420,39 @@ body.herotop #top{display:none}
 .tab{flex:none;min-height:34px;padding:0 var(--s4);border-radius:var(--r-md);color:var(--mut);font-weight:600;font-size:var(--fs-md);white-space:nowrap}
 .tab.on,.tab.on:hover{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
 
+/* ===== Stage 6: floating top bar, game information strip, scrolling song list, section dividers, world backdrop ===== */
+:root{--fbv:0;--fbH:calc(64px + env(safe-area-inset-top,0px))}
+.fbar{position:sticky;top:var(--topH,0px);z-index:5;background:color-mix(in srgb,var(--bg) calc(var(--fbv)*74%),transparent);-webkit-backdrop-filter:blur(calc(var(--fbv)*18px)) saturate(calc(1 + var(--fbv)*.35));backdrop-filter:blur(calc(var(--fbv)*18px)) saturate(calc(1 + var(--fbv)*.35));border-bottom:1px solid color-mix(in srgb,var(--line) calc(var(--fbv)*100%),transparent)}
+.fbi{width:100%;max-width:1760px;margin:0 auto;padding:0 var(--s5);display:flex;align-items:center;gap:var(--s3)}
+.fbar.ov{top:0;height:var(--fbH);margin-bottom:calc(var(--fbH)*-1);padding-top:env(safe-area-inset-top,0px);display:flex;align-items:center}
+.fbar .hback{position:static;flex:none}
+.fbar.ov .fbi>button{flex:none;min-height:40px;padding:0 var(--s4) 0 var(--s3);border:1px solid var(--line);border-radius:var(--r-md);background:color-mix(in srgb,var(--bg) 55%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--fg)}
+.fbar.ov .fbi>button:hover{background:color-mix(in srgb,var(--bg) 80%,transparent)}
+.fbt{flex:1;min-width:0;text-align:center;font-weight:650;font-size:var(--fs-lg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:var(--fbv)}
+.greet.fbar{display:block;margin:0 calc(var(--s5)*-1) var(--s3);padding:var(--s3) 0}
+.greet .fbi{max-width:none;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+@media(max-width:820px){.fbi{padding:0 var(--s4)}.greet.fbar{margin-left:calc(var(--s4)*-1);margin-right:calc(var(--s4)*-1)}}
+.gi{margin:0 0 var(--s4)}
+.gitog{min-height:32px;padding:var(--s1) var(--s3) var(--s1) 0;border:0;color:var(--mut);font-size:var(--fs-md);font-weight:600}
+.gitog:hover{background:transparent;color:var(--fg)}
+.gitog .i{width:16px;height:16px}.gitog .cv{transition:transform var(--t)}.gi.open .gitog .cv{transform:rotate(180deg)}
+.gi.open{background:var(--card);border-radius:var(--r-xl);padding:var(--s3) var(--s5) var(--s5)}
+.gi.open .gitog{width:100%;justify-content:flex-start;color:var(--fg);font-size:var(--fs-lg);font-weight:650;padding:var(--s2) 0 var(--s3);border-bottom:1px solid var(--line);border-radius:0;margin-bottom:var(--s4)}
+.gi.open .gitog .cv{margin-left:auto}
+.sl{position:relative;max-height:var(--slh,600px);overflow-y:auto;overscroll-behavior:contain}
+.sl.xl{max-height:none;overflow:visible}
+.slx{display:flex;justify-content:center;margin-top:var(--s3)}
+.pnlh{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;padding-bottom:var(--s3);border-bottom:1px solid var(--line)}
+.sub{border-top:1px solid var(--line);padding-top:var(--s4);margin-top:var(--s5)}
+.pnlh+.sub{border-top:0;padding-top:0;margin-top:var(--s4)}
+.music .bar:has(>h2){border-top:1px solid var(--line);padding-top:var(--s4);margin-top:var(--s5)}
+.ih{padding-bottom:var(--s3);border-bottom:1px solid var(--line)}
+.ih+.went{border-top:0}
+.info>h2{padding-bottom:var(--s3);border-bottom:1px solid var(--line)}
+.info.world{position:relative;overflow:hidden;isolation:isolate}
+.wbg{position:absolute;inset:0;z-index:-1;background-size:cover;background-position:center;opacity:.34;-webkit-mask-image:linear-gradient(90deg,#000 0%,transparent 80%);mask-image:linear-gradient(90deg,#000 0%,transparent 80%);pointer-events:none}
+.pn.wide{max-width:780px;max-height:88vh}
+
 /* ===== Reduced motion ===== */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style></head><body>
@@ -849,8 +882,8 @@ function vStats(){const y=S.sy===undefined?'':S.sy,m=(y===''||S.sm===undefined)?
  +(statsMeta&&statsMeta.legacy?`<p class="mut" style="margin-top:20px"><small>${statsMeta.legacy} plays were counted before detailed tracking began on ${new Date(statsMeta.start).toLocaleDateString()}. They show in song play counts but not in the time breakdowns.</small></p>`:'')}
 function vSeries(l){const cols=sorted(colls().filter(c=>c.ser==l.id)),ss=serSongs(l).filter(i=>songs.has(i)),set=new Set(ss),cset=new Set(cols.map(c=>c.id)),id=esc(l.id),
   ps=sorted(pls().filter(p=>p.ser==l.id||cset.has(p.col)||p.songs.some(x=>set.has(x))));
- return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${serArt(l)}</div><div class="hi"><small>Series · ${cols.length} collection${cols.length==1?'':'s'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button data-act="serCols" data-id="${id}">Add collections</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button>${addBtn()}</div></div></div></div>`
- +infoGrid(l)+`<h2>Collections</h2><div class="grid lg">${cols.map(ccard).join('')||'<p class="mut">No collections yet. Tap Add collections.</p>'}</div><div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div><div class="grid">${ps.map(p=>card(p.id,p.name,`${pn(p.songs.length,'song')}`,'','go',plArt(p))).join('')||'<p class="mut">No playlists yet.</p>'}</div>`}
+ return fbar(l.name,1)+`<div class="hero ct"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${serArt(l)}</div><div class="hi"><small>Series · ${cols.length} collection${cols.length==1?'':'s'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button data-act="serCols" data-id="${id}">Add collections</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div><div class="cwrap">`
+ +infoGrid(l)+`<h2>Collections</h2><div class="grid lg">${cols.map(ccard).join('')||'<p class="mut">No collections yet. Tap Add collections.</p>'}</div><div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div><div class="grid">${ps.map(p=>card(p.id,p.name,`${pn(p.songs.length,'song')}`,'','go',plArt(p))).join('')||'<p class="mut">No playlists yet.</p>'}</div></div>`}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  if(l.type=='series')return vSeries(l);if(l.type=='collection')return vGame(l);
  const own=lists.find(x=>x.id==l.id),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null;
@@ -871,8 +904,8 @@ let lastKey='',rq=0;
 /* make clickable non-button elements (chips, tiles, links) reachable by keyboard */
 function a11y(){$$('#main [data-act],#rp .chip[data-act]').forEach(e=>{if(e.tabIndex<0&&!/^(BUTTON|INPUT|SELECT|A)$/.test(e.tagName)){e.tabIndex=0;e.setAttribute('role','button')}})}
 function render(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;doRender()})}
-function doRender(){keyCol=null;MORE.clear();const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');if(nk2!=lastKey)KEEP.clear();viewKey=nk2;{const hl=!S.q&&S.t=='list'&&getList(S.id);document.body.classList.toggle('herotop',!!(hl&&hl.type=='collection'))}$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
- const html=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();mqClear();if(nk2!=lastKey)$('#main').innerHTML=html;else patchMain(html);if(S.t=='settings'&&!S.q){storageInfo();normPaint()}if(io)$$('#main .more').forEach(el=>io.observe(el));recAll();syncPreview();markNow();a11y();if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
+function doRender(){keyCol=null;MORE.clear();const nk=navKey(),nk2=S.t+':'+(S.id||'')+(S.q?'q':'');if(nk2!=lastKey)KEEP.clear();viewKey=nk2;{const hl=!S.q&&S.t=='list'&&getList(S.id);document.body.classList.toggle('herotop',!!(hl&&(hl.type=='collection'||hl.type=='series')))}$$('.nv').forEach(b=>b.classList.toggle('on',!S.q&&b.dataset.page==nk));
+ const html=S.q?vSearch():({home:vHome,explore:vExplore,library:vLibrary,playlists:vPlaylists,stats:vStats,settings:vSettings,list:vList,artist:vArtist}[S.t]||vHome)();mqClear();if(nk2!=lastKey)$('#main').innerHTML=html;else patchMain(html);if(S.t=='settings'&&!S.q){storageInfo();normPaint()}if(io)$$('#main .more').forEach(el=>io.observe(el));recAll();syncPreview();markNow();a11y();fbUpdate();slLayout();slWatch();if(nk2!=lastKey){lastKey=nk2;const m=$('#main');m.classList.remove('pg');void m.offsetWidth;m.classList.add('pg')}}
 /* ---------- stats ---------- */
 let LOG=[],logSeq=0,statsMeta=null;
 const inRange=(e,y,m)=>{const d=new Date(e.t);return(y===''||y==null||d.getFullYear()==y)&&(m===''||m==null||d.getMonth()==m)};
@@ -1451,7 +1484,7 @@ function patchMain(html){tplEl.innerHTML=html;patchKids($('#main'),tplEl.content
 /* ---------- Home: greeting, jump back in, because you played ---------- */
 function greetHtml(){const h=new Date().getHours(),g=h<5?'Still up?':h<12?'Good morning':h<18?'Good afternoon':'Good evening',wk=Date.now()-7*864e5,secs=LOG.reduce((n,e)=>e.t>=wk?n+(e.secs||0):n,0),
  sub=secs>=60?`${fmtT(secs)} of music this week`:'What are we listening to?';
- return`<div class="greet"><div><h1>${g}</h1><p>${sub}</p></div><div class="row" style="margin:0"><button class="p" data-act="qshuf" data-id="all">${ic('shuffle')} Shuffle everything</button>${addBtn()}</div></div>`}
+ return`<div class="greet fbar"><div class="fbi"><div><h1>${g}</h1><p>${sub}</p></div><div class="row" style="margin:0"><button class="p" data-act="qshuf" data-id="all">${ic('shuffle')} Shuffle everything</button>${addBtn()}</div></div></div>`}
 function jumpHtml(rc){const items=rc.map(([c,s])=>{const l=lists.find(x=>x.id==c);return l?`<div class="jbt" tabindex="0" data-act="go" data-id="${esc(c)}"><div class="jba">${art(lcover(l),l.name)}</div><div class="t"><b>${esc(l.name)}</b><small>${esc(ttl(s))}</small></div><button class="jbp" data-act="plall" data-id="${esc(c)}" title="Play" aria-label="Play ${esc(l.name)}">${ic('play')}</button></div>`:''}).join('');
  return items?`<div class="sech"><h2>Jump back in</h2></div>${rec(items,'jbrow')}`:''}
 function related(c){const sp=v=>new Set(splitList(v).map(x=>x.toLowerCase())),ov=(a,b)=>[...a].some(x=>b.has(x)),comp=sp(c.comp),dev=sp(c.dev),con=sp(c.console);
@@ -1583,27 +1616,29 @@ document.addEventListener('change',async e=>{const t=e.target;if(t.id!='conF'||!
 /* collection page */
 function heroMeta(l){const al=l.kind=='album',it=[],m=(i,t)=>`<span class="hm">${i}<span>${t}</span></span>`,
  lk=(k,v)=>`<span class="lnk" role="link" tabindex="0" data-act="facet" data-k="${k}" data-v="${esc(v)}">${esc(v)}</span>`;
- if(!al)for(const n of splitList(l.console).slice(0,3))it.push(m(conIcon(n),lk('console',n)));
+ if(!al)for(const n of splitList(l.console).slice(0,1))it.push(m(conIcon(n),lk('console',n)));
  if(l.year)it.push(m(ic('calendar'),esc(l.year)));
  if(l.dev)it.push(m(ic('users'),al?esc(l.dev):splitList(l.dev).map(x=>lk('developer',x)).join(', ')));
  if(l.genre)it.push(m(ic('tag'),esc(l.genre)));
  return it.length?`<div class="hmeta">${it.join('')}</div>`:''}
-function collInfo(l){const al=l.kind=='album',st=lstats(l),f=(k,v)=>v||v===0?`<div class="inf"><small>${k}</small><b>${v}</b></div>`:'',
+function collInfo(l){const al=l.kind=='album',st=lstats(l),open=XP.has('gi:'+l.id),f=(k,v)=>v||v===0?`<div class="inf"><small>${k}</small><b>${v}</b></div>`:'',
  sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),aw=(l.awards||'').split('\n').map(x=>x.trim()).filter(Boolean),
- items=[f('Series',sr?`<span class="lnk" role="link" tabindex="0" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''),f(al?'Label':'Publisher',esc(l.pub||'')),f('Soundtrack released',al?'':esc(l.syear||'')),
+ plat=al?'':splitList(l.console).map(n=>`<span class="lnk" role="link" tabindex="0" data-act="facet" data-k="console" data-v="${esc(n)}">${esc(n)}</span>`).join(', '),
+ items=[f('Platform',plat),f('Series',sr?`<span class="lnk" role="link" tabindex="0" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''),f(al?'Label':'Publisher',esc(l.pub||'')),f('Soundtrack released',al?'':esc(l.syear||'')),
   f('Tracks',st.tracks),f('Total length',fmtT(st.len)),f('You have listened',st.listened?fmtT(st.listened):'Not yet'),f('Times played',st.plays)];
- return`<div class="info"><h2>${al?'Album information':'Game information'}</h2><div class="igrid">${items.join('')}</div>${aw.length?`<div class="awl">${(XP.has('aw:'+l.id)?aw:aw.slice(0,5)).map(a=>`<div class="aw">${ic('trophy')}<span>${esc(a)}</span></div>`).join('')}${moreBtn('aw:'+l.id,aw.length,5,'awards')}</div>`:''}</div>`}
-function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
-  ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),ctx=l.id,comp=splitList(l.comp),KL=5;
+ return`<div class="gi${open?' open':''}"><button class="gitog" data-act="xpTog" data-k="gi:${esc(l.id)}" aria-expanded="${open}">${ic('info')} ${al?'Album':'Game'} information ${ic('chevDown','cv')}</button>${open?`<div class="igrid">${items.join('')}</div>${aw.length?`<div class="awl">${(XP.has('aw:'+l.id)?aw:aw.slice(0,5)).map(a=>`<div class="aw">${ic('trophy')}<span>${esc(a)}</span></div>`).join('')}${moreBtn('aw:'+l.id,aw.length,5,'awards')}</div>`:''}`:''}</div>`}
+function vGame(l){const ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
+  ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),ctx=l.id,comp=splitList(l.comp),KL=5,xl=XP.has('sl:'+l.id);
  keyCol=l.id;keySet=new Set(keys);
- const hero=`<div class="hero ct"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><button class="hback" data-act="back" aria-label="Back">${ic('back')} Back</button><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi"><small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc" title="${esc(l.desc)}">${esc(l.desc)}</p>`:''}${heroMeta(l)}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button>${addBtn()}</div></div></div></div>`;
+ const hero=`<div class="hero ct"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi"><small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc" title="${esc(l.desc)}">${esc(l.desc)}</p>`:''}${heroMeta(l)}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`;
  const keyH=`<div class="sub"><h3>${ic('starFill','gi')} Key tracks</h3>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`
   +(keys.length?`<div class="keys">${(XP.has('kt:'+l.id)?keys:keys.slice(0,KL)).map((k,i)=>keyRow(k,i,l.id)).join('')}</div>${moreBtn('kt:'+l.id,keys.length,KL,'key tracks')}`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>');
  const plH=`<div class="sub"><h3>${ic('queue')} Playlists</h3><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`
   +(ps.length?rec(ps.map(p=>card(p.id,p.name,pn(p.songs.length,'song'),'','go',plArt(p))).join(''),'rec2'):'<p class="mut">No playlists yet.</p>');
  const compH=comp.length?`<div class="composer">${ic('note')}<span>Composed by <b>${comp.map(x=>`<span class="lnk" role="link" tabindex="0" data-act="facet" data-k="composer" data-v="${esc(x)}">${esc(x)}</span>`).join(', ')}</b></span></div>`:'';
- const music=`<section class="pnl music"><div class="pnlh"><h2>${ic('note')} Music</h2></div>${keyH}${plH}${songsHead(l,ids.length)}${rowsHtml(ids,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>'}${compH}</section>`;
- return hero+`<div class="cwrap"><div class="cgrid"><div class="cmain">${music}</div><aside class="cside">${worldH(l)}${collInfo(l)}${expH(l)}${relH(l)}</aside></div></div>`}
+ const list=`<div class="sl${xl?' xl':''}">${rowsHtml(ids,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>'}</div>`+(ids.length>10?`<div class="slx"><button data-act="xpTog" data-k="sl:${id}">${ic(xl?'chevUp':'chevDown')} ${xl?'Collapse song list':'Show all '+ids.length+' songs'}</button></div>`:'');
+ const music=`<section class="pnl music"><div class="pnlh"><h2>${ic('note')} Music</h2><button data-act="tlOpen" data-id="${id}">${ic('queue')} View Full Tracklist</button></div>${keyH}${plH}${songsHead(l,ids.length)}${list}${compH}</section>`;
+ return fbar(l.name,1)+hero+`<div class="cwrap">${collInfo(l)}<div class="cgrid"><div class="cmain">${music}</div><aside class="cside">${worldH(l)}${expH(l)}${relH(l)}</aside></div></div>`}
 /* ===== Stage 3: Add button in page rows, game world, my experience ===== */
 Object.assign(ICONS,{
  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
@@ -1614,7 +1649,7 @@ const addBtn=p=>`<button${p?' class="p"':''} data-act="add">${ic('plus')} Add</b
 const WK=['location','character','faction','other'],WK_L={location:'Location',character:'Character',faction:'Faction',other:'Other'},WK_I={location:'pin',character:'user',faction:'users',other:'tag'};
 const ST=[['none','Not started'],['playing','Playing'],['completed','Completed'],['replaying','Replaying'],['hold','On hold'],['abandoned','Abandoned']],DATERE=/^\d{4}-\d{2}-\d{2}$/;
 /* every new field is validated whenever it arrives from a backup or the server */
-function cleanWorld(w){if(!w||typeof w!='object'||Array.isArray(w))return null;const o={mod:sNum(w.mod),intro:sStr(w.intro).slice(0,4000),items:[]};
+function cleanWorld(w){if(!w||typeof w!='object'||Array.isArray(w))return null;const o={mod:sNum(w.mod),intro:sStr(w.intro).slice(0,4000),items:[]};if(typeof w.img=='string'&&w.img.length<900000&&IMGRE.test(w.img))o.img=w.img;
  for(const it of Array.isArray(w.items)?w.items.slice(0,200):[]){if(!it||typeof it!='object'||!okId(it.id))continue;
   o.items.push({id:it.id,kind:WK.includes(it.kind)?it.kind:'other',name:sStr(it.name).slice(0,200),text:sStr(it.text).slice(0,2000),songs:idList(it.songs).slice(0,50)})}return o}
 function cleanExp(x){if(!x||typeof x!='object'||Array.isArray(x))return null;const o={mod:sNum(x.mod)};
@@ -1630,9 +1665,9 @@ const ihead=(icon,title,act,id,label)=>`<div class="ih"><h2>${ic(icon)} ${title}
 /* --- display --- */
 function wItem(it,l){const ss=(it.songs||[]).filter(i=>songs.has(i));
  return`<div class="went"><span class="wk" title="${WK_L[it.kind]||''}">${ic(WK_I[it.kind]||'tag')}</span><div class="wt"><b>${esc(it.name||WK_L[it.kind]||'Entry')}</b>${it.text?`<p>${esc(it.text)}</p>`:''}${ss.length?`<div class="chips">${ss.map(i=>`<span class="chip" data-act="wPlay" data-id="${i}" data-col="${esc(l.id)}" title="Play">${ic('play')} ${esc(ttl(songs.get(i)))}</span>`).join('')}</div>`:''}</div></div>`}
-function worldH(l){const w=l.world,its=(w&&w.items)||[];if(!w||(!(w.intro||'').trim()&&!its.length))return'';
+function worldH(l){const w=l.world,its=(w&&w.items)||[];if(!w||(!(w.intro||'').trim()&&!its.length&&!w.img))return'';
  const key='wd:'+l.id;
- return`<div class="info world">${ihead('globe','The World','worldEdit',l.id,'Edit game world')}${w.intro?`<p class="wintro">${esc(w.intro)}</p>`:''}${(XP.has(key)?its:its.slice(0,4)).map(it=>wItem(it,l)).join('')}${moreBtn(key,its.length,4,'entries')}</div>`}
+ return`<div class="info world">${w.img?`<div class="wbg" style="background-image:url('${esc(w.img)}')"></div>`:''}${ihead('globe','The World','worldEdit',l.id,'Edit game world')}${w.intro?`<p class="wintro">${esc(w.intro)}</p>`:''}${(XP.has(key)?its:its.slice(0,4)).map(it=>wItem(it,l)).join('')}${moreBtn(key,its.length,4,'entries')}</div>`}
 function expH(l){const x=l.exp,id=esc(l.id);
  if(!expHas(x))return`<div class="invite" tabindex="0" data-act="expEdit" data-id="${id}">${ic('pencil')}<span>Record your experience with this game</span></div>`;
  const f=(k,v)=>v?`<div class="inf"><small>${k}</small><b>${v}</b></div>`:'',st=x.status||'none',r=x.rating||0,nk='xn:'+l.id,long=(x.notes||'').length>240||(x.notes||'').split('\n').length>4;
@@ -1648,10 +1683,10 @@ A.wPlay=t=>{const c=t.dataset.col,ids=ctxIds(c);startPlay(ids.includes(t.dataset
 /* --- editors: shown as tabs in the collection settings sheet; one Save applies everything that was touched --- */
 let wd=null,ex=null;
 const blankEx=id=>({id,status:'none',rating:0,plat:'',first:'',done:'',last:'',hours:'',plays:'',notes:'',dirty:false});
-function initWd(l){const w=l.world||{};return{id:l.id,intro:w.intro||'',items:(w.items||[]).map(i=>({...i,songs:[...(i.songs||[])]})),dirty:false}}
+function initWd(l){const w=l.world||{};return{id:l.id,intro:w.intro||'',img:w.img||'',items:(w.items||[]).map(i=>({...i,songs:[...(i.songs||[])]})),dirty:false}}
 function initEx(l){const x=l.exp||{};return{id:l.id,status:x.status||'none',rating:x.rating||0,plat:x.plat||'',first:x.first||'',done:x.done||'',last:x.last||'',hours:x.hours||'',plays:x.plays||'',notes:x.notes||'',dirty:false}}
 function wRow(it,i){return`<div class="wrow"><div class="row" style="margin:0 0 6px;align-items:center;flex-wrap:nowrap"><select data-wi="${i}" data-wf="kind" style="flex:1;margin:0" aria-label="Type">${WK.map(k=>`<option value="${k}" ${it.kind==k?'selected':''}>${WK_L[k]}</option>`).join('')}</select><button class="ic" data-act="wUp" data-i="${i}" aria-label="Move up">${ic('chevUp')}</button><button class="ic" data-act="wDn" data-i="${i}" aria-label="Move down">${ic('chevDown')}</button><button class="ic" data-act="wDel" data-i="${i}" aria-label="Remove entry">${ic('x')}</button></div><input data-wi="${i}" data-wf="name" placeholder="Name, e.g. Hyrule Field" value="${esc(it.name)}"><textarea data-wi="${i}" data-wf="text" rows="2" placeholder="A line or two about it (optional)">${esc(it.text)}</textarea>${wMusic(it,i)}</div>`}
-const wBodyHtml=()=>`<p class="mut" style="margin:0 0 8px">Optional. A little context about the game's world. If you leave everything empty, nothing is shown on the page.</p><label>Overview</label><textarea data-wf="intro" rows="3" placeholder="A short description of the setting">${esc(wd.intro)}</textarea>${wd.items.map(wRow).join('')}<div class="row"><button data-act="wAdd">${ic('plus')} Add entry</button></div>`;
+const wBodyHtml=()=>`<p class="mut" style="margin:0 0 8px">Optional. A little context about the game's world. If you leave everything empty, nothing is shown on the page.</p><label>Overview</label><textarea data-wf="intro" rows="3" placeholder="A short description of the setting">${esc(wd.intro)}</textarea><label>Background image (fades in from the left of the section)</label><div class="row" style="align-items:center"><div class="kap" id="wImgP">${wd.img?`<img src="${esc(wd.img)}" alt="">`:''}</div><input id="wImgF" type="file" accept="image/*"><button data-act="wImgX">Remove</button></div>${wd.items.map(wRow).join('')}<div class="row"><button data-act="wAdd">${ic('plus')} Add entry</button></div>`;
 function wPaint(){const el=$('#wBody');if(!el)return;const p=$('#sheet .pn'),sc=p?p.scrollTop:0;el.innerHTML=wBodyHtml();if(p)p.scrollTop=sc}
 A.wAdd=()=>{wd.dirty=true;wd.items.push({id:'w'+Date.now().toString(36)+rnd(),kind:'location',name:'',text:'',songs:[]});wPaint();const n=[...document.querySelectorAll('#sheet [data-wf=name]')].pop();if(n){n.focus();n.scrollIntoView({block:'nearest'})}};
 A.wDel=t=>{wd.dirty=true;wd.items.splice(+t.dataset.i,1);wPaint()};
@@ -1671,7 +1706,7 @@ A.worldEdit=t=>listSettings(t.dataset.id,'world');A.expEdit=t=>listSettings(t.da
 A.lTab=t=>{const k=t.dataset.t;$$('#sheet .tab').forEach(b=>{b.classList.toggle('on',b.dataset.t==k);b.setAttribute('aria-selected',b.dataset.t==k)});$$('#sheet .tp').forEach(p=>p.hidden=p.dataset.tp!=k)};
 /* only sections that were actually touched get a new timestamp, so merging between devices stays accurate */
 function applyWE(l){const now=Date.now();
- if(wd&&wd.dirty&&wd.id==l.id){const items=wd.items.map(i=>({...i,name:i.name.trim(),text:i.text.trim()})).filter(i=>i.name||i.text);l.world={mod:now,intro:wd.intro.trim(),items}}
+ if(wd&&wd.dirty&&wd.id==l.id){const items=wd.items.map(i=>({...i,name:i.name.trim(),text:i.text.trim()})).filter(i=>i.name||i.text);l.world={mod:now,intro:wd.intro.trim(),items,...(wd.img?{img:wd.img}:{})}}
  if(ex&&ex.dirty&&ex.id==l.id)l.exp=cleanExp({mod:now,status:ex.status=='none'?'':ex.status,rating:ex.rating,plat:ex.plat.trim(),first:ex.first,done:ex.done,last:ex.last,hours:parseFloat(ex.hours),plays:parseInt(ex.plays),notes:ex.notes.trim()});
  wd=null;ex=null}
 for(const ev of['input','change'])document.addEventListener(ev,e=>{const t=e.target;if(!t.dataset)return;
@@ -1706,6 +1741,43 @@ function wMusic(it,i){const l=lists.find(x=>x.id==wd.id),have=new Set(it.songs||
  return`<div class="wchips">${(it.songs||[]).filter(s=>songs.has(s)).map(s=>`<span class="chip">${ic('play')} ${esc(ttl(songs.get(s)))}<button data-act="wSongDel" data-i="${i}" data-s="${s}" aria-label="Unlink track">${ic('x')}</button></span>`).join('')}</div>${pool.length?`<select data-wi="${i}" data-wsong="1" aria-label="Link a track"><option value="">Link a track from this collection…</option>${pool.map(s=>`<option value="${s}">${esc(ttl(songs.get(s)))}</option>`).join('')}</select>`:''}`}
 A.wSongDel=t=>{const it=wd.items[+t.dataset.i];wd.dirty=true;it.songs=it.songs.filter(s=>s!=t.dataset.s);wPaint()};
 document.addEventListener('change',e=>{const t=e.target;if(wd&&t.dataset&&t.dataset.wsong!==undefined&&t.value){const it=wd.items[+t.dataset.wi];wd.dirty=true;if(!it.songs.includes(t.value))it.songs.push(t.value);wPaint()}});
+/* ===== Stage 6: floating top bar, scrolling song list, full tracklist window, world image ===== */
+ICONS.info='<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>';
+const fbar=(title,hero)=>`<div class="fbar ov"${hero?' data-fb="hero"':''}><div class="fbi"><button class="hback" data-act="back" aria-label="Back">${ic('back')} Back</button><span class="fbt">${esc(title)}</span>${addBtn()}</div></div>`;
+/* the bar is clear over a hero and turns to glass as the hero scrolls away; on Home it turns to glass as soon as you scroll.
+   Values live on the root element, not on the bar, so the soft re-render cannot reset them. */
+let fbLast='';
+function fbUpdate(){const rs=document.documentElement.style,t=$('#top'),b=$('#main .fbar');let v=0;
+ const th=(t?t.offsetHeight:0)+'px';
+ if(b){const h=b.dataset.fb=='hero'?$('#main .hero'):null;
+  if(h)v=Math.max(0,Math.min(1,(b.offsetHeight+180-h.getBoundingClientRect().bottom)/180));
+  else v=Math.max(0,Math.min(1,(scrollY-8)/72))}
+ const k=th+'|'+v.toFixed(3);if(k===fbLast)return;fbLast=k;rs.setProperty('--topH',th);rs.setProperty('--fbv',v.toFixed(3))}
+addEventListener('scroll',fbUpdate,{passive:true});addEventListener('resize',fbUpdate);
+/* song list height: at least 10 songs tall; if the section beside it ends lower, the list ends exactly there.
+   With no section beside it (narrow screens, or the right column ends sooner) it stays at 10 songs. */
+function slLayout(){const el=$('#main .sl:not(.xl)'),rs=document.documentElement.style;if(!el){rs.removeProperty('--slh');return}
+ const rows=el.querySelectorAll(':scope>.song');if(!rows.length)return;
+ const last=rows[Math.min(9,rows.length-1)],h10=last.offsetTop+last.offsetHeight-rows[0].offsetTop;let h=h10;
+ const side=$('#main .cside'),main=$('#main .cmain');
+ if(side&&main&&side.getBoundingClientRect().left>main.getBoundingClientRect().left+10){
+  const top=el.getBoundingClientRect().top,b10=top+h10;
+  for(const c of side.children){const r=c.getBoundingClientRect();if(!r.height)continue;if(r.bottom>=b10-1){h=Math.max(h10,r.bottom-top);break}}}
+ rs.setProperty('--slh',Math.round(h)+'px')}
+const slRO='ResizeObserver'in window?new ResizeObserver(()=>slLayout()):null;
+function slWatch(){if(!slRO)return;slRO.disconnect();const s=$('#main .cside'),m=$('#main .cmain');if(s)slRO.observe(s);if(m)slRO.observe(m)}
+addEventListener('load',()=>slLayout());
+/* full tracklist in its own window */
+function tlSheet(id){const l=lists.find(x=>x.id==id);if(!l)return;const ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),p0=sh.querySelector('.pn'),sc=p0?p0.scrollTop:0,kc=keyCol,ks=keySet;
+ keyCol=l.id;keySet=new Set((l.keys||[]).filter(i=>songs.has(i)));const rows=ids.map(i=>row(i,l.id)).join('');keyCol=kc;keySet=ks;
+ sheet(`<div data-tl="${esc(id)}"></div><div class="bar" style="margin:0 0 8px;align-items:center"><h3 style="margin:0">${esc(l.name)} <small style="display:inline">${pn(ids.length,'track')}</small></h3><div class="row" style="margin:0"><button class="p" data-act="plall" data-id="${esc(id)}">${ic('play')} Play</button><button data-act="shuf" data-id="${esc(id)}">${ic('shuffle')} Shuffle</button><button class="ic" data-act="tlClose" aria-label="Close">${ic('x')}</button></div></div>${rows||'<p class="mut">No songs yet.</p>'}`);
+ const p=sh.querySelector('.pn');p.classList.add('wide');p.scrollTop=sc;markNow()}
+A.tlOpen=t=>tlSheet(t.dataset.id);A.tlClose=()=>closeSheet();
+{const kt=A.keyT;A.keyT=async t=>{await kt(t);const d=!sh.hidden&&sh.querySelector('[data-tl]');if(d)tlSheet(d.dataset.tl)}}   /* keep the star in the open tracklist in step */
+/* world background image */
+A.wImgX=()=>{wd.dirty=true;wd.img='';wPaint()};
+document.addEventListener('change',async e=>{const t=e.target;if(t.id!='wImgF'||!t.files[0]||!wd)return;const f=t.files[0];
+ ls.pending=busy('[data-act=lSave]',async()=>{const d=await toData(f,1000,false);if(d){wd.img=d;wd.dirty=true;wPaint()}else toast(BADIMG)});await ls.pending});
 /* ===== Stage 5: section-level merge. Each of world / exp / rel carries its own timestamp, so notes written on one device
    and a rename on another are both kept. Everything else keeps the existing newest-record-wins rule. ===== */
 const SECS=['world','exp','rel'];
