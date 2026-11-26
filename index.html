@@ -338,10 +338,7 @@ body.hint #rpTab{animation:tabPulse 1.8s ease-in-out 4}
 
 body.herotop{padding-top:0}
 body.herotop main{padding:0;max-width:none}
-body.herotop #top{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:0;background:transparent;pointer-events:none}
-body.herotop #top>*{pointer-events:auto}
-body.herotop .mbrand{display:none}
-.hero.ct{border-radius:0;margin:0;min-height:440px;padding:calc(84px + env(safe-area-inset-top,0px)) 0 var(--s6)}
+.hero.ct{border-radius:0;margin:0;min-height:440px;padding:calc(72px + env(safe-area-inset-top,0px)) 0 var(--s6)}
 .hero.ct .hbgw{-webkit-mask-image:linear-gradient(#000 52%,transparent 100%);mask-image:linear-gradient(#000 52%,transparent 100%)}
 .hero.ct .hbg{background-position:center 30%}
 .hero.ct .hov{background:linear-gradient(180deg,rgba(8,26,18,.6),transparent 160px),linear-gradient(90deg,rgba(8,26,18,.85),rgba(8,26,18,.3) 62%,transparent),linear-gradient(0deg,var(--bg) 2%,transparent 62%)}
@@ -387,6 +384,41 @@ body.srch .sbx{display:inline-flex}
 .pnl{padding:var(--s4);border-radius:var(--r-lg)}
 .keys .dur,.keys .kn{display:none}.keys .krow{gap:var(--s2)}.keys .sm{width:44px;height:44px}
 }
+
+/* ===== Stage 3: game world, my experience ===== */
+.ih{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);margin:0 0 var(--s3)}
+.ih h2{margin:0;display:flex;align-items:center;gap:var(--s2)}.ih h2 .i{color:var(--acc)}.ih .ic{margin-right:calc(var(--s2)*-1)}
+.exp h2 .i{color:var(--gold)}.exp{border:1px solid color-mix(in srgb,var(--gold) 22%,transparent)}
+.wintro{margin:0 0 var(--s3);color:color-mix(in srgb,var(--fg) 88%,transparent);white-space:pre-wrap;overflow-wrap:anywhere}
+.went{display:flex;gap:var(--s3);padding:var(--s3) 0;border-top:1px solid var(--line)}
+.wk{flex:none;width:28px;height:28px;border-radius:var(--r-sm);background:var(--raise);color:var(--acc);display:grid;place-items:center}.wk .i{width:16px;height:16px}
+.wt{min-width:0;flex:1}.wt b{display:block;overflow-wrap:anywhere}.wt p{margin:2px 0 0;color:var(--mut);font-size:var(--fs-md);white-space:pre-wrap;overflow-wrap:anywhere}.wt .chips{margin-top:var(--s2)}
+.wt .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.wrow{border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3);margin:var(--s3) 0}.wrow select,.wrow input,.wrow textarea{margin-bottom:var(--s2)}
+.exrow{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:0 0 var(--s3)}.exrow>label{flex:none}.exrow select{max-width:60%}
+.exr{display:flex;gap:2px;color:var(--mut)}.exr span{cursor:pointer;display:inline-flex;padding:2px;transition:color var(--t)}.exr span:hover{color:var(--gold)}.exr .i{width:22px;height:22px}.exr .on{color:var(--gold)}.exr .on .i{fill:currentColor}
+.exnotes{margin:var(--s3) 0 0;padding:var(--s3) var(--s4);background:var(--bg);border-radius:var(--r-md);white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--fs-md)}
+.exnotes.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.invite{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);border:1px dashed var(--line);border-radius:var(--r-lg);color:var(--mut);cursor:pointer;font-size:var(--fs-md);transition:color var(--t),border-color var(--t)}.invite:hover{color:var(--fg);border-color:var(--acc)}.invite .i{color:var(--gold)}
+body.herotop #top{display:none}
+@media(min-width:821px){#top{display:none}main{padding-top:var(--s4)}}
+
+/* ===== Stage 4: related games, world track picker ===== */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:var(--s3)}
+.rc{cursor:pointer;min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
+.rc .art{aspect-ratio:1;border-radius:var(--r-md);overflow:hidden;background:var(--bg);transition:transform .2s var(--ease)}
+.rc b{font-size:var(--fs-md);font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.rc:focus-visible{outline:none}.rc:focus-visible .art{outline:2px solid var(--acc);outline-offset:3px}
+@media(hover:hover){.rc:hover .art{transform:translateY(-2px)}}
+.rl{align-self:flex-start;padding:1px 9px;border-radius:99px;font-size:var(--fs-xs);font-weight:600;background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);white-space:nowrap}
+.rl.b{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}.rl.s{background:var(--raise);color:var(--mut)}
+.wchips{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s2)}
+.wchips .chip{padding-right:var(--s1)}.wchips .chip button{min-height:20px;min-width:20px;padding:0;border:0;color:inherit}.wchips .chip button .i{width:12px;height:12px}
+
+/* ===== Stage 5: tabs in collection settings ===== */
+.tabs{display:flex;gap:var(--s2);margin:0 0 var(--s4);overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;min-height:34px;padding:0 var(--s4);border-radius:var(--r-md);color:var(--mut);font-weight:600;font-size:var(--fs-md);white-space:nowrap}
+.tab.on,.tab.on:hover{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
 
 /* ===== Reduced motion ===== */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
@@ -491,6 +523,7 @@ function cleanList(l){if(!l||typeof l!='object'||!okId(l.id)||!LIST_TYPES.includ
  o.name=sStr(l.name);o.songs=idList(l.songs);o.mod=sNum(l.mod);for(const k of['tags','cat','color','icon','meta'])delete o[k];if(l.keys!==undefined)o.keys=idList(l.keys);
  for(const k of['col','ser'])if(l[k]!==undefined&&!okId(l[k]))delete o[k];if(o.smart&&typeof o.smart!='object')delete o.smart;
  if(o.img&&!IMGRE.test(o.img))o.img='';if(o.bi!==undefined&&!(typeof o.bi=='string'&&CON_BI.includes(o.bi)))delete o.bi;
+ for(const[k,f]of[['world',cleanWorld],['exp',cleanExp],['rel',x=>cleanRel(x,l.id)]])if(l[k]!==undefined){const v=f(l[k]);if(v)o[k]=v;else delete o[k]}
  
  for(const k of['desc','console','year','dev','pub','comp','genre','syear','awards','kind'])if(o[k]!==undefined&&typeof o[k]!='string')o[k]=sStr(o[k]);
  if(o.acmod!==undefined)o.acmod=sNum(o.acmod);return o}
@@ -637,6 +670,7 @@ async function syncOnce(manual){
  let base='';const api=(p,o={})=>fetch(base+p,{...o,headers:{Authorization:'Bearer '+cfg.token,...(o.headers||{})}});
  try{
   base=await findServer();if(!base)throw new Error('offline');if(manual)toast('Syncing…');
+  if(lists.some(l=>(l.mod||0)>=lastPush)){try{const pr=await api('/api/state');if(pr.ok)await mergeRemoteLists((await pr.json()).lists)}catch{}}   /* see what the server already holds before sending, so its newer sections are merged, not overwritten */
   const t0=Date.now(),dS={},dL={},dT={};
   for(const s of songs.values())if((s.mod||0)>=lastPush)dS[s.id]=strip(s);
   for(const l of lists)if((l.mod||0)>=lastPush)dL[l.id]=l;
@@ -650,7 +684,7 @@ async function syncOnce(manual){
    if(!s){const n={...rec,cover:null,cmod:0};songs.set(id,n);await put('songs',n)}
    else{const o=mergeSong(s,rec);let c=s.cover;if(o.cvh&&o.cvh!==s.cvh)c=COV.get(o.cvh)||null;const cm=s.cmod||0;Object.assign(s,o,{cover:c,cmod:cm});SNAP.set(id,TRK.map(k=>jv(s[k])));bump('songs');await putSong(s)}}
   for(const l0 of Object.values(m.lists||{})){const l=cleanList(l0);if(!l)continue;if(tomb[l.id]&&l.mod>tomb[l.id])delete tomb[l.id];const ix=lists.findIndex(x=>x.id==l.id);
-   if(ix<0){lists.push(l);await put('lists',l)}else if(l.mod>lists[ix].mod){lists[ix]=l;await put('lists',l)}}
+   if(ix<0){lists.push(l);await put('lists',l)}else{const M=mergeList(lists[ix],l);if(sj(M)!==sj(lists[ix])){lists[ix]=M;await put('lists',M)}}}
   for(const[id,ts]of Object.entries(m.tomb||{})){if(!okId(id))continue;
    const s=songs.get(id);if(s&&(s.mod||0)<=ts){songs.delete(id);haveBlob.delete(id);await del('songs',id);await del('blobs',id)}
    const li=lists.findIndex(x=>x.id==id);if(li>=0&&(lists[li].mod||0)<=ts){lists.splice(li,1);await del('lists',id)}
@@ -717,7 +751,7 @@ const cpl=(id,name)=>`<button class="cpl" data-act="plall" data-id="${esc(id)}" 
 const card=(id,name,subt,cover,act='go',html='')=>`<div class="card" tabindex="0" data-act="${act}" data-id="${esc(id)}"><div class="art">${html||art(cover,name)}${act=='go'?cpl(id,name):''}</div><b>${esc(name)}</b><small>${esc(subt||'')}&nbsp;</small></div>`;
 const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song${sel.has(id)?' picked':''}${isNow(id)?' now':''}" tabindex="0" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"${FINE?' draggable="true"':''}><span class="ck"></span>${keyCol?`<span class="tn">${tnum(s)}</span>`:''}<div class="sm">${art(cu(s),ttl(s))}${isNow(id)?eqH:''}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> '+ic('cloud')+'</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${s.fav?'<span class="fv">'+ic('heartFill')+'</span>':''}${s.plays?`<span class="pc" title="Times played">${ic('play')}${s.plays}</span>`:''}${keyCol?`<button class="ic kb${keySet.has(id)?' on':''}" data-act="keyT" data-id="${id}" data-col="${esc(keyCol)}" title="Key track" aria-label="Key track">${ic(keySet.has(id)?'starFill':'star')}</button>`:''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic ed" data-act="edit" data-id="${id}" data-ctx="${esc(ctx)}" title="Edit info" aria-label="Edit info">${ic('pencil')}</button><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}" aria-label="More options">${ic('more')}</button></div>`};
 const EMPTY='<div class="empty"><h2>Your game music, all in one place</h2><p class="mut">Add your soundtrack files (MP3, M4A, WAV or OGG). On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
-const phead=(title,btns)=>`<div class="phd"><h1>${title}</h1><div class="row" style="margin:0">${btns||''}</div></div>`;
+const phead=(title,btns)=>`<div class="phd"><h1>${title}</h1><div class="row" style="margin:0">${btns||''}${addBtn(!/class="p"/.test(btns||''))}</div></div>`;
 const sortSelHtml=()=>`<select id="sortSel">${[['az','A to Z'],['za','Z to A'],['new','Newest first'],['old','Oldest first'],['big','Most songs']].map(o=>`<option value="${o[0]}" ${sortK==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`;
 
 function ccard(c){const set=new Set(c.songs),np=pls().filter(p=>p.col==c.id||p.songs.some(x=>set.has(x))).length;
@@ -815,12 +849,12 @@ function vStats(){const y=S.sy===undefined?'':S.sy,m=(y===''||S.sm===undefined)?
  +(statsMeta&&statsMeta.legacy?`<p class="mut" style="margin-top:20px"><small>${statsMeta.legacy} plays were counted before detailed tracking began on ${new Date(statsMeta.start).toLocaleDateString()}. They show in song play counts but not in the time breakdowns.</small></p>`:'')}
 function vSeries(l){const cols=sorted(colls().filter(c=>c.ser==l.id)),ss=serSongs(l).filter(i=>songs.has(i)),set=new Set(ss),cset=new Set(cols.map(c=>c.id)),id=esc(l.id),
   ps=sorted(pls().filter(p=>p.ser==l.id||cset.has(p.col)||p.songs.some(x=>set.has(x))));
- return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${serArt(l)}</div><div class="hi"><small>Series · ${cols.length} collection${cols.length==1?'':'s'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button data-act="serCols" data-id="${id}">Add collections</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`
+ return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hero"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><div class="hc"><div class="hcov">${serArt(l)}</div><div class="hi"><small>Series · ${cols.length} collection${cols.length==1?'':'s'}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button data-act="serCols" data-id="${id}">Add collections</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button>${addBtn()}</div></div></div></div>`
  +infoGrid(l)+`<h2>Collections</h2><div class="grid lg">${cols.map(ccard).join('')||'<p class="mut">No collections yet. Tap Add collections.</p>'}</div><div class="bar" style="align-items:baseline"><h2>Playlists</h2><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div><div class="grid">${ps.map(p=>card(p.id,p.name,`${pn(p.songs.length,'song')}`,'','go',plArt(p))).join('')||'<p class="mut">No playlists yet.</p>'}</div>`}
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  if(l.type=='series')return vSeries(l);if(l.type=='collection')return vGame(l);
  const own=lists.find(x=>x.id==l.id),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null;
- let h=`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div class="big">${l.type=='playlist'?plArt(l):art(lcover(l),l.name)}</div><div><small>${l.type=='collection'?'Collection':'Playlist'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${pn(ids.length,'song')} · ${fmtT(ids.reduce((n,i)=>n+(songs.get(i).dur||0),0))} · ${ids.reduce((n,i)=>n+(songs.get(i).plays||0),0)} plays</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.smart?`<button data-act="spRefresh" data-id="${id}">Refresh</button><button data-act="spEdit" data-id="${id}">Edit rules</button>`:''}${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}</div></div></div>`;
+ let h=`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div class="big">${l.type=='playlist'?plArt(l):art(lcover(l),l.name)}</div><div><small>${l.type=='collection'?'Collection':'Playlist'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${pn(ids.length,'song')} · ${fmtT(ids.reduce((n,i)=>n+(songs.get(i).dur||0),0))} · ${ids.reduce((n,i)=>n+(songs.get(i).plays||0),0)} plays</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.smart?`<button data-act="spRefresh" data-id="${id}">Refresh</button><button data-act="spEdit" data-id="${id}">Edit rules</button>`:''}${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}${addBtn()}</div></div></div>`;
  if(l.type=='collection'){const set=new Set(l.songs);
   const ps=pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x))).map(p=>({p,s:sub(p,cs)})).sort((a,b)=>!!b.s-!!a.s||a.p.name.localeCompare(b.p.name));
   h+=`<h2>Playlists</h2><div class="grid">${ps.map(x=>card(x.p.id,x.p.name,x.s,lcover(x.p))).join('')||'<p class="mut">No playlists use songs from this collection yet.</p>'}</div>`}
@@ -828,7 +862,7 @@ function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act=
  return h+songsHead(l,ids.length)+(rowsHtml(shown,ctx)||'<p class="mut">No songs yet.</p>')}
 const artistsMap=()=>{const m=new Map();for(const s of songs.values()){const a=s.artist||'Unknown artist';if(!m.has(a))m.set(a,[]);m.get(a).push(s)}return[...m].sort((a,b)=>a[0].localeCompare(b[0]))};
 function vArtists(){return`<h2>Artists</h2><div class="grid">${artistsMap().map(([a,ss])=>card(a,a,pn(ss.length,'song'),(ss.find(s=>s.cover)?cu(ss.find(s=>s.cover)):''),'artist')).join('')}</div>`}
-function vArtist(){const c='artist:'+S.id,ids=ctxIds(c);return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div><h1>${esc(S.id)}</h1><small>${pn(ids.length,'song')}</small><div class="row"><button class="p" data-act="plall" data-id="${esc(c)}">Play</button><button data-act="shuf" data-id="${esc(c)}">Shuffle</button></div></div></div>`+rowsHtml(ids,c)}
+function vArtist(){const c='artist:'+S.id,ids=ctxIds(c);return`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div><h1>${esc(S.id)}</h1><small>${pn(ids.length,'song')}</small><div class="row"><button class="p" data-act="plall" data-id="${esc(c)}">Play</button><button data-act="shuf" data-id="${esc(c)}">Shuffle</button>${addBtn()}</div></div></div>`+rowsHtml(ids,c)}
 function vSearch(){const q=S.q.toLowerCase(),ids=all().filter(s=>(ttl(s)+' '+s.artist+' '+s.album).toLowerCase().includes(q)).sort((a,b)=>ttl(a).localeCompare(ttl(b))).map(s=>s.id).slice(0,200);S.found=ids;
  const ls=[...lists.filter(x=>x.type=='series'),...pls(),...colls().filter(c=>c.id!='all'&&c.id!='fav')].filter(l=>l.name.toLowerCase().includes(q)),cs=colls();
  return`<h2>Series, collections and playlists</h2><div class="grid">${ls.map(l=>card(l.id,l.name,l.type=='playlist'?sub(l,cs):l.type=='series'?'Series':'Collection',lcover(l),'go',l.type=='series'?serArt(l):l.type=='playlist'?plArt(l):'')).join('')||'<p class="mut">No matches.</p>'}</div><h2>Songs</h2>`+(rowsHtml(ids,'search')||'<p class="mut">No matches.</p>')}
@@ -1004,8 +1038,12 @@ function nFChange(v){const s=$('#nS');s.hidden=v!='album';if(v=='album')s.innerH
 function endSel(){if(!selMode)return;selMode=0;sel=new Set();document.body.classList.remove('selecting');$('#selbar').hidden=true;$$('.song.picked').forEach(e=>e.classList.remove('picked'))}
 function toggleSel(t){const id=t.dataset.id;sel.has(id)?sel.delete(id):sel.add(id);t.classList.toggle('picked',sel.has(id));$('#selN').textContent=sel.size+' selected'}
 async function purge(id,keep){songs.delete(id);if(!keep)haveBlob.delete(id);tomb[id]=Date.now();await del('songs',id);if(!keep)await del('blobs',id);for(const l of lists)if((l.songs||[]).includes(id)){l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l)}}
-function listSettings(id){const l=lists.find(x=>x.id==id);if(!l)return;ls={id,img:l.img||'',artBlob:null,artDel:false};
- sheet(`<h3>${({collection:'Collection',playlist:'Playlist',series:'Series'})[l.type]} settings</h3><label>Name</label><input id="lN" value="${esc(l.name)}"><label>Description</label><textarea id="lD" rows="3">${esc(l.desc||'')}</textarea>${detailFields(l)}${l.type=='playlist'?`<label>Collection</label><select id="lCol"><option value="">(none)</option>${lists.filter(c=>c.type=='collection').map(c=>`<option value="${esc(c.id)}" ${l.col==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:''}${l.type!='series'?`<label>Series</label><select id="lSer"><option value="">(none)</option>${lists.filter(x=>x.type=='series').map(x=>`<option value="${esc(x.id)}" ${l.ser==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<label>Cover art</label><div class="row" style="align-items:center"><div class="sm" id="lP" style="width:70px;height:70px">${(l.type=='series'&&!l.img?serArt(l):art(l.img||lcover(l),l.name))}</div><input id="lC" type="file" accept="image/*"><button data-act="lNoImg">Use default</button></div>${l.type!='playlist'?`<label>Key art (wide image for the top of the page)</label><div class="row" style="align-items:center"><div class="kap" id="kaP">${artUrl(l.id)?`<img src="${artUrl(l.id)}" alt="">`:''}</div><input id="kaF" type="file" accept="image/*"><button data-act="kaX">Remove</button></div>`:''}<div class="row"><button class="p" data-act="lSave">Save</button><button data-act="lDel">Delete ${l.type}</button></div>`)}
+function listSettings(id,tab){const l=lists.find(x=>x.id==id);if(!l)return;ls={id,img:l.img||'',artBlob:null,artDel:false};
+ const isC=l.type=='collection',TT=[['details','Details'],['world','Game world'],['exp','My experience'],['rel','Related games']];
+ if(isC){wd=initWd(l);ex=initEx(l);relId=l.id}
+ const det=`<label>Name</label><input id="lN" value="${esc(l.name)}"><label>Description</label><textarea id="lD" rows="3">${esc(l.desc||'')}</textarea>${detailFields(l)}${l.type=='playlist'?`<label>Collection</label><select id="lCol"><option value="">(none)</option>${lists.filter(c=>c.type=='collection').map(c=>`<option value="${esc(c.id)}" ${l.col==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`:''}${l.type!='series'?`<label>Series</label><select id="lSer"><option value="">(none)</option>${lists.filter(x=>x.type=='series').map(x=>`<option value="${esc(x.id)}" ${l.ser==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}<label>Cover art</label><div class="row" style="align-items:center"><div class="sm" id="lP" style="width:70px;height:70px">${(l.type=='series'&&!l.img?serArt(l):art(l.img||lcover(l),l.name))}</div><input id="lC" type="file" accept="image/*"><button data-act="lNoImg">Use default</button></div>${l.type!='playlist'?`<label>Key art (wide image for the top of the page)</label><div class="row" style="align-items:center"><div class="kap" id="kaP">${artUrl(l.id)?`<img src="${artUrl(l.id)}" alt="">`:''}</div><input id="kaF" type="file" accept="image/*"><button data-act="kaX">Remove</button></div>`:''}`;
+ sheet(`<h3>${({collection:'Collection',playlist:'Playlist',series:'Series'})[l.type]} settings</h3>`+(isC?`<div class="tabs" role="tablist">${TT.map(([k,n])=>`<button class="tab${k=='details'?' on':''}" role="tab" aria-selected="${k=='details'}" data-act="lTab" data-t="${k}">${n}</button>`).join('')}</div>`:'')+`<div class="tp" data-tp="details">${det}</div>`+(isC?`<div class="tp" data-tp="world" hidden><div id="wBody">${wBodyHtml()}</div></div><div class="tp" data-tp="exp" hidden><div id="eBody">${eBodyHtml(l)}</div></div><div class="tp" data-tp="rel" hidden><div id="rBody">${rBodyHtml(l)}</div></div>`:'')+`<div class="row"><button class="p" data-act="lSave">Save</button><button data-act="lDel">Delete ${l.type}</button></div>`);
+ if(isC&&tab&&tab!='details')A.lTab({dataset:{t:tab}})}
 
 /*@@ch*/
 const collMap=()=>memo('cm',()=>{const m=new Map();for(const l of lists)if(l.type=='collection')for(const id of l.songs)if(!m.has(id))m.set(id,l.id);return m});
@@ -1148,7 +1186,7 @@ async function exportBackup(){toast('Preparing backup…');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:'application/json'}));a.download='ocarina-of-time-backup.json';a.click();toast('Backup saved')}
 async function importBackup(f){try{const d=JSON.parse(await f.text());if(!d||typeof d!='object')throw 0;let n=0;
  for(const r0 of d.songs||[]){const r=cleanSong(r0),s=r&&songs.get(r.id);if(s&&(r.mod>s.mod||s.mod==s.added)){const cv=s.cover||null;Object.assign(s,r,{cover:cv});SNAP.set(s.id,TRK.map(k=>jv(s[k])));await put('songs',s);n++}}
- for(const l0 of d.lists||[]){const l=cleanList(l0);if(!l)continue;const o=lists.find(x=>x.id==l.id);if(!o){lists.push(l);await put('lists',l);n++}else if(l.mod>o.mod){Object.assign(o,l);await put('lists',o);n++}}
+ for(const l0 of d.lists||[]){const l=cleanList(l0);if(!l)continue;const o=lists.find(x=>x.id==l.id);if(!o){lists.push(l);await put('lists',l);n++}else{const M={...o,...mergeList(o,l)};if(sj(M)!==sj(o)){lists[lists.indexOf(o)]=M;await put('lists',M);n++}}}
  const have=new Set(LOG.map(e=>e.id));
  for(const e of d.log||[]){if(!e||!okId(e.id)||have.has(e.id))continue;have.add(e.id);
   const x={id:e.id,t:sNum(e.t),song:okId(e.song)?e.song:undefined,coll:okId(e.coll)?e.coll:undefined,ser:okId(e.ser)?e.ser:undefined,pl:okId(e.pl)?e.pl:undefined,secs:sNum(e.secs),play:e.play?1:0,sent:0};
@@ -1279,7 +1317,7 @@ favf:()=>{S.fav=!S.fav;S.sc=null;S.lb=false;render()},lbf:()=>{S.lb=!S.lb;S.fav=
   for(const[k,i]of[['console','dCon'],['year','dYear'],['dev','dDev'],['pub','dPub'],['comp','dComp'],['genre','dGen'],['syear','dSY'],['awards','dAw']]){const e=$('#'+i);if(e)l[k]=e.value.trim()}
   if($('#dKind'))l.kind=$('#dKind').value;
   if(ls.artBlob){const c=Date.now();ART.set(l.id,{blob:ls.artBlob,cmod:c});await put('art',{id:l.id,blob:ls.artBlob,cmod:c});l.acmod=c}
-  else if(ls.artDel&&ART.has(l.id)){ART.delete(l.id);await del('art',l.id);l.acmod=0}await put('lists',l);closeSheet();render()},
+  else if(ls.artDel&&ART.has(l.id)){ART.delete(l.id);await del('art',l.id);l.acmod=0}applyWE(l);await put('lists',l);closeSheet();render()},
  lDel:async()=>{const l=lists.find(x=>x.id==ls.id);if(!l||!confirm(`Delete "${l.name}"? Songs stay in your library, and you can restore it from Settings, Trash.`))return;
   const e={id:'list:'+l.id,kind:'list',at:Date.now(),rec:l,extra:{}},a=ART.get(l.id);if(a)e.extra.art={blob:a.blob,cmod:a.cmod};
   if(l.type=='series')e.extra.kids=lists.filter(x=>x.type=='collection'&&x.ser==l.id).map(x=>x.id);
@@ -1413,7 +1451,7 @@ function patchMain(html){tplEl.innerHTML=html;patchKids($('#main'),tplEl.content
 /* ---------- Home: greeting, jump back in, because you played ---------- */
 function greetHtml(){const h=new Date().getHours(),g=h<5?'Still up?':h<12?'Good morning':h<18?'Good afternoon':'Good evening',wk=Date.now()-7*864e5,secs=LOG.reduce((n,e)=>e.t>=wk?n+(e.secs||0):n,0),
  sub=secs>=60?`${fmtT(secs)} of music this week`:'What are we listening to?';
- return`<div class="greet"><div><h1>${g}</h1><p>${sub}</p></div><button class="p" data-act="qshuf" data-id="all">${ic('shuffle')} Shuffle everything</button></div>`}
+ return`<div class="greet"><div><h1>${g}</h1><p>${sub}</p></div><div class="row" style="margin:0"><button class="p" data-act="qshuf" data-id="all">${ic('shuffle')} Shuffle everything</button>${addBtn()}</div></div>`}
 function jumpHtml(rc){const items=rc.map(([c,s])=>{const l=lists.find(x=>x.id==c);return l?`<div class="jbt" tabindex="0" data-act="go" data-id="${esc(c)}"><div class="jba">${art(lcover(l),l.name)}</div><div class="t"><b>${esc(l.name)}</b><small>${esc(ttl(s))}</small></div><button class="jbp" data-act="plall" data-id="${esc(c)}" title="Play" aria-label="Play ${esc(l.name)}">${ic('play')}</button></div>`:''}).join('');
  return items?`<div class="sech"><h2>Jump back in</h2></div>${rec(items,'jbrow')}`:''}
 function related(c){const sp=v=>new Set(splitList(v).map(x=>x.toLowerCase())),ov=(a,b)=>[...a].some(x=>b.has(x)),comp=sp(c.comp),dev=sp(c.dev),con=sp(c.console);
@@ -1558,14 +1596,126 @@ function collInfo(l){const al=l.kind=='album',st=lstats(l),f=(k,v)=>v||v===0?`<d
 function vGame(l){const cs=colls(),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.ser&&lists.find(x=>x.id==l.ser&&x.type=='series'),keys=(l.keys||[]).filter(i=>songs.has(i)),set=new Set(l.songs),
   ps=sorted(pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x)))),ctx=l.id,comp=splitList(l.comp),KL=5;
  keyCol=l.id;keySet=new Set(keys);
- const hero=`<div class="hero ct"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><button class="hback" data-act="back" aria-label="Back">${ic('back')} Back</button><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi"><small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc" title="${esc(l.desc)}">${esc(l.desc)}</p>`:''}${heroMeta(l)}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button></div></div></div></div>`;
+ const hero=`<div class="hero ct"><div class="hbgw">${heroBg(l)}</div><div class="hov"></div><button class="hback" data-act="back" aria-label="Back">${ic('back')} Back</button><div class="hc"><div class="hcov">${art(lcover(l),l.name)}</div><div class="hi"><small>${l.kind=='album'?'Album':'Collection'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc" title="${esc(l.desc)}">${esc(l.desc)}</p>`:''}${heroMeta(l)}<div class="row"><button class="pill" data-act="plall" data-id="${id}">${ic('play')} Play</button><button class="rbtn" data-act="shuf" data-id="${id}" title="Shuffle" aria-label="Shuffle">${ic('shuffle')}</button><button class="rbtn" data-act="lset" data-id="${id}" title="Settings" aria-label="Settings">${ic('gear')}</button>${addBtn()}</div></div></div></div>`;
  const keyH=`<div class="sub"><h3>${ic('starFill','gi')} Key tracks</h3>${keys.length?`<button data-act="plkeys" data-id="${id}">${ic('play')} Play key tracks</button>`:''}</div>`
   +(keys.length?`<div class="keys">${(XP.has('kt:'+l.id)?keys:keys.slice(0,KL)).map((k,i)=>keyRow(k,i,l.id)).join('')}</div>${moreBtn('kt:'+l.id,keys.length,KL,'key tracks')}`:'<p class="mut">Tap the star beside a song below to make it a key track, then drag to put them in order.</p>');
  const plH=`<div class="sub"><h3>${ic('queue')} Playlists</h3><button data-act="newPl" data-id="${id}">${ic('plus')} New playlist</button></div>`
   +(ps.length?rec(ps.map(p=>card(p.id,p.name,pn(p.songs.length,'song'),'','go',plArt(p))).join(''),'rec2'):'<p class="mut">No playlists yet.</p>');
  const compH=comp.length?`<div class="composer">${ic('note')}<span>Composed by <b>${comp.map(x=>`<span class="lnk" role="link" tabindex="0" data-act="facet" data-k="composer" data-v="${esc(x)}">${esc(x)}</span>`).join(', ')}</b></span></div>`:'';
  const music=`<section class="pnl music"><div class="pnlh"><h2>${ic('note')} Music</h2></div>${keyH}${plH}${songsHead(l,ids.length)}${rowsHtml(ids,ctx)||'<p class="mut">No songs yet. Use Add songs.</p>'}${compH}</section>`;
- return hero+`<div class="cwrap"><div class="cgrid"><div class="cmain">${music}</div><aside class="cside">${collInfo(l)}</aside></div></div>`}
+ return hero+`<div class="cwrap"><div class="cgrid"><div class="cmain">${music}</div><aside class="cside">${worldH(l)}${collInfo(l)}${expH(l)}${relH(l)}</aside></div></div>`}
+/* ===== Stage 3: Add button in page rows, game world, my experience ===== */
+Object.assign(ICONS,{
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+ pin:'<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+ chevUp:'<path d="M6 15l6-6 6 6"/>'});
+const addBtn=p=>`<button${p?' class="p"':''} data-act="add">${ic('plus')} Add</button>`;
+const WK=['location','character','faction','other'],WK_L={location:'Location',character:'Character',faction:'Faction',other:'Other'},WK_I={location:'pin',character:'user',faction:'users',other:'tag'};
+const ST=[['none','Not started'],['playing','Playing'],['completed','Completed'],['replaying','Replaying'],['hold','On hold'],['abandoned','Abandoned']],DATERE=/^\d{4}-\d{2}-\d{2}$/;
+/* every new field is validated whenever it arrives from a backup or the server */
+function cleanWorld(w){if(!w||typeof w!='object'||Array.isArray(w))return null;const o={mod:sNum(w.mod),intro:sStr(w.intro).slice(0,4000),items:[]};
+ for(const it of Array.isArray(w.items)?w.items.slice(0,200):[]){if(!it||typeof it!='object'||!okId(it.id))continue;
+  o.items.push({id:it.id,kind:WK.includes(it.kind)?it.kind:'other',name:sStr(it.name).slice(0,200),text:sStr(it.text).slice(0,2000),songs:idList(it.songs).slice(0,50)})}return o}
+function cleanExp(x){if(!x||typeof x!='object'||Array.isArray(x))return null;const o={mod:sNum(x.mod)};
+ if(ST.some(s=>s[0]==x.status&&s[0]!='none'))o.status=x.status;
+ const r=Math.round(sNum(x.rating));if(r>=1&&r<=5)o.rating=r;
+ const pl=sStr(x.plat).slice(0,200);if(pl)o.plat=pl;
+ for(const k of['first','done','last'])if(typeof x[k]=='string'&&DATERE.test(x[k]))o[k]=x[k];
+ const h=sNum(x.hours);if(h>0)o.hours=Math.min(h,99999);const p=Math.round(sNum(x.plays));if(p>0)o.plays=Math.min(p,9999);
+ const n=sStr(x.notes).slice(0,20000);if(n)o.notes=n;return o}
+const expHas=x=>!!x&&!!(x.status||x.rating||x.plat||x.first||x.done||x.last||x.hours||x.plays||x.notes);
+const fmtD=s=>{const[y,m,d]=String(s).split('-').map(Number),dt=new Date(y,m-1,d);return isNaN(dt)?s:dt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})};
+const ihead=(icon,title,act,id,label)=>`<div class="ih"><h2>${ic(icon)} ${title}</h2><button class="ic" data-act="${act}" data-id="${esc(id)}" title="${label}" aria-label="${label}">${ic('pencil')}</button></div>`;
+/* --- display --- */
+function wItem(it,l){const ss=(it.songs||[]).filter(i=>songs.has(i));
+ return`<div class="went"><span class="wk" title="${WK_L[it.kind]||''}">${ic(WK_I[it.kind]||'tag')}</span><div class="wt"><b>${esc(it.name||WK_L[it.kind]||'Entry')}</b>${it.text?`<p>${esc(it.text)}</p>`:''}${ss.length?`<div class="chips">${ss.map(i=>`<span class="chip" data-act="wPlay" data-id="${i}" data-col="${esc(l.id)}" title="Play">${ic('play')} ${esc(ttl(songs.get(i)))}</span>`).join('')}</div>`:''}</div></div>`}
+function worldH(l){const w=l.world,its=(w&&w.items)||[];if(!w||(!(w.intro||'').trim()&&!its.length))return'';
+ const key='wd:'+l.id;
+ return`<div class="info world">${ihead('globe','The World','worldEdit',l.id,'Edit game world')}${w.intro?`<p class="wintro">${esc(w.intro)}</p>`:''}${(XP.has(key)?its:its.slice(0,4)).map(it=>wItem(it,l)).join('')}${moreBtn(key,its.length,4,'entries')}</div>`}
+function expH(l){const x=l.exp,id=esc(l.id);
+ if(!expHas(x))return`<div class="invite" tabindex="0" data-act="expEdit" data-id="${id}">${ic('pencil')}<span>Record your experience with this game</span></div>`;
+ const f=(k,v)=>v?`<div class="inf"><small>${k}</small><b>${v}</b></div>`:'',st=x.status||'none',r=x.rating||0,nk='xn:'+l.id,long=(x.notes||'').length>240||(x.notes||'').split('\n').length>4;
+ return`<div class="info exp">${ihead('starFill','My Experience','expEdit',l.id,'Edit my experience')}
+ <div class="exrow"><label for="expSt">Status</label><select id="expSt" data-id="${id}">${ST.map(([v,n])=>`<option value="${v}" ${st==v?'selected':''}>${n}</option>`).join('')}</select></div>
+ <div class="exrow"><label>My rating</label><div class="exr" role="group" aria-label="My rating">${[1,2,3,4,5].map(n=>`<span class="${n<=r?'on':''}" role="button" tabindex="0" data-act="gRate" data-id="${id}" data-n="${n}" aria-label="${n} star${n>1?'s':''}">${ic('star')}</span>`).join('')}</div></div>
+ <div class="igrid">${f('Platform',esc(x.plat||''))}${f('Playthroughs',x.plays||'')}${f('First played',x.first?fmtD(x.first):'')}${f('Completed',x.done?fmtD(x.done):'')}${f('Last played',x.last?fmtD(x.last):'')}${f('Playtime',x.hours?'about '+(Math.round(x.hours*10)/10)+' h':'')}</div>
+ ${x.notes?`<div class="exnotes${long&&!XP.has(nk)?' clamp':''}">${esc(x.notes)}</div>${long?`<div class="row" style="margin-top:6px"><button data-act="xpTog" data-k="${nk}">${XP.has(nk)?'Show less':'Read more'}</button></div>`:''}`:''}</div>`}
+async function expUpd(id,fn){const l=lists.find(x=>x.id==id);if(!l)return;const x=l.exp||(l.exp={});fn(x);x.mod=l.mod=Date.now();await put('lists',l);render()}
+A.gRate=t=>expUpd(t.dataset.id,x=>{const n=+t.dataset.n;if(x.rating==n)delete x.rating;else x.rating=n});
+document.addEventListener('change',e=>{const t=e.target;if(t.id=='expSt')expUpd(t.dataset.id,x=>{if(t.value=='none')delete x.status;else x.status=t.value})});
+A.wPlay=t=>{const c=t.dataset.col,ids=ctxIds(c);startPlay(ids.includes(t.dataset.id)?ids:[t.dataset.id],t.dataset.id,undefined,c)};
+/* --- editors: shown as tabs in the collection settings sheet; one Save applies everything that was touched --- */
+let wd=null,ex=null;
+const blankEx=id=>({id,status:'none',rating:0,plat:'',first:'',done:'',last:'',hours:'',plays:'',notes:'',dirty:false});
+function initWd(l){const w=l.world||{};return{id:l.id,intro:w.intro||'',items:(w.items||[]).map(i=>({...i,songs:[...(i.songs||[])]})),dirty:false}}
+function initEx(l){const x=l.exp||{};return{id:l.id,status:x.status||'none',rating:x.rating||0,plat:x.plat||'',first:x.first||'',done:x.done||'',last:x.last||'',hours:x.hours||'',plays:x.plays||'',notes:x.notes||'',dirty:false}}
+function wRow(it,i){return`<div class="wrow"><div class="row" style="margin:0 0 6px;align-items:center;flex-wrap:nowrap"><select data-wi="${i}" data-wf="kind" style="flex:1;margin:0" aria-label="Type">${WK.map(k=>`<option value="${k}" ${it.kind==k?'selected':''}>${WK_L[k]}</option>`).join('')}</select><button class="ic" data-act="wUp" data-i="${i}" aria-label="Move up">${ic('chevUp')}</button><button class="ic" data-act="wDn" data-i="${i}" aria-label="Move down">${ic('chevDown')}</button><button class="ic" data-act="wDel" data-i="${i}" aria-label="Remove entry">${ic('x')}</button></div><input data-wi="${i}" data-wf="name" placeholder="Name, e.g. Hyrule Field" value="${esc(it.name)}"><textarea data-wi="${i}" data-wf="text" rows="2" placeholder="A line or two about it (optional)">${esc(it.text)}</textarea>${wMusic(it,i)}</div>`}
+const wBodyHtml=()=>`<p class="mut" style="margin:0 0 8px">Optional. A little context about the game's world. If you leave everything empty, nothing is shown on the page.</p><label>Overview</label><textarea data-wf="intro" rows="3" placeholder="A short description of the setting">${esc(wd.intro)}</textarea>${wd.items.map(wRow).join('')}<div class="row"><button data-act="wAdd">${ic('plus')} Add entry</button></div>`;
+function wPaint(){const el=$('#wBody');if(!el)return;const p=$('#sheet .pn'),sc=p?p.scrollTop:0;el.innerHTML=wBodyHtml();if(p)p.scrollTop=sc}
+A.wAdd=()=>{wd.dirty=true;wd.items.push({id:'w'+Date.now().toString(36)+rnd(),kind:'location',name:'',text:'',songs:[]});wPaint();const n=[...document.querySelectorAll('#sheet [data-wf=name]')].pop();if(n){n.focus();n.scrollIntoView({block:'nearest'})}};
+A.wDel=t=>{wd.dirty=true;wd.items.splice(+t.dataset.i,1);wPaint()};
+A.wUp=t=>{const i=+t.dataset.i;if(i>0){wd.dirty=true;[wd.items[i-1],wd.items[i]]=[wd.items[i],wd.items[i-1]];wPaint()}};
+A.wDn=t=>{const i=+t.dataset.i;if(i<wd.items.length-1){wd.dirty=true;[wd.items[i+1],wd.items[i]]=[wd.items[i],wd.items[i+1]];wPaint()}};
+function eBodyHtml(l){const fld=(lab,k,extra='')=>`<div><label>${lab}</label><input data-ef="${k}" value="${esc(ex[k])}" ${extra}></div>`;
+ return`<p class="mut" style="margin:0 0 8px">Your own record of this game. It is separate from your music ratings and listening stats, and none of it is tracked automatically.</p>
+ <label>Status</label><select data-ef="status">${ST.map(([v,n])=>`<option value="${v}" ${ex.status==v?'selected':''}>${n}</option>`).join('')}</select>
+ <label>My rating</label><div class="exr" id="exStars">${[1,2,3,4,5].map(n=>`<span class="${n<=ex.rating?'on':''}" role="button" tabindex="0" data-act="exStar" data-n="${n}" aria-label="${n} star${n>1?'s':''}">${ic('star')}</span>`).join('')}</div>
+ <div class="fg">${fld('Platform I played on','plat',`list="dl-explat"`)}${fld('Playthroughs','plays','inputmode="numeric"')}${fld('First played','first','type="date"')}${fld('Completed','done','type="date"')}${fld('Last played','last','type="date"')}${fld('Approximate playtime (hours)','hours','inputmode="decimal"')}</div>
+ <datalist id="dl-explat">${splitList(l.console).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+ <label>Notes and memories</label><textarea data-ef="notes" rows="7" placeholder="Favourite moments, memories, why this game matters to you...">${esc(ex.notes)}</textarea>
+ <div class="row"><button data-act="expClear">Clear everything</button></div>`}
+A.exStar=t=>{const n=+t.dataset.n;ex.dirty=true;ex.rating=ex.rating==n?0:n;$$('#exStars span').forEach(s=>s.classList.toggle('on',+s.dataset.n<=ex.rating))};
+A.expClear=()=>{if(!confirm('Clear everything you have recorded about this game? It is removed when you press Save.'))return;const l=lists.find(x=>x.id==ex.id);ex=blankEx(ex.id);ex.dirty=true;$('#eBody').innerHTML=eBodyHtml(l)};
+A.worldEdit=t=>listSettings(t.dataset.id,'world');A.expEdit=t=>listSettings(t.dataset.id,'exp');A.relEdit=t=>listSettings(t.dataset.id,'rel');
+A.lTab=t=>{const k=t.dataset.t;$$('#sheet .tab').forEach(b=>{b.classList.toggle('on',b.dataset.t==k);b.setAttribute('aria-selected',b.dataset.t==k)});$$('#sheet .tp').forEach(p=>p.hidden=p.dataset.tp!=k)};
+/* only sections that were actually touched get a new timestamp, so merging between devices stays accurate */
+function applyWE(l){const now=Date.now();
+ if(wd&&wd.dirty&&wd.id==l.id){const items=wd.items.map(i=>({...i,name:i.name.trim(),text:i.text.trim()})).filter(i=>i.name||i.text);l.world={mod:now,intro:wd.intro.trim(),items}}
+ if(ex&&ex.dirty&&ex.id==l.id)l.exp=cleanExp({mod:now,status:ex.status=='none'?'':ex.status,rating:ex.rating,plat:ex.plat.trim(),first:ex.first,done:ex.done,last:ex.last,hours:parseFloat(ex.hours),plays:parseInt(ex.plays),notes:ex.notes.trim()});
+ wd=null;ex=null}
+for(const ev of['input','change'])document.addEventListener(ev,e=>{const t=e.target;if(!t.dataset)return;
+ if(wd&&t.dataset.wf!==undefined){wd.dirty=true;if(t.dataset.wi===undefined)wd[t.dataset.wf]=t.value;else wd.items[+t.dataset.wi][t.dataset.wf]=t.value}
+ if(ex&&t.dataset.ef!==undefined){ex.dirty=true;ex[t.dataset.ef]=t.value}});
+/* ===== Stage 4: related games (two-way, by collection id) and tracks on world entries ===== */
+ICONS.link='<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>';
+/* REL[type] = [label shown for the OTHER game, type stored on the other game's side] */
+const REL={sequel:['Sequel','prequel'],prequel:['Prequel','sequel'],spinoff:['Spin-off','parent'],parent:['Parent game','spinoff'],remake:['Remake','orig_remake'],orig_remake:['Original game','remake'],remaster:['Remaster','orig_remaster'],orig_remaster:['Original game','remaster'],series:['Same series','series'],related:['Related game','related']};
+const REL_PICK=['sequel','prequel','spinoff','remake','remaster','series','related'],REL_FWD=['sequel','spinoff','remake','remaster'],REL_BACK=['prequel','parent','orig_remake','orig_remaster'];
+function cleanRel(r,selfId){if(!r||typeof r!='object'||Array.isArray(r))return null;const o={mod:sNum(r.mod),items:[]},seen=new Set();
+ for(const it of Array.isArray(r.items)?r.items.slice(0,200):[]){if(!it||!okId(it.id)||it.id==selfId||seen.has(it.id)||!REL[it.type])continue;seen.add(it.id);o.items.push({id:it.id,type:it.type})}return o}
+/* a link whose other collection is in the trash (or gone) is simply not shown; the reference stays, so restoring the collection brings the link back */
+function relItems(l){const cm=new Map(colls().map(c=>[c.id,c]));return((l.rel&&l.rel.items)||[]).filter(i=>cm.has(i.id)&&REL[i.type]).map(i=>({c:cm.get(i.id),type:i.type}))}
+function relH(l){const it=relItems(l);if(!it.length)return'';
+ return`<div class="info rel">${ihead('link','Related Games','relEdit',l.id,'Edit related games')}<div class="rgrid">${it.map(({c,type})=>`<div class="rc" tabindex="0" role="link" data-act="go" data-id="${esc(c.id)}"><div class="art">${art(lcover(c),c.name)}</div><b>${esc(c.name)}</b><span class="rl${REL_BACK.includes(type)?' b':REL_FWD.includes(type)?'':' s'}">${REL[type][0]}</span></div>`).join('')}</div></div>`}
+async function relLink(a,b,type){const X=lists.find(x=>x.id==a),Y=lists.find(x=>x.id==b);if(!X||!Y||a==b||!REL[type])return;const now=Date.now();
+ for(const[l,other,ty]of[[X,b,type],[Y,a,REL[type][1]]]){const r=l.rel||(l.rel={items:[]});r.items=r.items||[];const ix=r.items.findIndex(i=>i.id==other);if(ix>=0)r.items[ix]={id:other,type:ty};else r.items.push({id:other,type:ty});r.mod=l.mod=now;await put('lists',l)}}
+async function relUnlink(a,b){const now=Date.now();for(const[x,y]of[[a,b],[b,a]]){const l=lists.find(z=>z.id==x);if(l&&l.rel&&(l.rel.items||[]).some(i=>i.id==y)){l.rel.items=l.rel.items.filter(i=>i.id!=y);l.rel.mod=l.mod=now;await put('lists',l)}}}
+let relId='';
+const relOpts=cur=>[...REL_PICK,...(REL_PICK.includes(cur)||!cur?[]:[cur])].map(k=>`<option value="${k}" ${k==cur?'selected':''}>${REL[k][0]}</option>`).join('');
+function rBodyHtml(l){const cur=relItems(l),linked=new Set(((l.rel&&l.rel.items)||[]).map(i=>i.id)),others=[...colls()].filter(c=>c.id!=l.id&&!linked.has(c.id)).sort(sorters.az);
+ return`<p class="mut" style="margin:0 0 8px">Link ${esc(l.name)} to other collections in your library. Links save straight away, and each one is also added on the other game's page with the matching label (a Sequel here shows as a Prequel there).</p>`
+ +(cur.length?cur.map(({c,type})=>`<div class="song" style="cursor:default"><div class="sm">${art(lcover(c),c.name)}</div><div class="t"><b>${esc(c.name)}</b></div><select data-rt="${esc(c.id)}" style="width:auto;max-width:42%;margin:0" aria-label="Relationship">${relOpts(type)}</select><button class="ic" data-act="relDel" data-id="${esc(c.id)}" aria-label="Remove link">${ic('x')}</button></div>`).join(''):'<p class="mut">No games linked yet.</p>')
+ +'<label>Add a game</label>'+(others.length?`<select id="relNew">${others.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select><select id="relNewT" aria-label="Relationship">${relOpts('sequel')}</select><div class="row" style="margin-top:0"><button class="p" data-act="relAdd">Link game</button></div>`:'<p class="mut">There are no other collections to link.</p>')}
+function rPaint(){const l=lists.find(x=>x.id==relId),el=$('#rBody');if(l&&el)el.innerHTML=rBodyHtml(l)}
+A.relAdd=async()=>{const b=$('#relNew'),t=$('#relNewT');if(!b||!b.value)return;await relLink(relId,b.value,t.value);rPaint();render()};
+A.relDel=async t=>{await relUnlink(relId,t.dataset.id);rPaint();render()};
+document.addEventListener('change',async e=>{const t=e.target;if(t.dataset&&t.dataset.rt&&relId){await relLink(relId,t.dataset.rt,t.value);rPaint();render()}});
+/* tracks on world entries */
+function wMusic(it,i){const l=lists.find(x=>x.id==wd.id),have=new Set(it.songs||[]),pool=l?sortSongs(l.songs.filter(s=>songs.has(s)&&!have.has(s)),'track',l):[];
+ return`<div class="wchips">${(it.songs||[]).filter(s=>songs.has(s)).map(s=>`<span class="chip">${ic('play')} ${esc(ttl(songs.get(s)))}<button data-act="wSongDel" data-i="${i}" data-s="${s}" aria-label="Unlink track">${ic('x')}</button></span>`).join('')}</div>${pool.length?`<select data-wi="${i}" data-wsong="1" aria-label="Link a track"><option value="">Link a track from this collection…</option>${pool.map(s=>`<option value="${s}">${esc(ttl(songs.get(s)))}</option>`).join('')}</select>`:''}`}
+A.wSongDel=t=>{const it=wd.items[+t.dataset.i];wd.dirty=true;it.songs=it.songs.filter(s=>s!=t.dataset.s);wPaint()};
+document.addEventListener('change',e=>{const t=e.target;if(wd&&t.dataset&&t.dataset.wsong!==undefined&&t.value){const it=wd.items[+t.dataset.wi];wd.dirty=true;if(!it.songs.includes(t.value))it.songs.push(t.value);wPaint()}});
+/* ===== Stage 5: section-level merge. Each of world / exp / rel carries its own timestamp, so notes written on one device
+   and a rename on another are both kept. Everything else keeps the existing newest-record-wins rule. ===== */
+const SECS=['world','exp','rel'];
+const sj=v=>JSON.stringify(v,(k,x)=>x&&typeof x=='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(y=>[y,x[y]])):x);
+function mergeList(l,r){const newer=(r.mod||0)>(l.mod||0),M={...(newer?r:l)};
+ for(const k of SECS){const a=l[k],b=r[k],pick=!a?b:!b?a:(b.mod||0)>(a.mod||0)?b:a;if(pick)M[k]=pick;else delete M[k]}
+ M.mod=sj(M)==sj(r)?r.mod:sj(M)==sj(l)?l.mod:Date.now();   /* if the result holds something the other side lacks, stamp it new so it is sent back */
+ return M}
+async function mergeRemoteLists(rl){for(const l0 of Object.values(rl||{})){const r=cleanList(l0);if(!r)continue;const ix=lists.findIndex(x=>x.id==r.id);if(ix<0)continue;
+ const M=mergeList(lists[ix],r);if(sj(M)!==sj(lists[ix])){lists[ix]=M;await put('lists',M)}}}
 (async()=>{
  await open();(await idb('songs','readonly',s=>s.getAll())).forEach(s=>songs.set(s.id,s));for(const s of songs.values())SNAP.set(s.id,TRK.map(k=>jv(s[k])));lists=await idb('lists','readonly',s=>s.getAll());
  (await idb('blobs','readonly',s=>s.getAllKeys())).forEach(k=>haveBlob.add(k));
