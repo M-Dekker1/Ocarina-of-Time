@@ -453,6 +453,10 @@ body.herotop #top{display:none}
 .wbg{position:absolute;inset:0;z-index:-1;background-size:cover;background-position:center;opacity:.34;-webkit-mask-image:linear-gradient(90deg,#000 0%,transparent 80%);mask-image:linear-gradient(90deg,#000 0%,transparent 80%);pointer-events:none}
 .pn.wide{max-width:780px;max-height:88vh}
 
+.mood{display:inline-flex;align-items:center;gap:var(--s1);color:var(--mut);flex:none}
+.mood .i{width:14px;height:14px}.mood .mg{color:var(--acc)}.mood .mx{display:inline-flex}
+@media(max-width:820px){.mood .mx{display:none}}
+
 /* ===== Reduced motion ===== */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style></head><body>
@@ -571,13 +575,13 @@ function cleanSong(r){if(!r||typeof r!='object'||!okId(r.id))return null;const o
  for(const k of['title','artist','album','fn'])o[k]=sStr(r[k]);
  for(const k of['dur','trk','disc','plays','rating','fav','added','mod','lp','cmod','batch','sk','skl'])if(r[k]!==undefined)o[k]=sNum(r[k]);
  delete o.tags;if(r.cvh!==undefined&&!okId(r.cvh))delete o.cvh;
- if(r.lufs!=null)o.lufs=sNum(r.lufs);if(r.pk!=null)o.pk=sNum(r.pk);
+ if(r.lufs!=null)o.lufs=sNum(r.lufs);if(r.pk!=null)o.pk=sNum(r.pk);for(const k of['bpm','tc','br','ons','dr','an']){if(r[k]!=null)o[k]=sNum(r[k]);else delete o[k]}
  if(r.fm&&typeof r.fm=='object'){o.fm={};for(const k of TRK)if(r.fm[k])o.fm[k]=sNum(r.fm[k])}else delete o.fm;return o}
 function mergeSong(s,r){const o={...s},fm={...(s.fm||{})},rf=r.fm||{},newer=(r.mod||0)>(s.mod||0);
- if(newer)for(const k in r)if(!TRK.includes(k)&&!['fm','cover','plays','lp','lufs','pk','sk','skl'].includes(k))o[k]=r[k];
+ if(newer)for(const k in r)if(!TRK.includes(k)&&!['fm','cover','plays','lp','lufs','pk','sk','skl','bpm','tc','br','ons','dr','an'].includes(k))o[k]=r[k];
  for(const k of TRK){const a=fm[k]||0,b=rf[k]||0;if(b>a||(b==a&&newer)){o[k]=r[k];if(b)fm[k]=b}}
  o.plays=Math.max(s.plays||0,r.plays||0);o.lp=Math.max(s.lp||0,r.lp||0);o.sk=Math.max(s.sk||0,r.sk||0);o.skl=Math.max(s.skl||0,r.skl||0);
- for(const k of['lufs','pk'])o[k]=s[k]!==undefined?s[k]:r[k];
+ for(const k of['lufs','pk','bpm','tc','br','ons','dr','an'])o[k]=s[k]!==undefined?s[k]:r[k];
  o.fm=fm;
  const same=TRK.every(k=>jv(o[k])===jv(r[k]))&&o.plays==(r.plays||0)&&o.lp==(r.lp||0)&&o.sk==(r.sk||0)&&cj(fm)===cj(r.fm)&&jv(o.lufs)===jv(r.lufs);
  o.mod=same?(newer?r.mod:s.mod):Date.now();   /* if the merge differs from what the server holds, bump mod so it is sent back */
@@ -782,7 +786,7 @@ function initIcons(){$$('img.lg').forEach(i=>i.src=LOGO);const m={bShuf:'shuffle
 /* ---------- views ---------- */
 const cpl=(id,name)=>`<button class="cpl" data-act="plall" data-id="${esc(id)}" title="Play ${esc(name)}" aria-label="Play ${esc(name)}">${ic('play')}</button>`;
 const card=(id,name,subt,cover,act='go',html='')=>`<div class="card" tabindex="0" data-act="${act}" data-id="${esc(id)}"><div class="art">${html||art(cover,name)}${act=='go'?cpl(id,name):''}</div><b>${esc(name)}</b><small>${esc(subt||'')}&nbsp;</small></div>`;
-const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song${sel.has(id)?' picked':''}${isNow(id)?' now':''}" tabindex="0" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"${FINE?' draggable="true"':''}><span class="ck"></span>${keyCol?`<span class="tn">${tnum(s)}</span>`:''}<div class="sm">${art(cu(s),ttl(s))}${isNow(id)?eqH:''}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> '+ic('cloud')+'</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${s.fav?'<span class="fv">'+ic('heartFill')+'</span>':''}${s.plays?`<span class="pc" title="Times played">${ic('play')}${s.plays}</span>`:''}${keyCol?`<button class="ic kb${keySet.has(id)?' on':''}" data-act="keyT" data-id="${id}" data-col="${esc(keyCol)}" title="Key track" aria-label="Key track">${ic(keySet.has(id)?'starFill':'star')}</button>`:''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic ed" data-act="edit" data-id="${id}" data-ctx="${esc(ctx)}" title="Edit info" aria-label="Edit info">${ic('pencil')}</button><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}" aria-label="More options">${ic('more')}</button></div>`};
+const row=(id,ctx)=>{const s=songs.get(id);return`<div class="song${sel.has(id)?' picked':''}${isNow(id)?' now':''}" tabindex="0" data-act="play" data-id="${id}" data-ctx="${esc(ctx)}"${FINE?' draggable="true"':''}><span class="ck"></span>${keyCol?`<span class="tn">${tnum(s)}</span>`:''}<div class="sm">${art(cu(s),ttl(s))}${isNow(id)?eqH:''}</div><div class="t"><b>${esc(ttl(s))}${needs(s)?'<span class="warn" title="Needs info">!</span>':''}${haveBlob.has(id)?'':'<span class="mut" title="Not on this device"> '+ic('cloud')+'</span>'}</b><small>${esc(s.artist||'Unknown artist')}${s.album?' · '+esc(s.album):''}</small></div>${moodH(s)}${s.fav?'<span class="fv">'+ic('heartFill')+'</span>':''}${s.plays?`<span class="pc" title="Times played">${ic('play')}${s.plays}</span>`:''}${keyCol?`<button class="ic kb${keySet.has(id)?' on':''}" data-act="keyT" data-id="${id}" data-col="${esc(keyCol)}" title="Key track" aria-label="Key track">${ic(keySet.has(id)?'starFill':'star')}</button>`:''}<span class="dur">${s.dur?fm(s.dur):''}</span><button class="ic ed" data-act="edit" data-id="${id}" data-ctx="${esc(ctx)}" title="Edit info" aria-label="Edit info">${ic('pencil')}</button><button class="ic" data-act="smenu" data-id="${id}" data-ctx="${esc(ctx)}" aria-label="More options">${ic('more')}</button></div>`};
 const EMPTY='<div class="empty"><h2>Your game music, all in one place</h2><p class="mut">Add your soundtrack files (MP3, M4A, WAV or OGG). On iPhone they need to be in the Files app (iCloud Drive, OneDrive or Google Drive).</p><button class="p" data-act="addfiles">Add songs</button></div>';
 const phead=(title,btns)=>`<div class="phd"><h1>${title}</h1><div class="row" style="margin:0">${btns||''}${addBtn(!/class="p"/.test(btns||''))}</div></div>`;
 const sortSelHtml=()=>`<select id="sortSel">${[['az','A to Z'],['za','Z to A'],['new','Newest first'],['old','Oldest first'],['big','Most songs']].map(o=>`<option value="${o[0]}" ${sortK==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>`;
@@ -843,6 +847,7 @@ function vSettings(){const sc=cfg.url,sec=(h,b)=>`<div class="set"><h3>${h}</h3>
  +sec('Console icons','<p class="mut">Choose the icon shown beside each console on collection pages. An icon is shared by every collection that uses that console.</p><div class="row"><button data-act="conIcons">Choose icons</button></div>')
  +sec('Backup','<p class="mut">Playlists, favourites, ratings and play counts. Add the same audio files first when restoring.</p><div class="row"><button data-act="expBackup">Export backup</button><button data-act="impBackup">Import backup</button></div>')
  +sec('Volume',`<p class="mut">Levels every song to the same loudness so quiet and loud soundtracks don't need the volume turned up and down. Songs are measured once and the result syncs between devices. If sound ever cuts out or stops when the phone locks, switch this off and restart the app.</p><label class="pk"><input type="checkbox" id="nmOn" ${NORM.on?'checked':''}>Normalise volume</label><label>Loudness target</label><select id="nmT">${[[-23,'Quiet (-23 LUFS)'],[-18,'Relaxed (-18 LUFS)'],[-16,'Standard (-16 LUFS)'],[-14,'Loud (-14 LUFS)']].map(([v,l])=>`<option value="${v}" ${NORM.target==v?'selected':''}>${l}</option>`).join('')}</select><p class="mut" id="nmS" data-live></p><div class="row"><button data-act="nmRun">Measure songs now</button></div>`)
+ +sec('Mood and intensity',`<p class="mut">Each song is analysed once for intensity, tempo and brightness, and the result syncs between devices. Symbols on song rows: <b>bars</b> show intensity (one bar calm, three intense), ${ic('mslow')} slow, ${ic('mfast')} fast, ${ic('sun')} bright, ${ic('moon')} dark. Calm, Intense and the rest are relative to your own library.</p><p class="mut" id="mdS" data-live></p><div class="row"><button data-act="mdRun">Analyse songs now</button></div>`)
  +sec('Collection previews',`<p class="mut">Opening a collection plays three seconds from each of three random key tracks (or random songs, if you haven't starred any key tracks yet) as quiet background music. Previews are never counted in your stats or shown as now playing, and fade out as soon as you play something. It plays when nothing is playing, including when your music is paused, and is skipped while a song is actively playing. ${colls().filter(c=>(c.keys||[]).length).length} of ${colls().length} collections have key tracks.</p><label class="pk"><input type="checkbox" id="pvOn" ${PV.on?'checked':''}>Play collection previews</label><label for="pvVol">Preview volume: <b id="pvVolV">${Math.round(PV.vol*100)}%</b> of the main volume</label><input type="range" id="pvVol" min="0" max="1" step=".01" value="${PV.vol}">`)
  +sec('Trash',`<p class="mut">${TRASH.length?`${TRASH.length} deleted item${TRASH.length>1?'s':''} kept on this device for 30 days.`:'Songs and lists you delete are kept here for 30 days so you can restore them.'}</p><div class="row"><button data-act="trashOpen">Open trash</button></div>`)
  +sec('Keyboard shortcuts',SHORTCUTS.map(([k,d])=>`<div class="srow"><b>${k}</b><span class="mut">${d}</span></div>`).join(''))+'</div>'}
@@ -887,7 +892,7 @@ function vSeries(l){const cols=sorted(colls().filter(c=>c.ser==l.id)),ss=serSong
 function vList(){const cs=colls(),l=getList(S.id);if(!l)return'<button data-act="back">Back</button><p>Not found.</p>';
  if(l.type=='series')return vSeries(l);if(l.type=='collection')return vGame(l);
  const own=lists.find(x=>x.id==l.id),ids=sortSongs(l.songs.filter(i=>songs.has(i)),getSort(l),l),id=esc(l.id),sr=l.type=='collection'&&l.ser?lists.find(x=>x.id==l.ser&&x.type=='series'):null;
- let h=`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div class="big">${l.type=='playlist'?plArt(l):art(lcover(l),l.name)}</div><div><small>${l.type=='collection'?'Collection':'Playlist'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${pn(ids.length,'song')} · ${fmtT(ids.reduce((n,i)=>n+(songs.get(i).dur||0),0))} · ${ids.reduce((n,i)=>n+(songs.get(i).plays||0),0)} plays</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.smart?`<button data-act="spRefresh" data-id="${id}">Refresh</button><button data-act="spEdit" data-id="${id}">Edit rules</button>`:''}${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}${addBtn()}</div></div></div>`;
+ let h=`<button class="ic" data-act="back">${ic('back')} Back</button><div class="hd"><div class="big">${l.type=='playlist'?plArt(l):art(lcover(l),l.name)}</div><div><small>${l.type=='collection'?'Collection':'Playlist'}${sr?` · <span class="lnk" data-act="go" data-id="${esc(sr.id)}">${esc(sr.name)}</span>`:''}</small><h1>${esc(l.name)}</h1>${l.desc?`<p class="desc">${esc(l.desc)}</p>`:''}<small>${pn(ids.length,'song')} · ${fmtT(ids.reduce((n,i)=>n+(songs.get(i).dur||0),0))} · ${ids.reduce((n,i)=>n+(songs.get(i).plays||0),0)} plays</small><div class="row"><button class="p" data-act="plall" data-id="${id}">Play</button><button data-act="shuf" data-id="${id}">Shuffle</button><button data-act="selStart" data-ctx="${id}">Select</button>${l.smart?`<button data-act="spRefresh" data-id="${id}">Refresh</button><button data-act="spEdit" data-id="${id}">Edit rules</button>`:''}${l.type=='collection'?`<button data-act="newPl" data-id="${id}">New playlist</button>`:''}${l.type=='playlist'?`<button data-act="simFind" data-id="${id}">Find similar songs</button>`:''}${own?`<button data-act="addsongs" data-id="${id}">Add songs</button><button data-act="lset" data-id="${id}">Settings</button>`:''}${addBtn()}</div></div></div>`;
  if(l.type=='collection'){const set=new Set(l.songs);
   const ps=pls().filter(p=>p.col==l.id||p.songs.some(x=>set.has(x))).map(p=>({p,s:sub(p,cs)})).sort((a,b)=>!!b.s-!!a.s||a.p.name.localeCompare(b.p.name));
   h+=`<h2>Playlists</h2><div class="grid">${ps.map(x=>card(x.p.id,x.p.name,x.s,lcover(x.p))).join('')||'<p class="mut">No playlists use songs from this collection yet.</p>'}</div>`}
@@ -965,17 +970,17 @@ async function decodeFile(f){const data=await f.arrayBuffer(),OC=window.OfflineA
  return await new Promise((res,rej)=>{try{const p=ctx.decodeAudioData(data,res,rej);if(p&&p.then)p.then(res,rej)}catch(e){rej(e)}})}
 const FAILED=new Set();let anQ=Promise.resolve(),analysing=0;const INFL=new Map();
 async function analyse1(s){if(!songs.has(s.id))return;const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b)return;
- const lim=IOS?360:600;let r=null,failed=false;
+ const lim=IOS?360:600;let r=null,failed=false,f=null;
  if(b.file.size>40e6||(s.dur&&s.dur>lim)){r=null}   /* too long to decode safely: left at normal volume */
- else{try{r=await loudness(await decodeFile(b.file))}catch(e){failed=true}}
+ else{try{const buf=await decodeFile(b.file);r=await loudness(buf);try{f=await features(buf)}catch(e2){}}catch(e){failed=true}}
  if(failed&&IOS){FAILED.add(s.id);return}   /* might just be low memory: don't record a permanent failure from a phone */
- s.lufs=r?Math.round(r.lufs*10)/10:null;s.pk=r?Math.round(r.peak*1000)/1000:null;s.mod=Date.now();await put('songs',s)}
+ s.lufs=r?Math.round(r.lufs*10)/10:null;s.pk=r?Math.round(r.peak*1000)/1000:null;for(const k of['bpm','tc','br','ons','dr']){if(f&&f[k]!=null)s[k]=f[k];else delete s[k]}s.an=1;s.mod=Date.now();await put('songs',s)}
 function analyseSong(s){if(INFL.has(s.id))return INFL.get(s.id);const p=anQ.then(()=>analyse1(s)).catch(()=>{FAILED.add(s.id)}).finally(()=>INFL.delete(s.id));anQ=p;INFL.set(s.id,p);return p}
-async function analyseAll(){if(analysing||!NORM.on||IOS)return;analysing=1;let n=0;   /* phones only measure the song that is playing; the PC measures the library and it syncs across */
- try{for(const s of[...songs.values()]){if(!NORM.on)break;if(s.lufs!==undefined||FAILED.has(s.id)||!haveBlob.has(s.id)||!songs.has(s.id))continue;
+async function analyseAll(){if(analysing||IOS)return;analysing=1;let n=0;   /* phones only measure the song that is playing; the PC measures the library and it syncs across */
+ try{for(const s of[...songs.values()]){if(s.an||FAILED.has(s.id)||!haveBlob.has(s.id)||!songs.has(s.id))continue;
    await analyseSong(s);if(++n%10==0){applyGain(true);render()}await sleep(120)}}
  finally{analysing=0;if(n){applyGain(true);render()}}}
-function normPaint(){const el=$('#nmS');if(!el)return;const done=all().filter(s=>s.lufs!==undefined).length;el.textContent=`${done} of ${songs.size} songs measured${analysing?' (measuring now…)':''}${IOS?'. This device only measures the song that is playing; songs measured on your PC arrive with sync.':''}`}
+function normPaint(){mdPaint();const el=$('#nmS');if(!el)return;const done=all().filter(s=>s.lufs!==undefined).length;el.textContent=`${done} of ${songs.size} songs measured${analysing?' (measuring now…)':''}${IOS?'. This device only measures the song that is playing; songs measured on your PC arrive with sync.':''}`}
 function sessNew(s){const c=collOf(s.id),cl=c&&lists.find(l=>l.id==c),pl=lists.find(l=>l.id==curCtx&&l.type=='playlist');sess={song:s.id,coll:c,ser:cl&&cl.ser,pl:pl&&pl.id,secs:0,tot:0,played:0,t:Date.now()};lastT=0}
 async function flush(){const x=sess;if(!x||(x.secs<1&&!x.played))return;const e={id:'e'+Date.now().toString(36)+rnd(),t:x.t,song:x.song,coll:x.coll,ser:x.ser,pl:x.pl,secs:Math.round(x.secs),play:x.played};x.secs=0;x.played=0;x.t=Date.now();LOG.push(e);await put('log',e)}
 const savePlay=()=>{if(qi<0||!Q.length)return;put('meta',{id:'play',q:Q.slice(qi,qi+300),pos:realSrc()?au.currentTime:resumePos,ctx:curCtx})};
@@ -984,7 +989,7 @@ async function playAt(i,o={}){if(i<0||i>=Q.length)return;stopPreview();await flu
  const b=await idb('blobs','readonly',st=>st.get(s.id));if(!b&&!cfg.url)return toast('Audio file missing');
  if(curUrl)URL.revokeObjectURL(curUrl);curUrl=b?URL.createObjectURL(b.file):null;au.src=b?curUrl:(activeBase||bases()[0])+'/api/audio/'+s.id+'?t='+encodeURIComponent(cfg.token);
  if(o.pos)au.addEventListener('loadedmetadata',()=>{au.currentTime=o.pos},{once:true});
- ensureGraph();applyGain();if(NORM.on&&b&&s.lufs===undefined)analyseSong(s).then(()=>{if(Q[qi]==s.id)applyGain(true)});
+ ensureGraph();applyGain();if(b&&!s.an)analyseSong(s).then(()=>{if(Q[qi]==s.id)applyGain(true)});
  au.play().catch(()=>{});paint();savePlay()}
 function startPlay(ids,id,sf,ctx){if(!ids.length)return;if(sf!==undefined)shuf=sf;curCtx=ctx||'';ids=ids.slice();
  if(shuf){const f=id||(shuf==2?smartOrder(ids)[0]:ids[Math.random()*ids.length|0]);Q0=ids.slice();Q=[f,...(shuf==2?smartOrder:shuffled)(ids.filter(x=>x!=f))];playAt(0)}else{Q0=null;Q=ids;playAt(id?ids.indexOf(id):0)}}
@@ -1175,7 +1180,7 @@ function autoNum(){let c=0,pd=null;for(const x of ord.items){const d=x.disc||0;i
 function ordEdit(id){const l=lists.find(x=>x.id==id);if(!l)return;ord={id,items:sortSongs(l.songs.filter(i=>songs.has(i)),'track',l).map(i=>({id:i,disc:songs.get(i).disc||0,trk:songs.get(i).trk||0}))};
  sheet(`<h3>Track order</h3><p class="mut" style="margin:0 0 10px">Drag songs into order, or type disc and track numbers. A collection plays in this order.</p><div class="row" style="margin:0 0 8px"><button data-act="ordNum">Number in this order</button><button data-act="ordSort">Sort by numbers</button></div><div class="row" style="justify-content:flex-end;margin:0 2px 2px;gap:0"><small style="width:68px;text-align:center;margin-left:6px">Disc</small><small style="width:68px;text-align:center;margin-left:6px">Track</small></div><div id="ordL">${ord.items.map(ordRow).join('')}</div><div class="row"><button class="p" data-act="ordSave">Save order</button></div>`)}
 function songInfo(id){const s=songs.get(id),ev=LOG.filter(e=>e.song==id),secs=ev.reduce((n,e)=>n+(e.secs||0),0),cid=collOf(id),cl=cid&&lists.find(l=>l.id==cid),f=(k,v)=>`<div class="srow"><span class="mut">${k}</span><b>${v}</b></div>`;
- sheet(`<h3>${esc(ttl(s))}</h3>`+f('Times played',s.plays||0)+f('Times skipped',s.sk||0)+f('Time listened',secs?fmtT(secs):'None recorded')+f('Last played',s.lp?new Date(s.lp).toLocaleString():'Never')+f('Rating',s.rating?s.rating+' of 5':'Not rated')+f('Collection',cl?esc(cl.name):'None')+f('Disc and track',(s.disc||'-')+' / '+(s.trk||'-'))+f('Length',s.dur?fm(s.dur):'Unknown')+f('Added',new Date(s.added).toLocaleDateString())+f('File',esc(s.fn)))}
+ sheet(`<h3>${esc(ttl(s))}</h3>`+f('Times played',s.plays||0)+f('Times skipped',s.sk||0)+f('Time listened',secs?fmtT(secs):'None recorded')+f('Last played',s.lp?new Date(s.lp).toLocaleString():'Never')+f('Rating',s.rating?s.rating+' of 5':'Not rated')+f('Collection',cl?esc(cl.name):'None')+f('Disc and track',(s.disc||'-')+' / '+(s.trk||'-'))+f('Sound',esc(moodText(s)))+f('Length',s.dur?fm(s.dur):'Unknown')+f('Added',new Date(s.added).toLocaleDateString())+f('File',esc(s.fn)))}
 /* ---------- actions ---------- */
 async function fav(id){const s=songs.get(id);s.fav=s.fav?0:1;s.mod=Date.now();await put('songs',s);if(Q[qi]==id)paint();render()}
 async function rate(n){const s=songs.get(Q[qi]);if(!s)return;s.rating=s.rating==n?0:n;s.mod=Date.now();await put('songs',s);paint()}
@@ -1189,7 +1194,7 @@ const closeSheet=()=>{sh.hidden=true;sh.innerHTML=''};
 function menu(title,items){sheet(`<h3>${esc(title)}</h3>`+items.map((it,i)=>`<button class="mi" data-i="${i}">${esc(it[0])}</button>`).join(''));sh._items=items}
 sh.onclick=e=>{if(e.target.classList.contains('bk'))return closeSheet();const b=e.target.closest('.mi');if(b){const f=sh._items[b.dataset.i][1];closeSheet();f()}};
 function songMenu(id,ctx){const s=songs.get(id),l=lists.find(x=>x.id==ctx);
- const it=[['Play next',()=>enq(id,1)],['Add to queue',()=>enq(id,0)],['Add to playlist or collection…',()=>addMenu(id)],['Edit info'+(needs(s)?' (needs info)':''),()=>editSong(id,ctx)],[s.fav?'Remove favourite':'Favourite',()=>fav(id)],['Song details',()=>songInfo(id)]];
+ const it=[['Play next',()=>enq(id,1)],['Add to queue',()=>enq(id,0)],['Add to playlist or collection…',()=>addMenu(id)],['Edit info'+(needs(s)?' (needs info)':''),()=>editSong(id,ctx)],[s.fav?'Remove favourite':'Favourite',()=>fav(id)],['Song details',()=>songInfo(id)],['Find similar songs',()=>simSheet([id],'')]];
  if(l)it.push(['Remove from this list',async()=>{l.songs=l.songs.filter(x=>x!=id);l.mod=Date.now();await put('lists',l);render()}],...(getSort(l)=='manual'?[['Move up',()=>mv(l,id,-1)],['Move down',()=>mv(l,id,1)]]:[]));
  it.push(['Delete from library',()=>delSong(id)]);menu(ttl(s),it)}
 /* ---------- editable queue ---------- */
@@ -1342,7 +1347,7 @@ favf:()=>{S.fav=!S.fav;S.sc=null;S.lb=false;render()},lbf:()=>{S.lb=!S.lb;S.fav=
  bEdit:()=>sel.size?bulkEdit():toast('Select songs first'),
  bAdd:()=>{if(!sel.size)return toast('Select songs first');menu('Add to…',[['New playlist…',async()=>{const l=await newPlaylistWith([...sel]);if(l)endSel()}],...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>{addTo(l,[...sel]);endSel()}])])},
  bMore:()=>{if(!sel.size)return toast('Select songs first');const src=lists.find(x=>x.id==selCtx&&(x.type=='playlist'||x.type=='collection'));
-  const it=[['Favourite all',async()=>{for(const id of sel){const s=songs.get(id);s.fav=1;s.mod=Date.now();await put('songs',s)}endSel();render()}]];
+  const it=[['Find similar songs',()=>simSheet([...sel],src&&src.type=='playlist'?src.id:'')],['Favourite all',async()=>{for(const id of sel){const s=songs.get(id);s.fav=1;s.mod=Date.now();await put('songs',s)}endSel();render()}]];
   if(src)it.push(['Remove from this list',async()=>{src.songs=src.songs.filter(x=>!sel.has(x));src.mod=Date.now();await put('lists',src);endSel();render()}]);
   it.push(['Delete from library',async()=>{if(!confirm(`Delete ${sel.size} songs from your library?`))return;const es=await trashSongs([...sel]);endSel();render();toast(`${es.length} song${es.length==1?'':'s'} deleted`,()=>undoTrash(es))}]);menu(sel.size+' songs',it)},
  lNoImg:()=>{const l=lists.find(x=>x.id==ls.id);ls.img='';$('#lP').innerHTML=l.type=='series'?serArt({...l,img:''}):art(lcover({songs:l.songs}),l.name)},
@@ -1523,12 +1528,12 @@ function bulkEdit(){const n=sel.size;sheet(`<h3>Edit ${n} songs</h3><label>Artis
 A.bSave=async()=>{const ids=[...sel],a=$('#bA').value.trim(),b=$('#bB').value.trim(),f=$('#bC').files[0],cv=f?await fitCover(f):null;
  for(const id of ids){const s=songs.get(id);if(!s)continue;if(a)s.artist=a;if(b)s.album=b;if(cv){s.cover=cv;s.cmod=Date.now()}s.mod=Date.now();await put('songs',s)}closeSheet();endSel();toast(`Updated ${ids.length} songs`);render()};
 /* smart playlists: rules produce a snapshot; Refresh re-runs them */
-const SPDEF={minR:0,fav:0,noSkip:0,scope:'',maxPlays:'',idle:'',newer:'',minLen:'',maxLen:'',order:'smart',maxN:'',maxMin:''};let sp=null;
+const SPDEF={minR:0,fav:0,noSkip:0,scope:'',maxPlays:'',idle:'',newer:'',minLen:'',maxLen:'',order:'smart',maxN:'',maxMin:'',mI:0,mB:0,bpmLo:'',bpmHi:''};let sp=null;
 function smartRun(r){const now=Date.now(),D=864e5;let ids=(r.scope?ctxIds(r.scope):all().map(s=>s.id)).filter(i=>{const s=songs.get(i);if(!s)return false;
   
   if((s.rating||0)<r.minR||(r.fav&&!s.fav))return false;if(r.maxPlays!==''&&(s.plays||0)>r.maxPlays)return false;
   if(r.idle&&s.lp&&now-s.lp<r.idle*D)return false;if(r.newer&&now-(s.added||0)>r.newer*D)return false;
-  if(r.minLen&&(s.dur||0)<r.minLen*60)return false;if(r.maxLen&&s.dur&&s.dur>r.maxLen*60)return false;if(r.noSkip&&skipF(s)<.35)return false;return true});
+  if(r.minLen&&(s.dur||0)<r.minLen*60)return false;if(r.maxLen&&s.dur&&s.dur>r.maxLen*60)return false;if(r.noSkip&&skipF(s)<.35)return false;if(!moodOk(s,r))return false;return true});
  const g=i=>songs.get(i),C={rating:(a,b)=>(g(b).rating||0)-(g(a).rating||0),plays:(a,b)=>(g(b).plays||0)-(g(a).plays||0),least:(a,b)=>(g(a).plays||0)-(g(b).plays||0),added:(a,b)=>(g(b).added||0)-(g(a).added||0),stale:(a,b)=>(g(a).lp||0)-(g(b).lp||0),az:(a,b)=>ttl(g(a)).localeCompare(ttl(g(b)))}[r.order];
  ids=C?shuffled(ids).sort(C):r.order=='smart'?smartOrder(ids):shuffled(ids);
  const out=[];let tot=0;for(const i of ids){const d=g(i).dur||180;if(r.maxN&&out.length>=r.maxN)break;if(r.maxMin&&tot+d>r.maxMin*60)continue;out.push(i);tot+=d}return out}
@@ -1538,6 +1543,7 @@ function smartDlg(id){const l=id&&lists.find(x=>x.id==id),r={...SPDEF,...(l&&l.s
  sheet(`<h3>${l?'Smart playlist rules':'New smart playlist'}</h3><label>Name</label><input id="spN" value="${esc(l?l.name:'')}" placeholder="e.g. Calm boss themes">
  <div class="fg"><div><label>Minimum rating</label>${sel2('spR',r.minR,[[0,'Any rating'],[1,'1 star +'],[2,'2 stars +'],[3,'3 stars +'],[4,'4 stars +'],[5,'5 stars']])}</div><div><label>Limit to</label><select id="spS"><option value="">Everything</option>${lists.some(x=>x.type=='series')?`<optgroup label="Series">${lists.filter(x=>x.type=='series').map(x=>`<option value="${esc(x.id)}" ${r.scope==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</optgroup>`:''}<optgroup label="Collections">${colls().map(x=>`<option value="${esc(x.id)}" ${r.scope==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</optgroup></select></div>
  ${num('spP','Max times played (0 = never played)',r.maxPlays)}${num('spD','Not played in the last (days)',r.idle)}${num('spA','Added in the last (days)',r.newer)}<div></div>${num('spLo','Song at least (minutes)',r.minLen)}${num('spHi','Song at most (minutes)',r.maxLen)}</div>
+ <div class="fg"><div><label>Intensity</label>${sel2('spMI',r.mI,[[0,'Any'],[1,'Calm'],[2,'Moderate'],[4,'Intense'],[6,'Moderate or intense'],[3,'Calm or moderate']])}</div><div><label>Brightness</label>${sel2('spMB',r.mB,[[0,'Any'],[1,'Dark'],[2,'Balanced'],[4,'Bright'],[6,'Balanced or bright'],[3,'Dark or balanced']])}</div>${num('spBl','Tempo at least (BPM)',r.bpmLo)}${num('spBh','Tempo at most (BPM)',r.bpmHi)}</div><p class="mut" style="margin:0 0 10px">Mood rules only match songs that have been analysed (${all().filter(x=>x.an).length} of ${songs.size} so far).</p>
  <label class="pk"><input type="checkbox" id="spF" ${r.fav?'checked':''}>Favourites only</label><label class="pk"><input type="checkbox" id="spK" ${r.noSkip?'checked':''}>Hide songs I often skip</label>
  <label>Order</label>${sel2('spO',r.order,[['smart','Smart (favours high ratings, avoids skipped and recent songs)'],['random','Random'],['rating','Highest rated'],['plays','Most played'],['least','Least played'],['added','Recently added'],['stale','Longest since played'],['az','A to Z']])}
  <div class="fg">${num('spC','Max songs',r.maxN)}${num('spL','Max total length (minutes)',r.maxMin)}</div><p class="mut" style="margin:0 0 10px">The playlist is a snapshot. Press Refresh on it to run these rules again.</p><button class="p" data-act="spSave">${l?'Save and refresh':'Create playlist'}</button>`)}
@@ -1545,7 +1551,7 @@ function smartDlg(id){const l=id&&lists.find(x=>x.id==id),r={...SPDEF,...(l&&l.s
 A.newSmart=()=>smartDlg();A.spEdit=t=>smartDlg(t.dataset.id);
 A.spRefresh=async t=>{const l=lists.find(x=>x.id==t.dataset.id);if(!l||!l.smart)return;await smartRefresh(l);render();toast(`Refreshed: ${pn(l.songs.length,'song')}`)};
 A.spSave=async()=>{const n=$('#spN').value.trim();if(!n)return toast('Enter a name');const v=i=>$('#'+i).value.trim(),num=i=>{const x=parseFloat(v(i));return isFinite(x)&&x>=0?x:''};
- const r={minR:+v('spR'),scope:v('spS'),fav:$('#spF').checked?1:0,noSkip:$('#spK').checked?1:0,maxPlays:num('spP'),idle:num('spD'),newer:num('spA'),minLen:num('spLo'),maxLen:num('spHi'),order:v('spO'),maxN:num('spC'),maxMin:num('spL')};
+ const r={minR:+v('spR'),scope:v('spS'),fav:$('#spF').checked?1:0,noSkip:$('#spK').checked?1:0,maxPlays:num('spP'),idle:num('spD'),newer:num('spA'),minLen:num('spLo'),maxLen:num('spHi'),order:v('spO'),maxN:num('spC'),maxMin:num('spL'),mI:+v('spMI'),mB:+v('spMB'),bpmLo:num('spBl'),bpmHi:num('spBh')};
  let l=sp.id&&lists.find(x=>x.id==sp.id),isNew=!l;if(l){l.name=n;l.smart=r}else l=await mkList({name:n,type:'playlist',smart:r});
  await smartRefresh(l);closeSheet();if(isNew){hist.push(S);S={t:'list',id:l.id}}render();toast(`${pn(l.songs.length,'song')} matched`)};
 /* skip tracking: Next within the first 30 seconds (or first third of a short song) counts as a skip and lowers the song's smart shuffle weight */
@@ -1778,6 +1784,75 @@ A.tlOpen=t=>tlSheet(t.dataset.id);A.tlClose=()=>closeSheet();
 A.wImgX=()=>{wd.dirty=true;wd.img='';wPaint()};
 document.addEventListener('change',async e=>{const t=e.target;if(t.id!='wImgF'||!t.files[0]||!wd)return;const f=t.files[0];
  ls.pending=busy('[data-act=lSave]',async()=>{const d=await toData(f,1000,false);if(d){wd.img=d;wd.dirty=true;wPaint()}else toast(BADIMG)});await ls.pending});
+/* ===== Mood and intensity: measured from the audio, labelled relative to your own library ===== */
+Object.assign(ICONS,{mslow:'<path d="M9 6l6 6-6 6"/>',mfast:'<path d="M5 6l6 6-6 6M12 6l6 6-6 6"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'});
+/* From one decoded song: brightness (how much of the sound is high-frequency), dynamic range, note/onset density and tempo (autocorrelation of the onset envelope). */
+async function features(buf){const fs=buf.sampleRate,H=512,nb=Math.floor(buf.length/H);if(nb<300)return null;
+ const x=buf.getChannelData(0),y=buf.numberOfChannels>1?buf.getChannelData(1):null,e=new Float32Array(nb),d=new Float32Array(nb),SL=1<<19,N=nb*H;
+ let k=0,se=0,sd=0,pm=0,j=0;
+ for(let st=0;st<N;st+=SL){const en=Math.min(N,st+SL);
+  for(let i=st;i<en;i++){const m=y?(x[i]+y[i])*.5:x[i],df=m-pm;pm=m;se+=m*m;sd+=df*df;if(++k==H){e[j]=se;d[j]=sd;j++;se=0;sd=0;k=0}}
+  await tick()}
+ const act=[];let E=0,D=0;
+ for(let i=0;i<nb;i++){const db=10*Math.log10(e[i]/H+1e-12);if(db>-55){act.push(db);E+=e[i];D+=d[i]}}
+ if(act.length<200||E<=0)return null;
+ act.sort((a,b)=>a-b);const dr=act[Math.floor(act.length*.95)]-act[Math.floor(act.length*.1)],br=Math.sqrt(D/E);
+ const o=new Float32Array(nb);let pl=0,mu=0,sg=0;
+ for(let i=0;i<nb;i++){const l=Math.log(1+100*Math.sqrt(e[i]/H));o[i]=Math.max(0,l-pl);pl=l;mu+=o[i]}
+ mu/=nb;for(let i=0;i<nb;i++)sg+=(o[i]-mu)*(o[i]-mu);sg=Math.sqrt(sg/nb);
+ let pk=0;for(let i=1;i<nb-1;i++)if(o[i]>mu+sg&&o[i]>=o[i-1]&&o[i]>o[i+1])pk++;
+ const out={br:Math.round(br*1000)/1000,dr:Math.round(dr*10)/10,ons:Math.round(pk/(N/fs)*100)/100};
+ const fr=fs/H,W=Math.min(nb,3000),a0=Math.floor((nb-W)/2),w=new Float32Array(W);let wm=0;
+ for(let i=0;i<W;i++){w[i]=o[a0+i];wm+=w[i]}wm/=W;for(let i=0;i<W;i++)w[i]-=wm;
+ const L0=Math.round(fr*60/200),L1=Math.round(fr*60/55),ac=new Float32Array(2*L1+2);
+ for(let l=0;l<ac.length&&l<W/2;l++){let t=0;for(let i=0;i+l<W;i++)t+=w[i]*w[i+l];ac[l]=t/(W-l)}
+ if(!(ac[0]>0))return out;
+ let best=0,bs=-1e9;
+ for(let l=L0;l<=L1;l++){const sc=(ac[l]+.5*ac[2*l])*Math.exp(-.5*Math.pow(Math.log2((60*fr/l)/120),2));if(sc>bs){bs=sc;best=l}}
+ let lag=best;if(best>L0&&best<L1){const a=ac[best-1],b=ac[best],c=ac[best+1],den=a-2*b+c;if(den<0)lag=best+.5*(a-c)/den}
+ out.bpm=Math.round(60*fr/lag);out.tc=Math.round(Math.max(0,ac[best]/ac[0])*100)/100;return out}
+const clamp01=v=>Math.max(0,Math.min(1,v)),tOk=s=>s.bpm&&(s.tc||0)>=.12;
+const inten=s=>.55*clamp01((s.lufs+30)/22)+.2*clamp01((s.ons||0)/4)+.1*clamp01((s.br||0)/.9)+.15*(tOk(s)?clamp01((s.bpm-60)/120):.4);
+function moodCuts(){return memo('mcuts',()=>{const ss=all().filter(x=>x.an&&x.lufs!=null&&x.br!=null),q=(a,p)=>{a.sort((u,v)=>u-v);return a[Math.min(a.length-1,Math.floor(a.length*p))]};
+ return ss.length<12?null:{i1:q(ss.map(inten),1/3),i2:q(ss.map(inten),2/3),b1:q(ss.map(x=>x.br),1/3),b2:q(ss.map(x=>x.br),2/3)}})}
+function moodOf(s){if(!s||!s.an||s.lufs==null||s.br==null)return null;const c=moodCuts();if(!c)return null;const I=inten(s);
+ return{i:I<c.i1?1:I<c.i2?2:3,b:s.br<c.b1?1:s.br<c.b2?2:3,t:tOk(s)?(s.bpm<90?0:s.bpm>130?2:1):null}}
+function moodText(s){const m=moodOf(s);if(!m)return s.an?'Not enough data':'Not analysed yet';
+ return[['Calm','Moderate','Intense'][m.i-1],m.t==null?'':['Slow','Medium tempo','Fast'][m.t]+' (about '+Math.round(s.bpm)+' BPM)',['Dark','Balanced','Bright'][m.b-1]].filter(Boolean).join(' · ')}
+function moodH(s){const m=moodOf(s);if(!m)return'';
+ const bars=`<svg class="i mg" viewBox="0 0 24 24">${[0,1,2].map(k=>`<rect x="${4+k*6}" y="${[14,9,4][k]}" width="4" height="${[6,11,16][k]}" rx="1.5" fill="currentColor"${k<m.i?'':' opacity=".25"'} stroke="none"/>`).join('')}</svg>`;
+ return`<span class="mood" title="${esc(moodText(s))}">${bars}${m.t==0?`<span class="mx">${ic('mslow')}</span>`:m.t==2?`<span class="mx">${ic('mfast')}</span>`:''}${m.b==3?`<span class="mx">${ic('sun')}</span>`:m.b==1?`<span class="mx">${ic('moon')}</span>`:''}</span>`}
+function moodOk(s,r){const lo=r.bpmLo===''||r.bpmLo==null?null:+r.bpmLo,hi=r.bpmHi===''||r.bpmHi==null?null:+r.bpmHi,mI=+r.mI||0,mB=+r.mB||0;
+ if(!mI&&!mB&&lo==null&&hi==null)return true;const m=moodOf(s);if(!m)return false;
+ if(mI&&!(mI&(1<<(m.i-1))))return false;if(mB&&!(mB&(1<<(m.b-1))))return false;
+ if(lo!=null||hi!=null){if(m.t==null)return false;if(lo!=null&&s.bpm<lo)return false;if(hi!=null&&s.bpm>hi)return false}return true}
+function mdPaint(){const el=$('#mdS');if(!el)return;el.textContent=`${all().filter(x=>x.an).length} of ${songs.size} songs analysed${analysing?' (analysing now…)':''}${IOS?'. This device only analyses the song that is playing; songs analysed on your PC arrive with sync.':''}`}
+A.mdRun=()=>{if(IOS)return toast('This device analyses the song that is playing. Your PC analyses the rest.');toast('Analysing songs in the background');analyseAll().then(normPaint);normPaint()};
+/* ===== Find similar songs: ranks the library by how close each song sounds to the chosen examples ===== */
+let sim=null;const VW=[1,1,1,.6,1.2];   /* loudness, note density, brightness, dynamic range, tempo */
+const vecOf=s=>s&&s.an&&s.lufs!=null&&s.br!=null?[s.lufs,s.ons||0,s.br,s.dr||0,tOk(s)?Math.log2(s.bpm):null]:null;
+const vStat=()=>memo('vstat',()=>{const vs=all().map(vecOf).filter(Boolean),st=[];for(let d=0;d<5;d++){const a=vs.map(v=>v[d]).filter(v=>v!=null),m=a.reduce((p,c)=>p+c,0)/(a.length||1);st.push([m,Math.sqrt(a.reduce((p,c)=>p+(c-m)*(c-m),0)/(a.length||1))||1])}return{st,n:vs.length}});
+function simRank(seedIds,exclude){const{st}=vStat(),z=s=>{const v=vecOf(s);return v&&v.map((x,d)=>x==null?null:(x-st[d][0])/st[d][1])},seeds=seedIds.map(i=>z(songs.get(i))).filter(Boolean);
+ if(!seeds.length)return{seeds:0,list:[]};
+ const dist=(a,b)=>{let t=0,w=0;for(let d=0;d<5;d++)if(a[d]!=null&&b[d]!=null){t+=VW[d]*(a[d]-b[d])**2;w+=VW[d]}return w?Math.sqrt(t/w):9},out=[];
+ for(const s of songs.values()){if(exclude.has(s.id))continue;const c=z(s);if(!c)continue;const ds=seeds.map(q=>dist(c,q)).sort((p,q)=>p-q),k=Math.min(3,ds.length);out.push({id:s.id,d:ds.slice(0,k).reduce((p,q)=>p+q,0)/k})}   /* average distance to the 3 closest examples, so a mixed playlist matches any of its styles */
+ out.sort((a,b)=>a.d-b.d);return{seeds:seeds.length,list:out}}
+function simSheet(ids,plId){ids=ids.filter(i=>songs.has(i));const pl=plId&&lists.find(x=>x.id==plId);
+ if(vStat().n<12)return sheet(`<h3>Find similar songs</h3><p class="mut">Only ${vStat().n} songs have been analysed so far. Analysis runs in the background (Settings, Mood and intensity); try again once more of your library is done.</p>`);
+ const r=simRank(ids,new Set([...ids,...(pl?pl.songs:[])]));
+ if(!r.seeds)return sheet('<h3>Find similar songs</h3><p class="mut">None of the example songs have been analysed yet, so there is nothing to compare against.</p>');
+ const top=r.list.slice(0,60);sim={plId:pl?pl.id:'',top:top.map(x=>x.id),sel:new Set()};
+ sheet(`<h3>Songs that sound similar</h3><p class="mut" style="margin:0 0 8px">Matched against ${pn(r.seeds,'analysed example song')}${r.seeds<ids.length?` (${ids.length-r.seeds} not analysed yet)`:''}. Best matches first. Nothing is added until you confirm.</p><div class="row" style="margin:0 0 8px"><button data-act="simTop">Tick top 20</button><button data-act="simClear">Clear</button></div><div id="simL">${top.map(x=>{const s=songs.get(x.id),cid=collOf(x.id),c=cid&&lists.find(l=>l.id==cid);
+  return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><input type="checkbox" data-sk="${x.id}"><div class="t"><b>${esc(ttl(s))}</b><small>${esc(c?c.name:s.artist||'')}</small></div>${moodH(s)}<span class="mut" style="min-width:36px;text-align:right">${Math.max(0,Math.round(100*(1-x.d/2.5)))}%</span><button class="ic" data-act="simPlay" data-id="${x.id}" aria-label="Play">${ic('play')}</button></div>`}).join('')}</div><button class="p" id="simG" data-act="simAdd">Add 0</button>`);
+ sh.querySelector('.pn').classList.add('wide')}
+const simCount=()=>{const g=$('#simG');if(g)g.textContent=(sim.plId?'Add to playlist: ':'Add ')+sim.sel.size};
+A.simFind=t=>{const l=lists.find(x=>x.id==t.dataset.id);if(l)simSheet(l.songs,l.id)};
+A.simTop=()=>{sim.top.slice(0,20).forEach(i=>sim.sel.add(i));$$('#simL [data-sk]').forEach(b=>b.checked=sim.sel.has(b.dataset.sk));simCount()};
+A.simClear=()=>{sim.sel.clear();$$('#simL [data-sk]').forEach(b=>b.checked=false);simCount()};
+A.simPlay=t=>startPlay(sim.top,t.dataset.id,undefined,'');
+A.simAdd=()=>{const ids=[...sim.sel];if(!ids.length)return toast('Tick some songs first');const pl=sim.plId&&lists.find(x=>x.id==sim.plId);closeSheet();
+ if(pl)addTo(pl,ids);else menu('Add to…',[['New playlist…',()=>newPlaylistWith(ids)],...lists.filter(l=>l.type=='playlist'||l.type=='collection').map(l=>[(l.type=='playlist'?'Playlist: ':'Collection: ')+l.name,()=>addTo(l,ids)])])};
+document.addEventListener('change',e=>{const t=e.target;if(sim&&t.dataset&&t.dataset.sk){t.checked?sim.sel.add(t.dataset.sk):sim.sel.delete(t.dataset.sk);simCount()}});
 /* ===== Stage 5: section-level merge. Each of world / exp / rel carries its own timestamp, so notes written on one device
    and a rename on another are both kept. Everything else keeps the existing newest-record-wins rule. ===== */
 const SECS=['world','exp','rel'];
